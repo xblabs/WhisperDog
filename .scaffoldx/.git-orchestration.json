@@ -1,0 +1,2747 @@
+{
+  "profile": "ScaffoldX Framework Development",
+  "timestamp": "2025-08-15T18:56:19.718Z",
+  "totalFiles": 305,
+  "processingMode": "two-tier",
+  "groups": [
+    {
+      "paths": [
+        ".scaffoldx/xcore/commands/"
+      ],
+      "commit_type": "feat",
+      "commit_scope": "commands",
+      "group_by": "subdirectory",
+      "priority": 1,
+      "name": "framework-commands",
+      "files": [
+        {
+          "path": ".scaffoldx/xcore/commands/x-child-add.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-child-remove.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-context-heal.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-archive.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-complete.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-create.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-dependencies.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-evolve-parent.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-execute.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-heal-context.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-navigate.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-next.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-propagate.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-transform-rollback.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-transform.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-task-tree.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-umbrella-status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/commands/x-git-review-group.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xcore/scripts/"
+      ],
+      "commit_type": "feat",
+      "commit_scope": "scripts",
+      "group_by": "related",
+      "priority": 2,
+      "name": "framework-scripts",
+      "files": [
+        {
+          "path": ".scaffoldx/xcore/scripts/fix-multiple-in-progress.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/fix-task-progress.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/fix-umbrella-active-state.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/fix-umbrella-status.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/git-commit-orchestrator.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/migrate-task-types.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/migrate-tasks-for-propagation.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/test-dependency-scenarios.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/test-status-propagation.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/test/test-cascade-operations.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/utils/CascadeOperations.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/utils/FamilyKnowledgeExtractor.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/utils/dependency-manager.js",
+          "staged": true,
+          "unstaged": true,
+          "untracked": false,
+          "status": "AM",
+          "statusLabel": "AM"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/utils/split-json-storage.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-child-add-script.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-child-remove-script.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-context-heal.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-git-commit.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-issue-add.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-issue-list.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-issue-resolve.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-sequential-thinking.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-archive-original.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-archive.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-complete-original.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-complete.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-conceptualize.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-create.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-dependencies-script.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-execute.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-heal-context.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-list.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-navigate.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-next-original.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-next.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-propagate.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-split.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-status-original.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-status.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-switch.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-transform-rollback.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-transform-umbrella.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-transform.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-tree.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-task-update.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-tree.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-umbrella-status.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/xt.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/utils/file-rotation.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xcore/scripts/x-git-review-group.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        }
+      ],
+      "requires_ai_grouping": true
+    },
+    {
+      "paths": [
+        ".scaffoldx/xcore/internal/"
+      ],
+      "commit_type": "refactor",
+      "commit_scope": "internal",
+      "group_by": "subdirectory",
+      "priority": 3,
+      "name": "framework-internal",
+      "files": [
+        {
+          "path": ".scaffoldx/xcore/internal/ai_guard_rails/simplicity_challenge.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/internal/governance/markers/CTX/CTX-HEA-001.yaml",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/internal/governance/markers/CTX/CTX-VAL-001.yaml",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/internal/hook_registry.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/internal/status_propagation/HookAdapter.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/internal/status_propagation/StatusPropagationEngine.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xcore/docs/"
+      ],
+      "commit_type": "docs",
+      "commit_scope": "framework",
+      "group_by": "subdirectory",
+      "priority": 5,
+      "name": "framework-docs",
+      "files": [
+        {
+          "path": ".scaffoldx/xcore/docs/_cheatsheets/context-inheritance-cheatsheet.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/_cheatsheets/git-orchestration-cheatsheet.md",
+          "staged": true,
+          "unstaged": true,
+          "untracked": false,
+          "status": "AM",
+          "statusLabel": "AM"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/api/dependency-manager.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/commands.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/commands/x-git-commit.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/dependency-management.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/features/context-inheritance.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/guides/git-orchestration-workflow.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/guides/transformation-workflows.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/guides/umbrella-best-practices.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/guides/umbrella-examples.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/guides/umbrella-task-system-user-guide.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/guides/umbrella-troubleshooting.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/status-propagation-guide.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/umbrella-task-best-practices.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/umbrella-task-command-reference.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/umbrella-task-orchestration.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/umbrella-task-system-user-guide.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/umbrella_task_system/best_practices.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/umbrella_task_system/index.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/umbrella_task_system/user_guide.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/docs/_cheatsheets/git-terminal-workflow.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0015)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0015_task-structure-standardization/.status",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0015_task-structure-standardization/01_prd.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0015_task-structure-standardization/02_implementation_plan.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0015_task-structure-standardization/03_checklist.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0015_task-structure-standardization/04_status.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0193)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/03_checklist.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/04_status.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/COMPLETION_REPORT.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/implementation/README.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/implementation/patches/apply-patches.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/implementation/patches/x-sequential-thinking-enhancement.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/implementation/patches/x-task-conceptualize-enhancement.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/implementation/patches/x-task-create-enhancement.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/implementation/patches/x-task-split-enhancement.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/implementation/tests/test-hook-adapter-core.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/knowledge/command_integration_complete_2025_08_15.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/knowledge/documentation_completion_2025_08_15.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/knowledge/external_results_drop_here/o4-mini.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/knowledge/hooks_refactoring_progress.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/knowledge/nomenclature_correction_2025_08_15.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0193_implement_parent-child_context_inheritance_system/knowledge/reference_update_complete_2025_08_15.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0196)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0196_unified_behavioral_control_system_hooks_and_governance_/DEPLOYMENT_SUMMARY.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0196_unified_behavioral_control_system_hooks_and_governance_/implementation/markers/CTX/CTX-HEA-001.yaml",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0196_unified_behavioral_control_system_hooks_and_governance_/implementation/markers/CTX/CTX-VAL-001.yaml",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0196_unified_behavioral_control_system_hooks_and_governance_/implementation/tests/test-ContextHooks.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0196_unified_behavioral_control_system_hooks_and_governance_/implementation/tests/test-Integration.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0234)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0234_master_orchestrator_context_flow_architecture_implement/.status",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "D ",
+          "statusLabel": "Deleted"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0234_master_orchestrator_context_flow_architecture_implement/0234_master_orchestrator_context_flow_architecture_implement.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0234_master_orchestrator_context_flow_architecture_implement/04_status.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0253)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/.umbrella_transformation.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/01_coordination_overview.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/01_prd.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/02_child_execution_strategy.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/02_implementation_plan.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/03_checklist.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/03_coordination_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/04_wisdom_accumulation.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/_archived_canonicals/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/_archived_canonicals/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/_archived_canonicals/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/_backup_2025-08-14T19-10-36-334Z/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/_backup_2025-08-14T19-10-36-334Z/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/_backup_2025-08-14T19-10-36-334Z/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/_backup_2025-08-14T19-10-36-334Z/04_status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0253_git_commit_enhancements/_backup_2025-08-14T19-10-36-334Z/transformation_metadata.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0255)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0255_free-floating_context_architecture/01_prd.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0255_free-floating_context_architecture/0255_free-floating_context_architecture.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0255_free-floating_context_architecture/02_implementation_plan.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0255_free-floating_context_architecture/03_checklist.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0255_free-floating_context_architecture/04_status.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " D",
+          "statusLabel": " D"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0260)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0260_automatic_status_propagation_for_umbrella_tasks/02_implementation_plan.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0260_automatic_status_propagation_for_umbrella_tasks/03_checklist.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0260_automatic_status_propagation_for_umbrella_tasks/04_status.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0261)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0261_task_family_cascade_operations/02_implementation_plan.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0261_task_family_cascade_operations/03_checklist.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0261_task_family_cascade_operations/04_status.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0261_task_family_cascade_operations/COMPLETION_SUMMARY.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0261_task_family_cascade_operations/knowledge/cascade_operations_summary.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0261_task_family_cascade_operations/knowledge/implementation_complete.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0263)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0263_umbrella_task_creation_and_management_system/02_implementation_plan.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0263_umbrella_task_creation_and_management_system/03_checklist.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0263_umbrella_task_creation_and_management_system/04_status.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0263_umbrella_task_creation_and_management_system/knowledge/transformation_summary.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0263_umbrella_task_creation_and_management_system/work_log/RUN_2025-08-14_01.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0264)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0264_test_umbrella_task_for_authentication/.transformation_log",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_test_umbrella_task_for_authentication/01_coordination_overview.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_test_umbrella_task_for_authentication/0264_test_umbrella_task_for_authentication.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_test_umbrella_task_for_authentication/02_child_execution_strategy.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_test_umbrella_task_for_authentication/03_coordination_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_test_umbrella_task_for_authentication/04_wisdom_accumulation.md",
+          "staged": true,
+          "unstaged": true,
+          "untracked": false,
+          "status": "AM",
+          "statusLabel": "AM"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0264)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0264_testing_and_documentation_for_umbrella_task_system/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_testing_and_documentation_for_umbrella_task_system/0264_testing_and_documentation_for_umbrella_task_system.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_testing_and_documentation_for_umbrella_task_system/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_testing_and_documentation_for_umbrella_task_system/03_checklist.md",
+          "staged": true,
+          "unstaged": true,
+          "untracked": false,
+          "status": "AM",
+          "statusLabel": "AM"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_testing_and_documentation_for_umbrella_task_system/04_status.md",
+          "staged": true,
+          "unstaged": true,
+          "untracked": false,
+          "status": "AM",
+          "statusLabel": "AM"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_testing_and_documentation_for_umbrella_task_system/documentation_summary.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0264_testing_and_documentation_for_umbrella_task_system/knowledge/documentation_progress.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0265)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0265_critical_fix_script_delegation_context_loss_-_proper_im/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_critical_fix_script_delegation_context_loss_-_proper_im/0265_critical_fix_script_delegation_context_loss_-_proper_im.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_critical_fix_script_delegation_context_loss_-_proper_im/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_critical_fix_script_delegation_context_loss_-_proper_im/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_critical_fix_script_delegation_context_loss_-_proper_im/04_status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0265)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/.transformation_log",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/0265_login_component_implementation.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/04_status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153748/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153748/0265_login_component_implementation.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153748/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153748/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153748/04_status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153748/transformation_metadata.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153811/01_coordination_overview.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153811/0265_login_component_implementation.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153811/02_child_execution_strategy.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153811/03_coordination_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153811/04_wisdom_accumulation.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0265_login_component_implementation/_backup_20250814153811/transformation_metadata.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0266)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0266_password_reset_component/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0266_password_reset_component/0266_password_reset_component.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0266_password_reset_component/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0266_password_reset_component/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0266_password_reset_component/04_status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0267)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0267_oauth_integration_module/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0267_oauth_integration_module/0267_oauth_integration_module.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0267_oauth_integration_module/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0267_oauth_integration_module/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0267_oauth_integration_module/04_status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": "task(0268)",
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/0268_free-floating_context_architecture/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0268_free-floating_context_architecture/0268_free-floating_context_architecture.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0268_free-floating_context_architecture/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0268_free-floating_context_architecture/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/0268_free-floating_context_architecture/04_status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xtasks/"
+      ],
+      "commit_type": "task",
+      "commit_scope": null,
+      "group_by": "task-folder",
+      "priority": 10,
+      "name": "tasks",
+      "files": [
+        {
+          "path": ".scaffoldx/xtasks/archive/0015_task-structure-standardization/.ARCHIVED.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/archive/0015_task-structure-standardization/.status",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/archive/0015_task-structure-standardization/01_prd.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/archive/0015_task-structure-standardization/02_implementation_plan.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/archive/0015_task-structure-standardization/03_checklist.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/archive/0015_task-structure-standardization/04_status.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/archive/index.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/archive/index.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/tasks.archive.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/tasks.backup.1755212912759.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtasks/tasks.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xtasks/tasks.json.corrupted",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xissues/"
+      ],
+      "commit_type": "fix",
+      "commit_scope": null,
+      "group_by": "issue-folder",
+      "priority": 11,
+      "name": "issues",
+      "files": [
+        {
+          "path": ".scaffoldx/xissues/ISS_00350_dual_active_state_for_umbrella_tasks.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xissues/active/ISS_00306_x_issue_add_fails_silently.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xissues/active/ISS_00307_implement_automatic_status_propagation_for_umbrella_tasks.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xissues/active/ISS_00308_add_cascade_operations_to_task_archive.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xissues/active/ISS_00309_x_task_next_umbrella_context.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xissues/active/ISS_00312_fix_x_task_complete_function_error.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xissues/active/issues.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        }
+      ]
+    },
+    {
+      "paths": [
+        ".scaffoldx/xmemory/"
+      ],
+      "commit_type": "chore",
+      "commit_scope": "memory",
+      "group_by": "subdirectory",
+      "priority": 20,
+      "name": "memory",
+      "files": [
+        {
+          "path": ".scaffoldx/xmemory/chats/2025-08-14_001_parent-child-task-management-implementation-L1.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/chats/2025-08-14_001_parent-child-task-management-implementation-L2.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/chats/2025-08-14_001_parent-child-task-management-implementation-L3.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/chats/2025-08-14_001_parent-child-task-management-implementation.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/insights/daily/2025-08-15_critical_script_delegation_paradox_persists.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/session_summaries/2025-01_umbrella_task_session.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/session_summaries/2025-08-15_session_001.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/session_summaries/2025-08.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xmemory/summaries/index.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-14_001_task_switch_0263_to_0264.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-14_002_task_switch_0264_to_0263.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-14_003_task_switch_0263_to_0264.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-14_004_task_switch_0264_to_0263.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-15_001_task_switch_0015_to_0262.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-15_002_task_switch_0262_to_0261.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-15_003_task_switch_0261_to_0262.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-15_004_task_switch_0260_to_0193.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-15_005_task_switch_0260_to_0101.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/2025-08-15_006_task_switch_0101_to_0263.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_01_02_001_umbrella_task_system_core_complete.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_14_001_umbrella_phase3_complete.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_15_001_critical_system_issues_discovered.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_15_002_task_0263_completed.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_15_003_umbrella_0262_complete.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_15_004_umbrella_complete_critical_fix_started.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_15_005_comprehensive_umbrella_complete_ready_for_docs.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_15_006_documentation_complete_testing_ready.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_15_007_testing_phase_started.md",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/tracking.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": false,
+          "status": " M",
+          "statusLabel": "Modified (unstaged)"
+        },
+        {
+          "path": ".scaffoldx/xmemory/transitions/TRANS_2025_08_15_008_unit_testing_complete.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        }
+      ]
+    },
+    {
+      "name": "other",
+      "commit_type": "chore",
+      "commit_scope": null,
+      "group_by": "related",
+      "priority": 99,
+      "files": [
+        {
+          "path": ".scaffoldx/.git-orchestration.json",
+          "staged": true,
+          "unstaged": true,
+          "untracked": false,
+          "status": "AM",
+          "statusLabel": "AM"
+        },
+        {
+          "path": ".scaffoldx/xcore/hooks/STATUS-PROP-001.yaml",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/hooks/STATUS-PROP-002.yaml",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/hooks/STATUS-PROP-003.yaml",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/templates/umbrella/01_coordination_overview.md.template",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/templates/umbrella/02_child_execution_strategy.md.template",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/templates/umbrella/03_coordination_checklist.md.template",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/templates/umbrella/04_wisdom_accumulation.md.template",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/parent-child-relationship-unit-tests_2025-08-15T18-30-32-045Z.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/parent-child-relationship-unit-tests_2025-08-15T18-30-55-744Z.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/parent-child-relationship-unit-tests_2025-08-15T18-32-21-451Z.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-detection-unit-tests_2025-08-15T18-28-59-519Z.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-detection-unit-tests_2025-08-15T18-32-21-393Z.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/test-report_2025-08-15T18-32-21-457Z.json",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/run-tests.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/unit/test-parent-child-relationships.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/unit/test-task-type-detection.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xworkbench/adjust-threshold-to-15.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xworkbench/apply-auto-status-rule.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xworkbench/fix-0234-children.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xworkbench/retrofit-status-changed-timestamps.js",
+          "staged": true,
+          "unstaged": false,
+          "untracked": false,
+          "status": "A ",
+          "statusLabel": "Added"
+        },
+        {
+          "path": ".scaffoldx/xcore/utils/umbrella-task-utils.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/aggregate-unit-tests-2025-08-15T18-49-25-630Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/aggregate-unit-tests-2025-08-15T18-50-50-834Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/aggregate-unit-tests-2025-08-15T18-51-53-210Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/parent-child-relationship-unit-tests_2025-08-15T18-49-25-494Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/parent-child-relationship-unit-tests_2025-08-15T18-50-50-692Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/parent-child-relationship-unit-tests_2025-08-15T18-51-53-042Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-detection-unit-tests_2025-08-15T18-49-25-424Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-detection-unit-tests_2025-08-15T18-50-50-623Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-detection-unit-tests_2025-08-15T18-51-52-954Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-validation-2025-08-15T18-50-50-754Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-validation-2025-08-15T18-50-58-253Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-validation-2025-08-15T18-51-44-109Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/task-type-validation-2025-08-15T18-51-53-120Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/transformation-eligibility-2025-08-15T18-50-50-822Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/transformation-eligibility-2025-08-15T18-51-53-200Z.json",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/results/unit-test-summary.md",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/run-unit-tests.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/test-utils.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/unit/test-task-type-validation.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xtests/umbrella-system/unit/test-transformation-eligibility.js",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xworkbench/git-orchestration/",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        },
+        {
+          "path": ".scaffoldx/xworkbench/git-reviews/",
+          "staged": false,
+          "unstaged": true,
+          "untracked": true,
+          "status": "??",
+          "statusLabel": "Untracked"
+        }
+      ],
+      "requires_ai_grouping": true
+    }
+  ],
+  "orchestration": {
+    "twoTierThreshold": 20,
+    "maxFilesPerCommit": 50,
+    "tokenBudget": 8000
+  },
+  "metadata": {
+    "created": "2025-08-15T18:56:19.719Z",
+    "version": "1.0.0",
+    "status": "pending",
+    "groupsProcessed": 0,
+    "groupsRemaining": 24
+  }
+}

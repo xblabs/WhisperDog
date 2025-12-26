@@ -1,0 +1,26 @@
+{
+  "_meta": {
+    "purpose": "Backward compatibility aliases for Phase 1 paths",
+    "usage": "UniversalConfigLoader will use these to map old keys to new locations"
+  },
+  "aliases": {
+    "xconfig.sentinel-priority": "sentinels",
+    "sentinel-priority": "sentinels",
+    "xconfig.context-loading": "context.loading",
+    "context-loading": "context.loading",
+    "xconfig.context-logging": "context.logging",
+    "context-logging": "context.logging",
+    "xconfig.external-ai": "externalAI",
+    "external-ai": "externalAI",
+    "xconfig.git-commit": "git",
+    "git-commit": "git",
+    "xconfig.knn-config": "knn",
+    "knn-config": "knn",
+    "xconfig.changelog": "changelog",
+    "xconfig.scanner": "scanner",
+    "xconfig.scrutiny": "scrutiny",
+    "xconfig.enhancement": "enhancement",
+    "xconfig.execution-mode": "executionMode",
+    "execution-mode": "executionMode"
+  }
+}

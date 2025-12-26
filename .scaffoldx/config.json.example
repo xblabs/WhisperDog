@@ -1,0 +1,29 @@
+{
+  "project": {
+    "name": "ScaffoldX",
+    "type": "team",
+    "description": "Team-based development project"
+  },
+  "teamMode": true,
+  "taskIdGeneration": {
+    "branchAware": true,
+    "checkBranchCount": 10,
+    "warnOnConflicts": true,
+    "performanceMode": "balanced"
+  },
+  "taskCreation": {
+    "autoCommitPrompt": true,
+    "validateBeforeCreate": true
+  },
+  "git": {
+    "autoStageNewTasks": false,
+    "requirePushConfirmation": true
+  },
+  "developer": {
+    "name": "Your Name",
+    "email": "your.email@example.com"
+  },
+  "optimization": {
+    "cacheTimeout": 300
+  }
+}

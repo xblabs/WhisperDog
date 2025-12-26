@@ -1,0 +1,53 @@
+{
+  "enabled": true,
+  "threshold": 3,
+  "blockThreshold": 3,
+  "allow_overrides": true,
+  "require_justification": true,
+  "mode": "enforcement",
+  "auditOverrides": true,
+  "alertOnViolation": true,
+  "metrics": {
+    "enabled": true,
+    "real_time": true,
+    "aggregation_interval": 3600,
+    "retention_days": 90
+  },
+  "exemptions": [
+    "x-system-prime",
+    "x-help",
+    "x-version",
+    "x-session-continue",
+    "x-session-transition"
+  ],
+  "rollout": {
+    "phase": "enforcement",
+    "start_date": "2025-08-19",
+    "enforcement_start": "2025-08-19",
+    "phases": {
+      "shadow": {
+        "description": "Collect metrics only, no user impact",
+        "duration_days": 7,
+        "completed": "2025-08-19"
+      },
+      "warning": {
+        "description": "Show warnings but allow all commands",
+        "duration_days": 7,
+        "completed": "2025-08-19"
+      },
+      "enforcement": {
+        "description": "Block low-score commands, require overrides",
+        "duration_days": null,
+        "current": true,
+        "started": "2025-08-19"
+      }
+    }
+  },
+  "reporting": {
+    "daily_enabled": true,
+    "weekly_enabled": true,
+    "monthly_enabled": true,
+    "alert_threshold": 0.3,
+    "alert_recipients": []
+  }
+}

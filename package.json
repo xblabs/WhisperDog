@@ -1,0 +1,17 @@
+{
+  "name": "WhisperDog",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "package": "jdeploy package"
+  },
+  "jdeploy": {
+    "jar": "target/whisperdog-2.0.0-jar-with-dependencies.jar",
+    "javaVersion": "11",
+    "title": "WhisperDog",
+    "installers" : ["mac-x64", "mac-arm64", "win", "linux"]
+  },
+  "devDependencies": {
+    "jdeploy": "^4.0.0"
+  }
+}

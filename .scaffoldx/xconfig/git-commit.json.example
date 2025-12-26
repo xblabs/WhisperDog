@@ -1,0 +1,37 @@
+{
+  "gitCommit": {
+    "defaultOptions": {
+      "autoStage": true,
+      "useTemplate": true,
+      "verbose": false,
+      "careful": false,
+      "suppressLineEndingWarnings": true
+    },
+    "autoEscalation": {
+      "enabled": true,
+      "fileCount": 10,
+      "fileSizeBytes": 102400,
+      "criticalPaths": [
+        "xtasks/",
+        "xcontext/",
+        "xdocs/",
+        "x_core/commands/",
+        "x_core/scripts/",
+        "x_core/internal/",
+        ".github/",
+        "src/",
+        "app/",
+        "lib/",
+        "api/",
+        "package.json",
+        "package-lock.json"
+      ]
+    },
+    "excludePatterns": [
+      "*.log",
+      "*.tmp",
+      ".env.local",
+      "node_modules/**"
+    ]
+  }
+}

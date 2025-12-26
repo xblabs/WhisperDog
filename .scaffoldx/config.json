@@ -1,0 +1,1021 @@
+{
+  "_meta": {
+    "version": "2.0.0",
+    "consolidatedAt": "2025-11-18T11:27:30.697Z",
+    "previousStructure": "xconfig/* (Phase 1)",
+    "migrationNotes": "All xconfig modules consolidated into namespaced sections"
+  },
+  "project": {},
+  "sentinels": {
+    "description": "Defines the priority order for loading domain sentinels. The first match in this list is the one that will be loaded in case of multiple triggers.",
+    "version": "1.0.0",
+    "last_updated": "2025-10-06",
+    "priority": [
+      "security_sentinel",
+      "file_ops_sentinel",
+      "task_sentinel",
+      "git_sentinel",
+      "insight_sentinel"
+    ],
+    "sentinel_definitions": {
+      "security_sentinel": {
+        "priority": 1,
+        "triggers": [
+          ".env",
+          "password",
+          "secret",
+          "token",
+          "api_key",
+          "credential"
+        ],
+        "action": "BLOCK_AND_WARN",
+        "load_immediate": true,
+        "description": "Highest priority - prevents accidental exposure of sensitive data"
+      },
+      "file_ops_sentinel": {
+        "priority": 2,
+        "triggers": [
+          "write",
+          "delete",
+          "modify",
+          "create",
+          "archive"
+        ],
+        "action": "VALIDATE_THEN_PROCEED",
+        "load_immediate": true,
+        "description": "File operations must be validated before any other processing"
+      },
+      "task_sentinel": {
+        "priority": 3,
+        "triggers": [
+          "x-task-",
+          "task-\\d{4}",
+          "switch.*task",
+          "create.*task"
+        ],
+        "action": "LOAD_CONTEXT",
+        "load_immediate": true,
+        "description": "Task operations load specific context deterministically"
+      },
+      "git_sentinel": {
+        "priority": 4,
+        "triggers": [
+          "x-git-",
+          "commit",
+          "push",
+          "branch",
+          "merge"
+        ],
+        "action": "CHECK_STATE",
+        "load_immediate": false,
+        "description": "Git operations check repository state first"
+      },
+      "layer2_traversal_sentinel": {
+        "priority": 5,
+        "triggers": [
+          "x-context-",
+          "load.*context",
+          "traverse",
+          "knn"
+        ],
+        "action": "LOAD_DENDRITIC",
+        "load_immediate": false,
+        "description": "Layer 2 traversal for intelligent context loading"
+      },
+      "architecture_sentinel": {
+        "priority": 6,
+        "triggers": [
+          "architecture",
+          "design",
+          "structure",
+          "pattern"
+        ],
+        "action": "LOAD_DOMAIN",
+        "load_immediate": false,
+        "description": "Architecture discussions load relevant design docs"
+      },
+      "insight_sentinel": {
+        "priority": 7,
+        "triggers": [
+          "weird",
+          "unexpected",
+          "strange",
+          "insight",
+          "discovery"
+        ],
+        "action": "CAPTURE_INSIGHT",
+        "load_immediate": false,
+        "description": "Insight detection for learning system"
+      },
+      "general_sentinel": {
+        "priority": 99,
+        "triggers": [
+          "*"
+        ],
+        "action": "DEFAULT",
+        "load_immediate": false,
+        "description": "Fallback sentinel for unmatched patterns"
+      }
+    },
+    "conflict_resolution": {
+      "strategy": "FIRST_MATCH_WINS",
+      "rules": [
+        {
+          "condition": "multiple_triggers",
+          "action": "use_highest_priority",
+          "log": true
+        },
+        {
+          "condition": "equal_priority",
+          "action": "load_all_in_parallel",
+          "log": true
+        },
+        {
+          "condition": "security_triggered",
+          "action": "override_all_others",
+          "log": true,
+          "alert": true
+        }
+      ]
+    },
+    "performance": {
+      "max_sentinels_per_request": 3,
+      "timeout_ms": 500,
+      "cache_sentinel_results": true,
+      "cache_ttl_ms": 300000
+    },
+    "logging": {
+      "enabled": true,
+      "log_path": ".scaffoldx/logs/sentinel_triggers.log",
+      "log_level": "INFO",
+      "log_conflicts": true,
+      "log_performance": true
+    }
+  },
+  "context": {
+    "loading": {
+      "$schema": "./schemas/context-loading-config.schema.json",
+      "version": "1.0.0",
+      "description": "Configuration for context loading strategy and NLP pattern optimization",
+      "nlp_loading_strategy": "pareto",
+      "nlp_loading_strategies": {
+        "minimal": {
+          "description": "Bootstrap only - 6KB Layer 1, load everything on-demand",
+          "layer1_includes": [
+            "bootstrap",
+            "sentinels"
+          ],
+          "nlp_patterns": "none",
+          "token_cost": "~6KB"
+        },
+        "pareto": {
+          "description": "Bootstrap + top 30 commands (80% usage coverage)",
+          "layer1_includes": [
+            "bootstrap",
+            "sentinels",
+            "pareto_commands"
+          ],
+          "nlp_patterns": "pareto_set_only",
+          "token_cost": "~12KB"
+        },
+        "sentinel": {
+          "description": "Bootstrap + sentinel triggers (load patterns on domain activation)",
+          "layer1_includes": [
+            "bootstrap",
+            "sentinels",
+            "domain_triggers"
+          ],
+          "nlp_patterns": "lazy_loaded_by_domain",
+          "token_cost": "~8KB"
+        },
+        "all": {
+          "description": "Full NLP patterns upfront (legacy v1.0 behavior)",
+          "layer1_includes": [
+            "bootstrap",
+            "sentinels",
+            "all_nlp_patterns"
+          ],
+          "nlp_patterns": "all_280_patterns",
+          "token_cost": "~82KB"
+        }
+      },
+      "layer2_disclosure_default": "SUMMARY",
+      "layer2_disclosure_levels": {
+        "SUMMARY": {
+          "description": "Essential context only (current task + active domains)",
+          "token_budget": 2000,
+          "includes": [
+            "current_task",
+            "active_domains_summary"
+          ]
+        },
+        "EXPANDED": {
+          "description": "Working context (recent tasks + relevant knowledge)",
+          "token_budget": 5000,
+          "includes": [
+            "current_task",
+            "recent_tasks",
+            "active_domains_expanded",
+            "recent_insights"
+          ]
+        },
+        "FULL": {
+          "description": "Complete index (all domains, full knowledge map)",
+          "token_budget": 10000,
+          "includes": [
+            "all_tasks",
+            "all_domains",
+            "full_knowledge_graph"
+          ]
+        }
+      },
+      "pareto_command_set": {
+        "description": "Domain-based intelligent command loading (universal core + contextual domains)",
+        "auto_optimize": true,
+        "auto_promote_threshold": 5,
+        "auto_demote_threshold": 0,
+        "learning_window_days": 30,
+        "universal_core": [
+          "x-task-create",
+          "x-task-switch",
+          "x-task-list",
+          "x-task-status",
+          "x-task-complete",
+          "x-git-commit",
+          "x-session-save",
+          "x-session-continue",
+          "x-help",
+          "x-insight-capture"
+        ],
+        "domain_commands": {
+          "task": [
+            "x-task-start",
+            "x-task-pause",
+            "x-task-resume",
+            "x-task-archive",
+            "x-task-activate",
+            "x-task-dependencies",
+            "x-task-consolidate",
+            "x-task-improve",
+            "x-task-review",
+            "x-task-details",
+            "x-task-downbreak",
+            "x-task-capture"
+          ],
+          "git": [
+            "x-git-commit-careful",
+            "x-git-group",
+            "x-git-status",
+            "x-git-push",
+            "x-git-organize"
+          ],
+          "knowledge": [
+            "x-knowledge-extract",
+            "x-knowledge-create",
+            "x-knowledge-add",
+            "x-archive-search",
+            "x-search",
+            "x-index-build"
+          ],
+          "issue": [
+            "x-issue-add",
+            "x-issue-to-task",
+            "x-issue-start",
+            "x-issue-list",
+            "x-issue-close",
+            "x-issue-resolve"
+          ],
+          "session": [
+            "x-chat-save",
+            "x-session-transition",
+            "x-session-summary",
+            "x-context-scan"
+          ],
+          "documentation": [
+            "x-prd-update",
+            "x-checklist-update",
+            "x-architecture-create"
+          ],
+          "system": [
+            "x-system-prime",
+            "x-command-list",
+            "x-pareto-show",
+            "x-sentinel-report",
+            "x-context-reindex"
+          ]
+        },
+        "deprecated": {
+          "note": "These should NOT be in Pareto - they are scripts or administrative",
+          "oracles_are_scripts_not_commands": [
+            "x-oracle-date",
+            "x-oracle-task-state",
+            "x-oracle-active-task"
+          ],
+          "administrative_rare_use": [
+            "x-config-get",
+            "x-config-set",
+            "x-instruction-build"
+          ]
+        }
+      },
+      "sentinel_config": {
+        "enabled": true,
+        "log_triggers": true,
+        "log_file": ".scaffoldx/xlogs/sentinel-triggers.jsonl",
+        "active_sentinels": [
+          "security",
+          "task",
+          "file_ops",
+          "git",
+          "insight"
+        ],
+        "priority": {
+          "security": "IMMEDIATE",
+          "task": "HIGH",
+          "file_ops": "HIGH",
+          "git": "MEDIUM",
+          "insight": "MEDIUM"
+        }
+      },
+      "usage_tracking": {
+        "enabled": true,
+        "log_file": ".scaffoldx/xlogs/command-usage.jsonl",
+        "track_resolution_method": true,
+        "track_nlp_patterns": true,
+        "track_context_loading": true,
+        "metrics": {
+          "command_frequency": true,
+          "resolution_confidence": true,
+          "pattern_hit_rate": true,
+          "context_relevance": true,
+          "token_costs": true
+        }
+      },
+      "performance": {
+        "cache_nlp_patterns": true,
+        "cache_duration_minutes": 60,
+        "lazy_load_threshold": 0.7,
+        "max_context_tokens": 150000,
+        "warn_at_token_percentage": 70
+      },
+      "experimental_features": {
+        "knn_context_selection": false,
+        "adaptive_pareto_optimization": false,
+        "context_evolution_tracking": false,
+        "multi_stage_pattern_loading": false
+      }
+    },
+    "logging": {
+      "description": "Configuration for context receipt logging system",
+      "version": "1.0.0",
+      "last_updated": "2025-10-06",
+      "enabled": true,
+      "retention_days": 30,
+      "archive_high_token_receipts": true,
+      "high_token_threshold": 20000,
+      "log_directory": ".scaffoldx/xlogs/context-receipts",
+      "daily_summary_enabled": true,
+      "verbose_mode": false,
+      "notify_on_high_usage": true,
+      "high_usage_threshold": 0.15,
+      "notes": {
+        "enabled": "Set to false to completely disable receipt logging",
+        "retention_days": "Number of days to keep receipts before cleanup",
+        "archive_high_token_receipts": "Whether to archive receipts with high token usage",
+        "high_token_threshold": "Token count above which receipts are archived",
+        "log_directory": "Directory for storing receipt logs",
+        "daily_summary_enabled": "Whether to create daily summary logs",
+        "verbose_mode": "Print logging activity to console",
+        "notify_on_high_usage": "Add warning to receipt when token usage is high",
+        "high_usage_threshold": "Percentage of total budget (0.15 = 15%)"
+      }
+    },
+    "nlp": "pareto",
+    "layer2": "on",
+    "commands": "common",
+    "detailed_config": "context-loading-config.json"
+  },
+  "git": {
+    "defaultMode": "context-aware",
+    "llmTimeout": 30000,
+    "contextPaths": {
+      "task": {
+        "prd": "01_prd.md",
+        "implementationPlan": "02_implementation_plan.md",
+        "checklist": "03_checklist.md",
+        "status": "04_status.md",
+        "completion": "completion_report.md"
+      },
+      "issue": {
+        "definition": "issue_*.md",
+        "resolution": "resolution.md"
+      }
+    },
+    "enableCaching": true,
+    "cacheTimeout": 300000,
+    "suppressLineEndingWarnings": false,
+    "autoEscalation": {
+      "enabled": true,
+      "fileCountThreshold": 10,
+      "criticalPaths": [
+        "xtasks/",
+        "xcontext/",
+        "package.json",
+        ".scaffoldx/xcore/scripts/"
+      ],
+      "largeFileThreshold": 102400
+    }
+  },
+  "externalAI": {
+    "description": "Configuration for x-task-improve-external command",
+    "defaultChunkSize": 80000,
+    "contextWindow": 80000,
+    "_comment": "Update defaultChunkSize to match your preferred platform's limits",
+    "platformLimits": {
+      "_comment": "These are reference values only. Use defaultChunkSize for actual splitting.",
+      "chatgpt": {
+        "messageLimit": 8000,
+        "contextWindow": 128000
+      },
+      "claude": {
+        "messageLimit": 10000,
+        "contextWindow": 100000
+      },
+      "gemini": {
+        "messageLimit": 8000,
+        "contextWindow": 1000000
+      },
+      "grok": {
+        "messageLimit": 8000,
+        "contextWindow": 100000
+      }
+    },
+    "splitOptions": {
+      "preserveSectionBoundaries": true,
+      "includeAcknowledgmentProtocol": true,
+      "stopCommandText": "===STOP SCAFFOLDX==="
+    },
+    "external_ai": {
+      "model_shortcuts": {
+        "4o": "gpt-4o",
+        "4.1": "gpt-4.1",
+        "4.1-mini": "gpt-4.1-mini",
+        "o3": "o3",
+        "o3-mini": "o3-mini",
+        "o4-mini": "o4-mini",
+        "opus": "claude-opus-4-20250514",
+        "sonnet": "claude-sonnet-4-20250514",
+        "sonnet-4": "claude-sonnet-4-20250514",
+        "haiku": "claude-3-5-haiku-20241022"
+      },
+      "default": "openai-api",
+      "fallback_enabled": true,
+      "fallback_provider": "gemini-cli",
+      "providers": {
+        "gemini-cli": {
+          "type": "cli",
+          "command": "gemini",
+          "file_syntax": "@{path}",
+          "timeout": 300000
+        },
+        "claude-api": {
+          "type": "api",
+          "endpoint": "https://api.anthropic.com/v1/messages",
+          "api_key": "${ANTHROPIC_API_KEY}",
+          "model": "claude-sonnet-4-20250514",
+          "max_tokens": 4000,
+          "timeout": 30000
+        },
+        "openai-api": {
+          "type": "api",
+          "endpoint": "https://api.openai.com/v1/chat/completions",
+          "api_key": "${OPENAI_API_KEY}",
+          "model": "o3-2025-04-16",
+          "temperature": 1,
+          "timeout": "30000Well, actually, every provider needs that map, because there could be overlapping model numbers or model identifiers. Or is that relatively unlikely? I think it's, in general, very unlikely for branding reasons, etc. Vendors try to avoid that."
+        },
+        "local-llm": {
+          "type": "cli",
+          "command": "ollama",
+          "model": "llama2",
+          "timeout": 60000
+        }
+      }
+    },
+    "profiles": {
+      "default": {
+        "system_prompt": "You are a collaborative documentation enhancer helping to improve implementation instructions for clarity and completeness.",
+        "focus": [
+          "completeness",
+          "clarity",
+          "consistency"
+        ]
+      },
+      "security": {
+        "system_prompt": "You are a security expert helping to enhance documentation with secure coding practices and vulnerability prevention.",
+        "focus": [
+          "security",
+          "authentication",
+          "validation",
+          "data_protection"
+        ]
+      },
+      "performance": {
+        "system_prompt": "You are a performance engineer helping to enhance documentation for scalability and efficiency.",
+        "focus": [
+          "performance",
+          "scalability",
+          "optimization",
+          "resource_usage"
+        ]
+      }
+    }
+  },
+  "knn": {
+    "$schema": "./schemas/knn-config.schema.json",
+    "version": "1.0.0",
+    "description": "K-Nearest Neighbors retrieval configuration for contextual force field architecture",
+    "algorithm": {
+      "alpha": 0.7,
+      "beta": 0.3,
+      "k_neighbors": 5,
+      "adjacency_window": 3,
+      "decay_rate": 0.23,
+      "description": {
+        "alpha": "Semantic similarity weight (0.7 = 70% of score from meaning)",
+        "beta": "Adjacency weight (0.3 = 30% of score from proximity)",
+        "k_neighbors": "Number of similar tasks to retrieve",
+        "adjacency_window": "Task ID range for spatial proximity (±N)",
+        "decay_rate": "Exponential decay rate (0.23 gives ~0.5 at distance 3)"
+      }
+    },
+    "embeddings": {
+      "model": "text-embedding-ada-002",
+      "dimensions": 1536,
+      "chunk_size": 8000,
+      "update_frequency": "weekly",
+      "description": {
+        "model": "OpenAI embedding model (or equivalent)",
+        "dimensions": "Vector dimensions (1536 for ada-002)",
+        "chunk_size": "Max tokens per embedding",
+        "update_frequency": "How often to refresh embeddings"
+      }
+    },
+    "status_weights": {
+      "active": 1.2,
+      "in_progress": 1.2,
+      "completed": 1,
+      "completed_recent": 1.1,
+      "paused": 0.9,
+      "draft": 0.8,
+      "deprecated": 0.5,
+      "archived": 0.3,
+      "consolidated": 0.3,
+      "description": "Multipliers based on task status (higher = more relevant)"
+    },
+    "recency": {
+      "threshold_days": 7,
+      "boost_factor": 1.1,
+      "description": {
+        "threshold_days": "Tasks modified within N days get boost",
+        "boost_factor": "Multiplier for recently modified tasks"
+      }
+    },
+    "performance": {
+      "cache_ttl": 3600,
+      "max_tokens": 8000,
+      "timeout_ms": 200,
+      "cache_strategy": "three_tier",
+      "description": {
+        "cache_ttl": "Cache time-to-live in seconds",
+        "max_tokens": "Maximum tokens for context loading",
+        "timeout_ms": "Maximum retrieval time",
+        "cache_strategy": "hot (active+adjacent), warm (recent), cold (all)"
+      }
+    },
+    "dimensions": {
+      "spatial": {
+        "enabled": true,
+        "window": 3,
+        "description": "Adjacent tasks by ID (±3 range)"
+      },
+      "semantic": {
+        "enabled": true,
+        "k": 5,
+        "description": "Similar tasks by embedding (top 5)"
+      },
+      "temporal": {
+        "enabled": false,
+        "description": "Recent sessions, transitions (future enhancement)"
+      }
+    },
+    "experimental_features": {
+      "multi_modal_embeddings": false,
+      "temporal_decay": false,
+      "project_specific_tuning": false,
+      "cross_project_context": false,
+      "real_time_updates": false
+    }
+  },
+  "changelog": {
+    "commitTypes": {
+      "feat": "Added",
+      "fix": "Fixed",
+      "docs": "Documentation",
+      "style": "Style",
+      "refactor": "Changed",
+      "perf": "Performance",
+      "test": "Tests",
+      "build": "Build",
+      "ci": "CI/CD",
+      "chore": "Maintenance",
+      "revert": "Reverted",
+      "breaking": "BREAKING CHANGES",
+      "security": "Security",
+      "deprecate": "Deprecated",
+      "remove": "Removed"
+    },
+    "excludedTypes": [
+      "chore",
+      "style",
+      "test",
+      "build",
+      "ci"
+    ],
+    "sections": {
+      "order": [
+        "BREAKING CHANGES",
+        "Added",
+        "Changed",
+        "Deprecated",
+        "Removed",
+        "Fixed",
+        "Security",
+        "Performance",
+        "Documentation",
+        "Maintenance"
+      ],
+      "aliases": {
+        "change": "Changed",
+        "add": "Added",
+        "new": "Added"
+      }
+    },
+    "urlPatterns": {
+      "issue": "https://github.com/{{owner}}/{{repo}}/issues/{{id}}",
+      "pr": "https://github.com/{{owner}}/{{repo}}/pull/{{id}}",
+      "commit": "https://github.com/{{owner}}/{{repo}}/commit/{{hash}}"
+    },
+    "formatting": {
+      "includeCommitHash": true,
+      "includeAuthor": false,
+      "includePRLinks": true,
+      "dateFormat": "YYYY-MM-DD"
+    }
+  },
+  "scanner": {
+    "maxFiles": 1000,
+    "maxDepth": 10,
+    "timeout": 30000,
+    "warnAtPercent": 0.8,
+    "maxFilesPerBatch": 10,
+    "maxTokensPerSummary": 200,
+    "exclusions": [
+      "node_modules",
+      ".git",
+      "scan_interim",
+      "archive",
+      "_archive",
+      "dist",
+      "build",
+      "coverage",
+      ".cache",
+      ".tmp",
+      ".temp",
+      "vendor",
+      "bower_components",
+      "__pycache__",
+      ".pytest_cache",
+      ".vscode",
+      ".idea"
+    ],
+    "excludePatterns": [
+      "*.min.js",
+      "*.min.css",
+      "*.map"
+    ]
+  },
+  "environments": {
+    "pipeline": {
+      "version": "2.0.0",
+      "description": "Central configuration for ScaffoldX environment system - Add your AI environments here!",
+      "lastUpdated": "2025-01-13",
+      "_comment": "To add a new environment: 1) Add template mapping below (optional), 2) Add deployment config, 3) Create template file (optional - uses generic if missing), 4) Run build & sync",
+      "_fallback_note": "If a template doesn't exist, the system automatically uses SCAFFOLDX.md (generic template) as fallback",
+      "templates": {
+        "generic.template.md": {
+          "output": "SCAFFOLDX.md",
+          "description": "Generic agent instruction (99% core)"
+        },
+        "claude.template.md": {
+          "output": "CLAUDE.md",
+          "description": "Claude Code with native file operations"
+        },
+        "claude-desktop.template.md": {
+          "output": "CLAUDE_DESKTOP.md",
+          "description": "Claude Desktop with MCP operations"
+        },
+        "cursor.template.mdc": {
+          "output": "scaffoldx.mdc",
+          "description": "Cursor IDE integration (.cursor/rules/)"
+        },
+        "gemini.template.md": {
+          "output": "GEMINI.md",
+          "description": "Google Gemini AI"
+        },
+        "windsurf.template.md": {
+          "output": "WINDSURF.md",
+          "description": "Windsurf IDE (.windsurf/rules/)"
+        }
+      },
+      "deployments": {
+        "scaffoldx": {
+          "source": "SCAFFOLDX.md",
+          "target": "SCAFFOLDX.md",
+          "enabled": true
+        },
+        "claude": {
+          "source": "CLAUDE.md",
+          "target": "CLAUDE.md",
+          "enabled": true
+        },
+        "claude-desktop": {
+          "source": "CLAUDE_DESKTOP.md",
+          "target": "CLAUDE_DESKTOP.md",
+          "enabled": true
+        },
+        "cursor": {
+          "source": "scaffoldx.mdc",
+          "target": ".cursor/rules/scaffoldx.mdc",
+          "enabled": true
+        },
+        "gemini": {
+          "source": "GEMINI.md",
+          "target": "GEMINI.md",
+          "enabled": true
+        },
+        "roo": {
+          "source": "SCAFFOLDX.md",
+          "target": ".roo/rules/scaffoldx.md",
+          "enabled": true,
+          "note": "Uses SCAFFOLDX.md as source"
+        },
+        "windsurf": {
+          "_comment": "Windsurf expects rules in .windsurf/rules/ directory",
+          "source": "WINDSURF.md",
+          "target": ".windsurf/rules/scaffoldx.md",
+          "enabled": true
+        },
+        "copilot": {
+          "_comment": "Uses generic SCAFFOLDX.md as fallback until copilot.template.md is created",
+          "source": "COPILOT.md",
+          "target": ".github/copilot-instructions.md",
+          "enabled": true
+        }
+      },
+      "directories": {
+        "templates": "_templates",
+        "shared": "_shared",
+        "output": "_dist",
+        "backup": "_backups"
+      },
+      "variables": {
+        "{{REPO_ROOT}}": "${SCAFFOLDX_REPO_ROOT}",
+        "{{PROJECT_NAME}}": "${PROJECT_NAME:-ScaffoldX}",
+        "{{USER_NAME}}": "${SCAFFOLDX_USER:-Developer}",
+        "{{CURRENT_DATE}}": "${CURRENT_DATE}"
+      }
+    }
+  },
+  "scrutiny": {
+    "scrutiny": {
+      "cache": {
+        "enabled": true,
+        "type": "file",
+        "file": {
+          "directory": ".scaffoldx/xcache/scrutiny",
+          "max_size_mb": 100,
+          "ttl": 86400
+        },
+        "memory": {
+          "max_entries": 1000,
+          "ttl": 3600
+        }
+      },
+      "scoring": {
+        "weights": {
+          "blocker": 25,
+          "major": 10,
+          "minor": 3
+        },
+        "modifiers": {
+          "positive_observation_bonus": 2,
+          "max_bonus": 20,
+          "missing_documentation_penalty": 15,
+          "inconsistency_penalty": 10
+        }
+      },
+      "thresholds": {
+        "proceed": 80,
+        "warn": 60,
+        "block": 40
+      },
+      "categorization": {
+        "critical_paths": [
+          {
+            "pattern": "*/auth/*",
+            "escalate_by": 1
+          },
+          {
+            "pattern": "*/payment/*",
+            "escalate_by": 2
+          },
+          {
+            "pattern": "*/security/*",
+            "escalate_by": 1
+          }
+        ],
+        "low_priority_paths": [
+          {
+            "pattern": "*/test/*",
+            "downgrade_by": 1
+          },
+          {
+            "pattern": "*/example/*",
+            "downgrade_by": 1
+          },
+          {
+            "pattern": "*/demo/*",
+            "downgrade_by": 2
+          }
+        ]
+      },
+      "output": {
+        "format": "json",
+        "include_timestamp": true,
+        "include_metadata": true,
+        "pretty_print": true
+      },
+      "integration": {
+        "auto_scrutinize_on_execute": false,
+        "block_on_low_score": true,
+        "minimum_score_to_proceed": 60,
+        "notify_on_block": true,
+        "notify_on_warn": true
+      }
+    }
+  },
+  "enhancement": {
+    "enhancement": {
+      "cache": {
+        "enabled": true,
+        "type": "file",
+        "file": {
+          "directory": ".scaffoldx/xcache/enhancement",
+          "max_size_mb": 100,
+          "ttl": 300
+        },
+        "memory": {
+          "max_entries": 1000,
+          "ttl": 180
+        }
+      },
+      "scoring": {
+        "weights": {
+          "critical": 25,
+          "recommended": 10,
+          "optional": 3
+        },
+        "modifiers": {
+          "positive_observation_bonus": 2,
+          "max_bonus": 20,
+          "missing_documentation_adjustment": 15,
+          "inconsistency_adjustment": 10
+        }
+      },
+      "thresholds": {
+        "well_documented": 80,
+        "enhancements_suggested": 60,
+        "needs_enhancement": 40
+      },
+      "categorization": {
+        "critical_paths": [
+          {
+            "pattern": "*/auth/*",
+            "escalate_by": 1
+          },
+          {
+            "pattern": "*/payment/*",
+            "escalate_by": 2
+          },
+          {
+            "pattern": "*/security/*",
+            "escalate_by": 1
+          }
+        ],
+        "low_priority_paths": [
+          {
+            "pattern": "*/test/*",
+            "downgrade_by": 1
+          },
+          {
+            "pattern": "*/example/*",
+            "downgrade_by": 1
+          },
+          {
+            "pattern": "*/demo/*",
+            "downgrade_by": 2
+          }
+        ]
+      },
+      "output": {
+        "format": "json",
+        "include_timestamp": true,
+        "include_metadata": true,
+        "pretty_print": true
+      },
+      "integration": {
+        "auto_enhance_on_execute": false,
+        "suggest_on_low_score": true,
+        "minimum_score_to_proceed": 60,
+        "notify_on_opportunities": true,
+        "notify_on_suggestions": true
+      },
+      "context_limits": {
+        "max_knowledge_files": 5,
+        "max_file_size_kb": 100,
+        "total_context_size_kb": 500
+      }
+    }
+  },
+  "executionMode": {
+    "defaults": {
+      "prefer_ai_first": true,
+      "fallback_to_script": true,
+      "script_timeout_ms": 30000,
+      "verbose_routing": false,
+      "cache_detection": true
+    },
+    "overrides": {
+      "x-task-improve": {
+        "allow_script_fallback": true,
+        "prefer_ai_first": true,
+        "cache_results": true
+      },
+      "x-task-create": {
+        "force_ai_first": true,
+        "allow_script_fallback": false
+      },
+      "x-proposal-create": {
+        "force_ai_first": true,
+        "allow_script_fallback": false
+      },
+      "x-task-list": {
+        "force_script": true
+      },
+      "x-git-commit": {
+        "force_script": true
+      },
+      "x-archive-task": {
+        "force_script": true
+      }
+    },
+    "environments": {
+      "ci": {
+        "prefer_ai_first": false,
+        "fallback_to_script": true,
+        "verbose_routing": true
+      },
+      "development": {
+        "prefer_ai_first": true,
+        "fallback_to_script": true,
+        "verbose_routing": false
+      },
+      "production": {
+        "prefer_ai_first": false,
+        "fallback_to_script": true,
+        "verbose_routing": true
+      }
+    },
+    "detection": {
+      "strategies": [
+        "mcp_functions",
+        "environment_vars",
+        "api_credentials",
+        "interactive_tty"
+      ],
+      "min_confidence": 0.7,
+      "cache_ttl": 300
+    }
+  }
+}

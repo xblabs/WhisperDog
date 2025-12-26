@@ -1,0 +1,42 @@
+{
+  "description": "Configuration for context system logging and debugging",
+  "version": "1.0.0",
+  "logging": {
+    "enabled": true,
+    "level": "INFO",
+    "destinations": {
+      "file": {
+        "enabled": true,
+        "path": ".scaffoldx/xlogs/context.log",
+        "max_size_mb": 10,
+        "rotate_count": 5
+      },
+      "console": {
+        "enabled": false,
+        "colored": true
+      }
+    }
+  },
+  "debug": {
+    "enabled": false,
+    "verbose_loading": false,
+    "show_timings": false,
+    "trace_decisions": false,
+    "save_intermediate_states": false
+  },
+  "metrics": {
+    "enabled": true,
+    "track_performance": true,
+    "track_usage": true,
+    "report_path": ".scaffoldx/xlogs/context-metrics.json"
+  },
+  "events_to_log": [
+    "context_load_start",
+    "context_load_complete",
+    "layer2_generation",
+    "cache_hit",
+    "cache_miss",
+    "error",
+    "warning"
+  ]
+}

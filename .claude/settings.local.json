@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nchore: remove WHISPERDOG_REBRAND_SPEC.md from repo\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git checkout:*)",
+      "Bash(node .scaffoldx/xcore/scripts/x-task-oracle.js:*)",
+      "Bash(mkdir:*)",
+      "Bash(node .scaffoldx/xcore/scripts/log-command-usage.js:*)",
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

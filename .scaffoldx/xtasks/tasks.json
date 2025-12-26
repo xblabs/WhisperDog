@@ -1,0 +1,21 @@
+{
+  "tasks": [
+    {
+      "id": "0001",
+      "name": "WhisperDog Rebranding",
+      "status": "in_progress",
+      "priority": "high",
+      "created": "2025-12-26",
+      "updated": "2025-12-26",
+      "task_type": "executable",
+      "tags": ["rebrand", "migration", "visual-assets", "documentation"],
+      "directory": ".scaffoldx/xtasks/0001_whisperdog_rebranding",
+      "description": "Complete rebrand from WhisperCat to WhisperDog with package renaming, visual assets, documentation updates, and configuration migration"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-12-26T03:51:26.574Z",
+    "total_tasks": 1
+  }
+}

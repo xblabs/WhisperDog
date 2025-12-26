@@ -1,0 +1,19 @@
+{
+  "REPO_ROOT": "C:\\your\\actual\\path\\here",
+  "USER_NAME": "Your Name",
+  "PERSONAL_SETTINGS": {
+    "enableCompletionSound": true,
+    "soundFile": "your-sound.wav",
+    "preferredEditor": "cursor"
+  },
+  "API_KEYS": {
+    "openai": "sk-...",
+    "anthropic": "sk-ant-..."
+  },
+  "LOCAL_OVERRIDES": {
+    "taskIdGeneration": {
+      "checkRemoteBranches": false
+    }
+  },
+  "_comment": "Copy this to config.private.json and update with your personal settings. This file is gitignored."
+}

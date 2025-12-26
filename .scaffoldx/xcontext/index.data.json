@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "command": "x-context-reindex",
+    "version": "1.0.0",
+    "timestamp": "2025-12-26T02:16:34.354Z",
+    "philosophy": "LLM-driven natural writing, not algorithmic generation"
+  },
+  "instructions": {
+    "task": "WRITE_NATURAL_PROSE_INDEX",
+    "outputLevel": "SUMMARY",
+    "tokenBudget": 500,
+    "guidelines": [
+      "Write natural prose, NOT template substitution",
+      "Use semantic expansion triggers (WHEN to load, not just WHAT)",
+      "NO keyword lists, relevance scores, or algorithmic patterns",
+      "Explain file purposes in context"
+    ]
+  },
+  "collectedData": {
+    "metadata": {
+      "repoRoot": "C:\\__dev\\_projects\\whisperdog",
+      "timestamp": "2025-12-26T02:16:34.288Z",
+      "collectorVersion": "1.0.0"
+    },
+    "currentTask": null,
+    "allTasks": {
+      "activeTasks": [],
+      "recentTasks": [],
+      "summary": {}
+    },
+    "xcontextFiles": {
+      "recentFiles": [
+        {
+          "path": ".scaffoldx\\xcontext\\current_project_context.md",
+          "tokens": 285
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\Overview.md",
+          "tokens": 1098
+        }
+      ],
+      "totalCount": 2
+    },
+    "recentSessions": [],
+    "domainStructure": {}
+  }
+}

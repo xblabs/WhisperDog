@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+# Git post-commit hook to automatically update CHANGELOG.md
+# Parses conventional commit messages and appends to the changelog
+#
+
+CHANGELOG_FILE="CHANGELOG.md"
+REPO_ROOT=$(git rev-parse --show-toplevel)
+CHANGELOG_PATH="$REPO_ROOT/$CHANGELOG_FILE"
+
+# Get the latest commit info
+COMMIT_HASH=$(git rev-parse --short HEAD)
+COMMIT_MSG=$(git log -1 --pretty=%s)
+COMMIT_DATE=$(git log -1 --pretty=%ci | cut -d' ' -f1)
+
+# Skip if changelog doesn't exist
+if [ ! -f "$CHANGELOG_PATH" ]; then
+    exit 0
+fi
+
+# Skip merge commits
+if [[ "$COMMIT_MSG" == Merge* ]]; then
+    exit 0
+fi
+
+# Parse conventional commit prefix
+PREFIX=""
+SECTION=""
+MESSAGE=""
+
+if [[ "$COMMIT_MSG" =~ ^feat:\ (.+)$ ]]; then
+    PREFIX="feat"
+    SECTION="Added"
+    MESSAGE="${BASH_REMATCH[1]}"
+elif [[ "$COMMIT_MSG" =~ ^fix:\ (.+)$ ]]; then
+    PREFIX="fix"
+    SECTION="Fixed"
+    MESSAGE="${BASH_REMATCH[1]}"
+elif [[ "$COMMIT_MSG" =~ ^docs:\ (.+)$ ]]; then
+    PREFIX="docs"
+    SECTION="Documentation"
+    MESSAGE="${BASH_REMATCH[1]}"
+elif [[ "$COMMIT_MSG" =~ ^refactor:\ (.+)$ ]]; then
+    PREFIX="refactor"
+    SECTION="Changed"
+    MESSAGE="${BASH_REMATCH[1]}"
+elif [[ "$COMMIT_MSG" =~ ^perf:\ (.+)$ ]]; then
+    PREFIX="perf"
+    SECTION="Changed"
+    MESSAGE="${BASH_REMATCH[1]}"
+elif [[ "$COMMIT_MSG" =~ ^style:\ (.+)$ ]]; then
+    PREFIX="style"
+    SECTION="Changed"
+    MESSAGE="${BASH_REMATCH[1]}"
+fi
+
+# Skip if no recognized prefix
+if [ -z "$PREFIX" ]; then
+    exit 0
+fi
+
+# Create the changelog entry
+ENTRY="- ${MESSAGE^} (${COMMIT_HASH})"
+
+# Check if similar entry already exists (avoid duplicates from amends)
+# Look for the message text, not the hash (hash changes on amend)
+MESSAGE_CHECK="${MESSAGE^}"
+if grep -qF "$MESSAGE_CHECK" "$CHANGELOG_PATH"; then
+    # Entry with same message exists - update hash instead of adding duplicate
+    # Use sed to update the existing entry with new hash
+    sed -i "s/- ${MESSAGE_CHECK} ([a-f0-9]\{7\})/- ${MESSAGE_CHECK} (${COMMIT_HASH})/" "$CHANGELOG_PATH"
+    git add "$CHANGELOG_PATH"
+    exit 0
+fi
+
+# Find the section under [Unreleased] and add the entry
+# Using a temp file for safe editing
+TEMP_FILE=$(mktemp)
+
+awk -v section="$SECTION" -v entry="$ENTRY" '
+BEGIN { found_unreleased=0; found_section=0; added=0 }
+
+/^## \[Unreleased\]/ {
+    found_unreleased=1
+    print
+    next
+}
+
+found_unreleased && /^### / {
+    if ($0 ~ "### " section && !added) {
+        print
+        print entry
+        added=1
+        next
+    }
+}
+
+# If we hit the next version section without finding our section, add it
+found_unreleased && /^## \[/ && !/\[Unreleased\]/ {
+    if (!added) {
+        print ""
+        print "### " section
+        print entry
+        print ""
+        added=1
+    }
+    found_unreleased=0
+}
+
+{ print }
+' "$CHANGELOG_PATH" > "$TEMP_FILE"
+
+# Only update if changes were made
+if ! diff -q "$CHANGELOG_PATH" "$TEMP_FILE" > /dev/null 2>&1; then
+    mv "$TEMP_FILE" "$CHANGELOG_PATH"
+
+    # Stage the changelog (but don't commit - user can amend or commit separately)
+    git add "$CHANGELOG_PATH"
+
+    echo "📝 CHANGELOG.md updated with: [$SECTION] $MESSAGE"
+else
+    rm "$TEMP_FILE"
+fi
+
+exit 0

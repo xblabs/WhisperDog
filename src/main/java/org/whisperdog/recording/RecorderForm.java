@@ -54,6 +54,16 @@ public class RecorderForm extends javax.swing.JPanel {
     private final OpenWebUITranscribeClient openWebUITranscribeClient;
     private boolean isRecording = false;
     private boolean isTranscribing = false;  // Track transcription/conversion state
+
+    // Helper to set processing state and update tray icon
+    private void setProcessingState(boolean processing) {
+        isTranscribing = processing;
+        statusIndicatorPanel.repaint();
+        TrayIconManager trayManager = AudioRecorderUI.getTrayIconManager();
+        if (trayManager != null) {
+            trayManager.setProcessing(processing);
+        }
+    }
     private AudioRecorder recorder;
     private final JTextArea transcriptionTextArea;
     private final JPanel statusIndicatorPanel;  // Status circles instead of large logo
@@ -481,9 +491,8 @@ public class RecorderForm extends javax.swing.JPanel {
         logger.info("Dropped file: " + file.getName());
         ConsoleLogger console = ConsoleLogger.getInstance();
 
-        // Set transcribing state (blue indicator)
-        isTranscribing = true;
-        statusIndicatorPanel.repaint();
+        // Set transcribing state (blue indicator) and update tray icon
+        setProcessingState(true);
         recordButton.setText("Analyzing...");
         recordButton.setEnabled(false);
 
@@ -1039,8 +1048,7 @@ public class RecorderForm extends javax.swing.JPanel {
             } else {
                 logger.info("Recording cancelled");
                 // Reset transcribing state if cancelled
-                isTranscribing = false;
-                statusIndicatorPanel.repaint();
+                setProcessingState(false);
                 updateTrayMenu();
             }
         }
@@ -1050,8 +1058,7 @@ public class RecorderForm extends javax.swing.JPanel {
         isStoppingInProgress = true;
 
         // Set transcribing state (blue indicator) - same as dropped files
-        isTranscribing = true;
-        statusIndicatorPanel.repaint();
+        setProcessingState(true);
 
         recordButton.setText("Converting. Please wait...");
         recordButton.setEnabled(false);
@@ -1128,8 +1135,7 @@ public class RecorderForm extends javax.swing.JPanel {
     private void updateUIForRecordingStop() {
         // Stop recording and start transcribing (blue indicator)
         isRecording = false;  // Must set this BEFORE isTranscribing, or circle stays red!
-        isTranscribing = true;
-        statusIndicatorPanel.repaint();
+        setProcessingState(true);
 
         recordButton.setText("Converting. Please wait...");
         recordButton.setEnabled(false);
@@ -1137,10 +1143,7 @@ public class RecorderForm extends javax.swing.JPanel {
 
     private void resetUIAfterTranscription() {
         isStoppingInProgress = false;
-        isTranscribing = false;  // Reset to idle state (green indicator)
-
-        // Repaint status indicator to show ready state (green circle)
-        statusIndicatorPanel.repaint();
+        setProcessingState(false);  // Reset to idle state (green indicator) and update tray
 
         recordButton.setText("Start Recording");
         recordButton.setEnabled(true);
@@ -1430,8 +1433,7 @@ public class RecorderForm extends javax.swing.JPanel {
         isManualPipelineRunning = true;
         runPipelineButton.setText("Running...");
         runPipelineButton.setEnabled(false);
-        isTranscribing = true;  // Show blue indicator
-        statusIndicatorPanel.repaint();
+        setProcessingState(true);  // Show blue indicator and update tray
 
         ConsoleLogger.getInstance().separator();
         ConsoleLogger.getInstance().log("Manual pipeline run: " + pipeline.title);
@@ -1507,8 +1509,7 @@ public class RecorderForm extends javax.swing.JPanel {
             } finally {
                 // Reset UI state
                 isManualPipelineRunning = false;
-                isTranscribing = false;
-                statusIndicatorPanel.repaint();
+                setProcessingState(false);  // Reset indicator and tray
                 runPipelineButton.setText("Run Pipeline");
                 updateRunPipelineButtonState();
             }

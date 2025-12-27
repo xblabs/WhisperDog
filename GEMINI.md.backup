@@ -2,7 +2,7 @@
 title: Gemini CLI Instructions - Polymorphic Template
 environment: gemini
 cli_access: true
-generated: 2025-12-26T03:40:53.278Z
+generated: 2025-12-26T15:01:58.780Z
 ---
 
 # ScaffoldX Configuration for Gemini CLI
@@ -728,5 +728,5 @@ Once ScaffoldX is initialized, you can use these commands:
 
 ---
 Generated from template: gemini.template.md
-Build timestamp: 2025-12-26T03:40:53.278Z
+Build timestamp: 2025-12-26T15:01:58.780Z
 ScaffoldX version: 1.0.0

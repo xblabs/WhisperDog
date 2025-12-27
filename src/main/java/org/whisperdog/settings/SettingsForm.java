@@ -493,7 +493,7 @@ public class SettingsForm extends JPanel {
         apiRow++;
 
 // ----- Hint Label for Custom OpenAI Models -----
-        JLabel modelsHintLabel = new JLabel("Comma-separated list (e.g., gpt-4o-mini, gpt-5-nano, gpt-5-mini)");
+        JLabel modelsHintLabel = new JLabel("Comma-separated list (e.g., gpt-4o-mini, gpt-4o, gpt-5-nano, gpt-5-mini)");
         modelsHintLabel.setFont(new Font("Dialog", Font.ITALIC, 10));
         modelsHintLabel.setForeground(Color.GRAY);
         apiGbc.gridx = 1;

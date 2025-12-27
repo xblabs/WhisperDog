@@ -14,7 +14,7 @@ status: active
 ## 🎯 Token-Insensitive Overview (50 tokens)
 **Essential context for basic understanding**
 
-WhisperDog (formerly WhisperCat) is a desktop audio transcription app, forked from xblabs, with enhancements for large files, LLM pipelines, and flexible API support.
+WhisperDog is a desktop audio transcription app, forked from WhisperCat by ddxy. This new version comes with enhancements for large files, processing enhancements through use of intelligent silence removal, compression and chunking, LLM post-processing pipelines, and flexible API support.
 
 **Key Areas:** Project History, Architecture Decisions, Requirements, Future Roadmap
 **Entry Points:** `README.md`, architectural decisions below

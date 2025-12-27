@@ -72,6 +72,11 @@ public class AudioRecorderUI extends javax.swing.JFrame {
             app.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
+                    // Save settings before exit or minimize
+                    if (app.mainForm.settingsForm != null) {
+                        app.mainForm.settingsForm.saveSettings();
+                    }
+
                     int result = JOptionPane.showConfirmDialog(app,
                             "Are you sure you want to exit? Click No to minimize to the system tray.",
                             "Confirm Exit", JOptionPane.YES_NO_OPTION);

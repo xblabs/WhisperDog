@@ -357,7 +357,7 @@ public class ConfigManager {
         String modelsJson = properties.getProperty("customOpenAIModels", "");
         if (modelsJson.trim().isEmpty()) {
             // Return default models if not configured
-            return Arrays.asList("gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo");
+            return Arrays.asList("gpt-4o-mini", "gpt-4o", "gpt-5-nano", "gpt-5-mini");
         }
         try {
             Gson gson = new Gson();
@@ -365,7 +365,7 @@ public class ConfigManager {
             return Arrays.asList(modelsArray);
         } catch (Exception e) {
             logger.error("Failed to parse custom OpenAI models, returning defaults", e);
-            return Arrays.asList("gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo");
+            return Arrays.asList("gpt-4o-mini", "gpt-4o", "gpt-5-nano", "gpt-5-mini");
         }
     }
 

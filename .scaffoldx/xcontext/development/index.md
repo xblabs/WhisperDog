@@ -311,7 +311,14 @@ java -jar target/Audiorecorder-1.0-SNAPSHOT-jar-with-dependencies.jar
 - Inline comments for complex logic
 - TODO comments for future improvements
 
+### Architecture Decision Records (ADRs)
+
+Significant design decisions are documented in [adr/](adr/):
+
+- [ADR-001: Pipeline Chaining](adr/001_pipeline_chaining.md) - API call optimization for multi-unit pipelines
+
 ### Related Domains
+
 - [Project Domain](../project/index.md) - Project-specific architectural decisions
 - [UI Domain](../ui/index.md) - EDT threading patterns
 - [Core Domain](../core/index.md) - Testing audio processing workflows

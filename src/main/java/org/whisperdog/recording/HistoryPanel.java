@@ -1,5 +1,7 @@
 package org.whisperdog.recording;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -26,7 +28,7 @@ public class HistoryPanel extends JPanel {
         setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Toggle button
-        toggleButton = new JButton("\u25BC Show Pipeline History (0 results)");
+        toggleButton = new JButton("Show Pipeline History (0 results)", new FlatSVGIcon("icon/svg/clock.svg", 14, 14));
         toggleButton.setHorizontalAlignment(SwingConstants.LEFT);
         toggleButton.setBorderPainted(false);
         toggleButton.setContentAreaFilled(false);
@@ -75,11 +77,10 @@ public class HistoryPanel extends JPanel {
      * Updates the toggle button text based on current state and result count.
      */
     private void updateToggleButtonText() {
-        String arrow = expanded ? "\u25B2" : "\u25BC";  // ▲ or ▼
         String action = expanded ? "Hide" : "Show";
         int count = contentPanel.getComponentCount();
-        toggleButton.setText(String.format("%s %s Pipeline History (%d result%s)",
-                arrow, action, count, count == 1 ? "" : "s"));
+        toggleButton.setText(String.format("%s Pipeline History (%d result%s)",
+                action, count, count == 1 ? "" : "s"));
     }
 
     /**

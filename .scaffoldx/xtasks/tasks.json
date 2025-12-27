@@ -1,21 +1,58 @@
 {
   "tasks": [
     {
-      "id": "0001",
-      "name": "WhisperDog Rebranding",
-      "status": "in_progress",
-      "priority": "high",
-      "created": "2025-12-26",
-      "updated": "2025-12-26",
+      "id": "0002",
+      "name": "Error Handling & Retry Mechanism",
+      "status": "todo",
+      "priority": "critical",
+      "created": "2025-12-30",
+      "updated": "2025-12-30",
       "task_type": "executable",
-      "tags": ["rebrand", "migration", "visual-assets", "documentation"],
-      "directory": ".scaffoldx/xtasks/0001_whisperdog_rebranding",
-      "description": "Complete rebrand from WhisperCat to WhisperDog with package renaming, visual assets, documentation updates, and configuration migration"
+      "tags": ["reliability", "error-handling", "retry", "openai-api", "user-experience"],
+      "dependencies": ["BUG-003"],
+      "directory": ".scaffoldx/xtasks/0002_error_handling_retry_mechanism",
+      "description": "Implement intelligent error handling and retry mechanism for OpenAI transcription failures with automatic retry for transient errors and user prompts for actionable errors"
+    },
+    {
+      "id": "0003",
+      "name": "Mic Test Screen",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2025-12-30",
+      "updated": "2025-12-30",
+      "task_type": "executable",
+      "tags": ["audio", "mic-test", "silence-detection", "calibration", "user-experience"],
+      "directory": ".scaffoldx/xtasks/0003_audio_processing_pipeline",
+      "description": "Create microphone test screen in Options that allows users to calibrate silence detection thresholds with real-time feedback"
+    },
+    {
+      "id": "0004",
+      "name": "UI/UX Improvements",
+      "status": "todo",
+      "priority": "medium",
+      "created": "2025-12-30",
+      "updated": "2025-12-30",
+      "task_type": "executable",
+      "tags": ["ui", "ux", "post-processing", "search", "polish"],
+      "directory": ".scaffoldx/xtasks/0004_ui_ux_improvements",
+      "description": "UI polish including post-processing UI reorganization, searchable logs, and long-process UX improvements (icons/padding in Task 0001)"
+    },
+    {
+      "id": "0005",
+      "name": "MP4 Drag-Drop Support",
+      "status": "todo",
+      "priority": "low",
+      "created": "2025-12-30",
+      "updated": "2025-12-30",
+      "task_type": "executable",
+      "tags": ["audio", "mp4", "ffmpeg", "drag-drop", "file-handling"],
+      "directory": ".scaffoldx/xtasks/0005_mp4_drag_drop_support",
+      "description": "Add support for dragging MP4 files onto the app window, auto-extracting audio via ffmpeg for transcription"
     }
   ],
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2025-12-26T03:51:26.574Z",
-    "total_tasks": 1
+    "last_updated": "2025-12-30T16:00:00.000Z",
+    "total_tasks": 5
   }
 }

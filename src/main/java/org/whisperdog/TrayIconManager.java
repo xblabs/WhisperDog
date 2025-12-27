@@ -15,7 +15,10 @@ public class TrayIconManager {
     private SystemTray systemTray;
     private MenuItem recordToggleMenuItem;
     private boolean isRecording;
+    private boolean isProcessing;
     private final String trayIconPath = "/whisperdog_tray.png";
+    private final String trayIconRecordingPath = "/whisperdog_recording.png";
+    private final String trayIconProcessingPath = "/whisperdog_processing.png";
 
     private static final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger(TrayIconManager.class);
 
@@ -56,16 +59,27 @@ public class TrayIconManager {
         }
     }
 
-    // Called when the recording state changes. 
+    // Called when the recording state changes.
     public void updateTrayMenu(boolean recording) {
         this.isRecording = recording;
         if (recordToggleMenuItem != null) {
             recordToggleMenuItem.setText(isRecording ? "Stop Recording" : "Start Recording");
         }
-        // Update the tray icon:
+        updateTrayIcon();
+    }
+
+    // Called when processing/transcription state changes
+    public void setProcessing(boolean processing) {
+        this.isProcessing = processing;
+        updateTrayIcon();
+    }
+
+    // Update tray icon based on current state (recording takes priority over processing)
+    private void updateTrayIcon() {
         if (isRecording) {
-            String recordingIconPath = "/whisperdog_recording.png";
-            setTrayImage(recordingIconPath);
+            setTrayImage(trayIconRecordingPath);
+        } else if (isProcessing) {
+            setTrayImage(trayIconProcessingPath);
         } else {
             setTrayImage(trayIconPath);
         }

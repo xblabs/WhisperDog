@@ -1,0 +1,53 @@
+---
+source: C:\Users\henry\Documents\Obsidian\Main\02_INBOX\PROJECTS\whisperdog.md
+triaged_at: 2025-12-30T16:30:00Z
+triaged_by: x-source-triage
+version: 3.2.0
+---
+
+# Triage Record
+
+**Source**: whisperdog.md
+**Triaged**: 2025-12-30
+**Project**: C:\__dev\_projects\whisperdog
+
+## Summary
+
+- Tasks created: 4
+- Tasks modified: 1
+- Issues created: 7
+
+## Decisions
+
+- Task 0003 split: Mic Test Screen only (WD-0006, WD-0007, WD-0008 extracted)
+- Task 0005 created: MP4 Drag-Drop Support (from Task 0003 split)
+- Task 0004 modified: WD-0002 (Icons/Padding) moved to Task 0001
+- Task 0001 updated: Added Spacing utility to Phase 4
+
+## Entities
+
+### Tasks
+
+| ID | Name | Status | Action |
+|----|------|--------|--------|
+| 0001 | WhisperDog Rebranding | in_progress | modified |
+| 0002 | Error Handling & Retry Mechanism | todo | created |
+| 0003 | Mic Test Screen | todo | created |
+| 0004 | UI/UX Improvements | todo | modified |
+| 0005 | MP4 Drag-Drop Support | todo | created |
+
+### Issues
+
+| ID | Alias | Name |
+|----|-------|------|
+| ISS_00001 | BUG-003 | File size validation before OpenAI submission |
+| ISS_00002 | BUG-001 | Dropdown resets on hotkey activation |
+| ISS_00003 | BUG-002 | Pipeline button disabled after recording |
+| ISS_00004 | WD-0005 | Large recording warning prompt |
+| ISS_00005 | WD-0010 | Log line breaks for readability |
+| ISS_00006 | WD-0006 | Min non-silence threshold |
+| ISS_00007 | WD-0007 | Sticky recording warning |
+
+## Disposition
+
+Source ready for archival: `x-source-delegated --project WD`

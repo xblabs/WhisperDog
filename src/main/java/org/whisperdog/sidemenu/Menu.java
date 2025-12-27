@@ -8,6 +8,7 @@ import org.whisperdog.sidemenu.mode.ToolBarAccentColor;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,17 +32,19 @@ public class Menu extends JPanel {
         if (menuFull) {
             header.setText(headerName);
             header.setHorizontalAlignment(getComponentOrientation().isLeftToRight() ? JLabel.LEFT : JLabel.RIGHT);
+            header.setIcon(new ImageIcon(getClass().getResource("/logo.png")));
         } else {
             header.setText("");
             header.setHorizontalAlignment(JLabel.CENTER);
+            header.setIcon(createTransparentIcon("/logo_small.png", 0.75f));
         }
         for (Component com : panelMenu.getComponents()) {
             if (com instanceof MenuItem) {
                 ((MenuItem) com).setFull(menuFull);
             }
         }
-        lightDarkMode.setMenuFull(menuFull);
-        toolBarAccentColor.setMenuFull(menuFull);
+        // lightDarkMode.setMenuFull(menuFull);  // DISABLED
+        // toolBarAccentColor.setMenuFull(menuFull);  // DISABLED
     }
 
     private final List<MenuEvent> events = new ArrayList<>();
@@ -90,13 +93,19 @@ public class Menu extends JPanel {
                 + "background:$Menu.ScrollBar.background;"
                 + "thumb:$Menu.ScrollBar.thumb");
         createMenu();
+
+        // DISABLED: Light/Dark toggle removed - dark mode only for now
+        // To re-enable: uncomment below and restore layout calculations in MenuLayout
+        // See: .scaffoldx/xcontext/ui/light_dark_toggle_notes.md
         lightDarkMode = new LightDarkMode();
+        lightDarkMode.setVisible(false);  // Hidden but retained for potential future use
         toolBarAccentColor = new ToolBarAccentColor(this);
-        toolBarAccentColor.setVisible(FlatUIUtils.getUIBoolean("AccentControl.show", false));
+        toolBarAccentColor.setVisible(false);  // Hidden
+
         add(header);
         add(scroll);
-        add(lightDarkMode);
-        add(toolBarAccentColor);
+        // add(lightDarkMode);  // DISABLED
+        // add(toolBarAccentColor);  // DISABLED
     }
 
     private void createMenu() {
@@ -193,6 +202,21 @@ public class Menu extends JPanel {
     private LightDarkMode lightDarkMode;
     private ToolBarAccentColor toolBarAccentColor;
 
+    private ImageIcon createTransparentIcon(String resourcePath, float opacity) {
+        ImageIcon originalIcon = new ImageIcon(getClass().getResource(resourcePath));
+        Image originalImage = originalIcon.getImage();
+        int width = originalIcon.getIconWidth();
+        int height = originalIcon.getIconHeight();
+
+        BufferedImage transparentImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = transparentImage.createGraphics();
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+        g2d.drawImage(originalImage, 0, 0, null);
+        g2d.dispose();
+
+        return new ImageIcon(transparentImage);
+    }
+
     private class MenuLayout implements LayoutManager {
 
         @Override
@@ -236,27 +260,30 @@ public class Menu extends JPanel {
                 }
 
                 header.setBounds(x + hgap, y, iconWidth - (hgap * 2), iconHeight);
-                int ldgap = UIScale.scale(10);
-                int ldWidth = width - ldgap * 2;
-                int ldHeight = lightDarkMode.getPreferredSize().height;
-                int ldx = x + ldgap;
-                int ldy = y + height - ldHeight - ldgap - accentColorHeight;
+
+                // DISABLED: Light/Dark toggle layout calculations
+                // int ldgap = UIScale.scale(10);
+                // int ldWidth = width - ldgap * 2;
+                // int ldHeight = lightDarkMode.getPreferredSize().height;
+                // int ldx = x + ldgap;
+                // int ldy = y + height - ldHeight - ldgap - accentColorHeight;
 
                 int menux = x;
                 int menuy = y + iconHeight + gap;
                 int menuWidth = width;
-                int menuHeight = height - (iconHeight + gap) - (ldHeight + ldgap * 2) - (accentColorHeight);
+                // Full height for menu since toggle is hidden
+                int menuHeight = height - (iconHeight + gap) - gap;
                 scroll.setBounds(menux, menuy, menuWidth, menuHeight);
 
-                lightDarkMode.setBounds(ldx, ldy, ldWidth, ldHeight);
-
-                if (toolBarAccentColor.isVisible()) {
-                    int tbheight = toolBarAccentColor.getPreferredSize().height;
-                    int tbwidth = Math.min(toolBarAccentColor.getPreferredSize().width, ldWidth);
-                    int tby = y + height - tbheight - ldgap;
-                    int tbx = ldx + ((ldWidth - tbwidth) / 2);
-                    toolBarAccentColor.setBounds(tbx, tby, tbwidth, tbheight);
-                }
+                // DISABLED: Light/Dark toggle bounds
+                // lightDarkMode.setBounds(ldx, ldy, ldWidth, ldHeight);
+                // if (toolBarAccentColor.isVisible()) {
+                //     int tbheight = toolBarAccentColor.getPreferredSize().height;
+                //     int tbwidth = Math.min(toolBarAccentColor.getPreferredSize().width, ldWidth);
+                //     int tby = y + height - tbheight - ldgap;
+                //     int tbx = ldx + ((ldWidth - tbwidth) / 2);
+                //     toolBarAccentColor.setBounds(tbx, tby, tbwidth, tbheight);
+                // }
             }
         }
     }

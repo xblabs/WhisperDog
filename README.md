@@ -173,7 +173,10 @@ WhisperDog is built on the foundation of [WhisperCat](https://github.com/ddxy/wh
 ### WhisperDog Development
 - [xblabs](https://github.com/xblabs) - Fork maintainer, feature development, rebrand
 
+Development assisted by ScaffoldX, an AI-assisted development scaffold for project management and context orchestration.
+
 ### Additional Credits
+
 - **[OpenAI Whisper API](https://openai.com/whisper)** for transcription engine
 - **[FasterWhisper Server](https://github.com/speaches-ai/speaches/)** for local transcription
 - **[SVG Repo](https://www.svgrepo.com/)** for vector graphic resources

@@ -1,4 +1,5 @@
 .idea
+.idea.disabled
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -42,3 +43,20 @@ build/
 /.idea/misc.xml
 /.idea/vcs.xml
 WHISPERDOG_REBRAND_SPEC.md
+
+
+### Resources
+/src/main/resources/logo/whisperdog_logo.psd
+
+### ScaffoldX
+.env
+/.scaffoldx/xlogs/
+/.scaffoldx/xtmp/
+/.scaffoldx/xworkbench/
+/.scaffoldx/xmemory/**/*.json
+/.scaffoldx/xmemory/transitions/
+/.scaffoldx/xcore/
+/.scaffoldx/xtasks/0001*/
+/.scaffoldx/xtasks/_*/
+/.scaffoldx/config.private.json
+.claude/settings.local.json

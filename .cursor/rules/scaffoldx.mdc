@@ -2,7 +2,7 @@
 title: Cursor IDE Instructions - Polymorphic Template
 environment: cursor
 ide_integration: true
-generated: 2025-12-26T15:01:58.780Z
+generated: 2025-12-27T01:16:25.190Z
 ---
 
 # ScaffoldX Configuration for Cursor IDE
@@ -735,5 +735,5 @@ This file uses .mdc extension for Cursor compatibility
 
 ---
 Generated from template: cursor.template.md
-Build timestamp: 2025-12-26T15:01:58.780Z
+Build timestamp: 2025-12-27T01:16:25.190Z
 ScaffoldX version: 1.0.0

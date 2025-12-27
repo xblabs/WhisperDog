@@ -111,6 +111,10 @@ See **API Domain** for client implementation details.
 - WavChunker: Fast, no dependencies, reliable for WAV
 - FfmpegChunker: Handles edge cases, supports other formats
 
+### Pipeline Optimization
+
+WhisperDog automatically chains consecutive same-model API calls into single requests, saving 2-3x cost and time. See [ADR-001: Pipeline Chaining](../development/adr/001_pipeline_chaining.md) for the full design rationale and alternatives considered.
+
 ### Related Domains
 - [API Domain](../api/index.md) - Transcription client implementations
 - [UI Domain](../ui/index.md) - RecorderForm UI components

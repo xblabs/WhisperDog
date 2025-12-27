@@ -2,7 +2,7 @@
 title: Claude Desktop Instructions - Polymorphic Template
 environment: claude-desktop
 mcp_enabled: true
-generated: 2025-12-26T15:01:58.780Z
+generated: 2025-12-27T01:16:25.190Z
 ---
 
 # ScaffoldX Configuration for Claude Desktop
@@ -10,6 +10,7 @@ generated: 2025-12-26T15:01:58.780Z
 # IMPORTANT: This file is generated from templates - DO NOT EDIT DIRECTLY
 # Edit: .scaffoldx/xcore/templates/core_instructions/claude-desktop.template.md
 
+SCAFFOLDX_REPO_ROOT=C:\__dev\_projects\whisperdog
 REPO_ROOT=C:\__dev\_projects\whisperdog
 PROJECT_NAME=ScaffoldX
 USER_NAME=User
@@ -822,5 +823,5 @@ Most frequent natural language patterns you'll encounter:
 
 ---
 Generated from template: claude-desktop.template.md
-Build timestamp: 2025-12-26T15:01:58.780Z
+Build timestamp: 2025-12-27T01:16:25.190Z
 ScaffoldX version: 1.0.0

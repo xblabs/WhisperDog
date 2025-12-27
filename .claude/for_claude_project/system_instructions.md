@@ -2,7 +2,7 @@
 title: Claude Projects Instructions - Polymorphic Template  
 environment: claude-projects
 web_interface: true
-generated: 2025-12-26T15:01:58.780Z
+generated: 2025-12-27T01:16:25.190Z
 ---
 
 # ScaffoldX Configuration for Claude Projects
@@ -735,5 +735,5 @@ Without file system access, guide users to:
 
 ---
 Generated from template: claude-projects.template.md
-Build timestamp: 2025-12-26T15:01:58.780Z
+Build timestamp: 2025-12-27T01:16:25.190Z
 ScaffoldX version: 1.0.0

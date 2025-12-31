@@ -1,7 +1,7 @@
 # WhisperDog
 
 <p align="center">
-  <img src="whisperdog.svg" alt="WhisperDog Icon" width="350"/>
+  <img src="whisperdog.png" alt="WhisperDog Icon" width="256"/>
 </p>
 
 <p align="center">
@@ -11,7 +11,8 @@
   </a>
   <img alt="Windows" src="https://img.shields.io/badge/Windows-Compatible-blue?style=flat-square&logo=windows&logoColor=white" />
   <img alt="Linux" src="https://img.shields.io/badge/Linux-Compatible-yellow?style=flat-square&logo=linux&logoColor=white" />
-  <img alt="macOS" src="https://img.shields.io/badge/macOS-Planned-black?style=flat-square&logo=apple&logoColor=white" />
+
+[//]: # (  <img alt="macOS" src="https://img.shields.io/badge/macOS-Planned-black?style=flat-square&logo=apple&logoColor=white" />)
 </p>
 
 <p align="center"><em>Your attentive audio companion</em></p>

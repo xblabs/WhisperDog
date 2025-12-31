@@ -1,16 +1,34 @@
+---
+issue_id: ISS_00007
+title: Sticky Recording Warning for Long Recordings
+type: enhancement
+priority: low
+status: open
+created: 2025-12-30
+tags: [recording, ui, user-experience]
+alias: WD-0007
+---
+
 # ISS_00007: Sticky Recording Warning for Long Recordings
 
-**Alias**: WD-0007
-**Status**: Open
-**Priority**: Low
-**Severity**: Minor
-**Created**: 2025-12-30
-
-## Summary
+## Problem Description
 
 Show a persistent visual warning indicator when recording exceeds a configurable duration threshold (e.g., > 2 minutes). This reminds users they're still recording and helps prevent accidentally long recordings.
 
-## Problem
+## Status
+
+- **Current Status**: open
+- **Priority**: low
+- **Type**: enhancement
+- **Created**: 2025-12-30
+
+## Tags
+
+- recording
+- ui
+- user-experience
+
+## Problem Details
 
 Users sometimes forget a recording is active, especially when:
 - Recording started via hotkey
@@ -39,6 +57,13 @@ Long recordings lead to:
 - Animated warning icon appears
 - Tray icon changes color
 
+## Acceptance Criteria
+
+- [ ] Setting added to ConfigManager
+- [ ] UI slider in Settings → Audio
+- [ ] Visual warning when threshold exceeded
+- [ ] Tray icon indication for minimized state
+
 ## Implementation Notes
 
 - Add `recordingWarningDuration` to ConfigManager (default: 120 seconds)
@@ -63,3 +88,8 @@ Settings → Audio → "Warn after recording: [slider] 2 min"
 - `src/main/java/org/whisperdog/ConfigManager.java`
 - `src/main/java/org/whisperdog/settings/SettingsForm.java`
 - `src/main/java/org/whisperdog/recording/RecorderForm.java`
+- `src/main/java/org/whisperdog/TrayIconManager.java`
+
+## Notes
+
+Feature request for improved user experience.

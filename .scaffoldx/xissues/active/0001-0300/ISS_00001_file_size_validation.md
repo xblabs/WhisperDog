@@ -1,16 +1,37 @@
+---
+issue_id: ISS_00001
+title: Validate compressed file size before OpenAI submission
+type: bug
+priority: high
+status: in-progress
+created: 2025-12-30
+tags: [validation, openai-api, file-size]
+alias: BUG-003
+started: 2025-12-31T01:15:35.419Z
+id: ISS_00001
+updated: 2025-12-31T01:15:35.425Z
+---
+
 # ISS_00001: Validate compressed file size before OpenAI submission
 
-**Alias**: BUG-003
-**Status**: Open
-**Priority**: High
-**Severity**: Major
-**Created**: 2025-12-30
-
-## Summary
+## Problem Description
 
 Check compressed file size before sending to OpenAI API to prevent HTTP 413 (file too large) and HTTP 507 (buffer limit) errors. Currently, files exceeding 25MB are still submitted, resulting in failed transcriptions and lost processing time.
 
-## Problem
+## Status
+
+- **Current Status**: open
+- **Priority**: high
+- **Type**: bug
+- **Created**: 2025-12-30
+
+## Tags
+
+- validation
+- openai-api
+- file-size
+
+## Problem Details
 
 **Trigger**: Recording files > 25MB after compression
 
@@ -38,10 +59,6 @@ After compression completes:
 3. Error message: "Compressed file is {size}MB, exceeds 26MB limit. Please record shorter audio."
 4. Log the validation failure with file details
 
-## Root Cause
-
-Missing validation step between compression and API submission.
-
 ## Acceptance Criteria
 
 - [ ] Validation catches oversized compressed files before API call
@@ -67,11 +84,11 @@ if (fileSizeMB > 26.0) {
 }
 ```
 
-## Dependencies
-
-- **Blocks**: Task 0002 (Error Handling) depends on this fix
-
 ## Related Files
 
-- `src/main/java/org/whisperdog/openai/OpenAIClient.java`
-- `src/main/java/org/whisperdog/audio/AudioCompressor.java`
+- `src/main/java/org/whisperdog/recording/clients/OpenAITranscribeClient.java`
+- `src/main/java/org/whisperdog/recording/FfmpegCompressor.java`
+
+## Notes
+
+Blocks Task 0002 (Error Handling) - this fix is a dependency.

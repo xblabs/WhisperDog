@@ -1,16 +1,34 @@
+---
+issue_id: ISS_00006
+title: Minimum Non-Silence Duration Threshold
+type: enhancement
+priority: low
+status: open
+created: 2025-12-30
+tags: [audio, validation, user-experience]
+alias: WD-0006
+---
+
 # ISS_00006: Minimum Non-Silence Duration Threshold
 
-**Alias**: WD-0006
-**Status**: Open
-**Priority**: Low
-**Severity**: Minor
-**Created**: 2025-12-30
-
-## Summary
+## Problem Description
 
 Add a minimum non-silence duration threshold setting that discards recordings where detected speech is below a configurable minimum (e.g., < 0.5 seconds). This prevents accidental transcription of noise-only recordings.
 
-## Problem
+## Status
+
+- **Current Status**: open
+- **Priority**: low
+- **Type**: enhancement
+- **Created**: 2025-12-30
+
+## Tags
+
+- audio
+- validation
+- user-experience
+
+## Problem Details
 
 Users sometimes accidentally trigger recording and capture only ambient noise or very brief sounds. The current silence detection may pass these through if they exceed the RMS threshold, resulting in:
 
@@ -29,6 +47,13 @@ Users sometimes accidentally trigger recording and capture only ambient noise or
 4. If non-silence < minimum threshold:
    - Show warning: "Recording contains less than 0.5s of detected speech. Discard?"
    - Options: [Discard] [Transcribe Anyway]
+
+## Acceptance Criteria
+
+- [ ] Setting added to ConfigManager
+- [ ] UI slider in Settings → Audio
+- [ ] Warning dialog when threshold not met
+- [ ] User can choose to discard or proceed
 
 ## Implementation Notes
 
@@ -52,4 +77,8 @@ Settings → Audio → "Minimum speech duration: [slider] 0.5s"
 
 - `src/main/java/org/whisperdog/ConfigManager.java`
 - `src/main/java/org/whisperdog/settings/SettingsForm.java`
-- `src/main/java/org/whisperdog/audio/` (AudioAnalyzer)
+- `src/main/java/org/whisperdog/recording/AudioFileAnalyzer.java`
+
+## Notes
+
+Feature request for improved user experience.

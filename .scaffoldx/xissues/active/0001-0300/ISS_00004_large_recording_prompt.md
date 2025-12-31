@@ -1,16 +1,33 @@
+---
+issue_id: ISS_00004
+title: Prompt before transcribing large recordings with high silence
+type: enhancement
+priority: low
+status: open
+created: 2025-12-30
+tags: [user-experience, validation]
+alias: WD-0005
+---
+
 # ISS_00004: Prompt before transcribing large recordings with high silence
 
-**Alias**: WD-0005
-**Status**: Open
-**Priority**: Low
-**Severity**: Minor
-**Created**: 2025-12-30
-
-## Summary
+## Problem Description
 
 Show a confirmation prompt before transcribing recordings that have both long duration and high silence ratio. This prevents wasted API tokens and processing time on accidental long recordings that are mostly silence.
 
-## Problem
+## Status
+
+- **Current Status**: open
+- **Priority**: low
+- **Type**: enhancement
+- **Created**: 2025-12-30
+
+## Tags
+
+- user-experience
+- validation
+
+## Problem Details
 
 **Scenario**: User accidentally leaves recording running for 10+ minutes while doing other work. Recording is mostly silence with occasional background noise.
 
@@ -85,5 +102,9 @@ if (duration > LONG_DURATION_THRESHOLD &&
 
 ## Related Files
 
-- `src/main/java/org/whisperdog/audio/SilenceDetector.java`
+- `src/main/java/org/whisperdog/recording/SilenceRemover.java`
 - `src/main/java/org/whisperdog/recording/RecorderForm.java`
+
+## Notes
+
+Feature request for improved user experience.

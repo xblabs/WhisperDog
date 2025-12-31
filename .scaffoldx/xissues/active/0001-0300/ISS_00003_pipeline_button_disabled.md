@@ -1,16 +1,33 @@
+---
+issue_id: ISS_00003
+title: Pipeline button disabled after recording stops
+type: bug
+priority: high
+status: open
+created: 2025-12-30
+tags: [state-management, ui]
+alias: BUG-002
+---
+
 # ISS_00003: Pipeline button disabled after recording stops
 
-**Alias**: BUG-002
-**Status**: Open
-**Priority**: High
-**Severity**: Major
-**Created**: 2025-12-30
-
-## Summary
+## Problem Description
 
 After recording stops, the pipeline execution button becomes disabled and cannot be clicked. The only workaround is to toggle the dropdown selection (select different option, then switch back), which re-enables the button.
 
-## Problem
+## Status
+
+- **Current Status**: open
+- **Priority**: high
+- **Type**: bug
+- **Created**: 2025-12-30
+
+## Tags
+
+- state-management
+- ui
+
+## Problem Details
 
 **Trigger**: Recording stopped
 
@@ -84,4 +101,7 @@ private void updatePipelineButtonState() {
 ## Related Files
 
 - `src/main/java/org/whisperdog/recording/RecorderForm.java`
-- `src/main/java/org/whisperdog/ui/PostProcessingPanel.java` (if exists)
+
+## Notes
+
+Issue created from user feedback.

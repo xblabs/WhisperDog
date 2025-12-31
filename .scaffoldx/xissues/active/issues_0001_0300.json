@@ -1,0 +1,81 @@
+{
+  "file": "issues_0001_0300.json",
+  "issue_range": {
+    "start": 1,
+    "end": 300
+  },
+  "count": 7,
+  "generated": "2025-12-31T01:15:00.000Z",
+  "issues": [
+    {
+      "id": "ISS_00001",
+      "title": "Validate compressed file size before OpenAI submission",
+      "status": "open",
+      "type": "bug",
+      "priority": "high",
+      "created": "2025-12-30",
+      "tags": "validation, openai-api, file-size",
+      "file_path": "active/0001-0300/ISS_00001_file_size_validation.md"
+    },
+    {
+      "id": "ISS_00002",
+      "title": "Post-processing dropdown resets on hotkey activation",
+      "status": "open",
+      "type": "bug",
+      "priority": "high",
+      "created": "2025-12-30",
+      "tags": "state-management, hotkeys, ui",
+      "file_path": "active/0001-0300/ISS_00002_dropdown_reset_hotkey.md"
+    },
+    {
+      "id": "ISS_00003",
+      "title": "Pipeline button disabled after recording stops",
+      "status": "open",
+      "type": "bug",
+      "priority": "high",
+      "created": "2025-12-30",
+      "tags": "state-management, ui",
+      "file_path": "active/0001-0300/ISS_00003_pipeline_button_disabled.md"
+    },
+    {
+      "id": "ISS_00004",
+      "title": "Prompt before transcribing large recordings with high silence",
+      "status": "open",
+      "type": "enhancement",
+      "priority": "low",
+      "created": "2025-12-30",
+      "tags": "user-experience, validation",
+      "file_path": "active/0001-0300/ISS_00004_large_recording_prompt.md"
+    },
+    {
+      "id": "ISS_00005",
+      "title": "Add line breaks around transcribed text in logs",
+      "status": "open",
+      "type": "enhancement",
+      "priority": "low",
+      "created": "2025-12-30",
+      "tags": "ui, logs, readability",
+      "file_path": "active/0001-0300/ISS_00005_log_line_breaks.md"
+    },
+    {
+      "id": "ISS_00006",
+      "title": "Minimum Non-Silence Duration Threshold",
+      "status": "open",
+      "type": "enhancement",
+      "priority": "low",
+      "created": "2025-12-30",
+      "tags": "audio, validation, user-experience",
+      "file_path": "active/0001-0300/ISS_00006_min_non_silence_threshold.md"
+    },
+    {
+      "id": "ISS_00007",
+      "title": "Sticky Recording Warning for Long Recordings",
+      "status": "open",
+      "type": "enhancement",
+      "priority": "low",
+      "created": "2025-12-30",
+      "tags": "recording, ui, user-experience",
+      "file_path": "active/0001-0300/ISS_00007_sticky_recording_warning.md"
+    }
+  ]
+}

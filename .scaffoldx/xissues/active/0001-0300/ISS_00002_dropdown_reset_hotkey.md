@@ -1,16 +1,34 @@
+---
+issue_id: ISS_00002
+title: Post-processing dropdown resets on hotkey activation
+type: bug
+priority: high
+status: open
+created: 2025-12-30
+tags: [state-management, hotkeys, ui]
+alias: BUG-001
+---
+
 # ISS_00002: Post-processing dropdown resets on hotkey activation
 
-**Alias**: BUG-001
-**Status**: Open
-**Priority**: High
-**Severity**: Major
-**Created**: 2025-12-30
-
-## Summary
+## Problem Description
 
 When recording is activated via global hotkeys while post-processing is enabled, the pipeline dropdown selection resets to the default option. This causes users to accidentally run the wrong pipeline.
 
-## Problem
+## Status
+
+- **Current Status**: open
+- **Priority**: high
+- **Type**: bug
+- **Created**: 2025-12-30
+
+## Tags
+
+- state-management
+- hotkeys
+- ui
+
+## Problem Details
 
 **Trigger**: Recording activated via hotkeys while post-processing is active
 
@@ -50,7 +68,7 @@ Likely causes:
 ## Implementation Notes
 
 **Probable fix locations**:
-- `src/main/java/org/whisperdog/hotkeys/GlobalHotkeyListener.java`
+- `src/main/java/org/whisperdog/GlobalHotkeyListener.java`
 - `src/main/java/org/whisperdog/recording/RecorderForm.java`
 
 **Approach**:
@@ -72,6 +90,10 @@ pipelineDropdown.setSelectedItem(selectedPipeline);
 
 ## Related Files
 
-- `src/main/java/org/whisperdog/hotkeys/GlobalHotkeyListener.java`
+- `src/main/java/org/whisperdog/GlobalHotkeyListener.java`
 - `src/main/java/org/whisperdog/recording/RecorderForm.java`
 - `src/main/java/org/whisperdog/ConfigManager.java`
+
+## Notes
+
+Issue created from user feedback.

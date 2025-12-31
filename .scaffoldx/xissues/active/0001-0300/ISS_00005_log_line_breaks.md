@@ -1,16 +1,34 @@
+---
+issue_id: ISS_00005
+title: Add line breaks around transcribed text in logs
+type: enhancement
+priority: low
+status: open
+created: 2025-12-30
+tags: [ui, logs, readability]
+alias: WD-0010
+---
+
 # ISS_00005: Add line breaks around transcribed text in logs
 
-**Alias**: WD-0010
-**Status**: Open
-**Priority**: Low
-**Severity**: Trivial
-**Created**: 2025-12-30
-
-## Summary
+## Problem Description
 
 Add blank lines before and after transcribed text in the log output. This makes it easier to visually distinguish transcription results from status messages and simplifies text selection for copying.
 
-## Problem
+## Status
+
+- **Current Status**: open
+- **Priority**: low
+- **Type**: enhancement
+- **Created**: 2025-12-30
+
+## Tags
+
+- ui
+- logs
+- readability
+
+## Problem Details
 
 **Current log format**:
 ```
@@ -79,5 +97,9 @@ appendLog("");
 
 ## Related Files
 
-- `src/main/java/org/whisperdog/ui/LogPanel.java`
-- `src/main/java/org/whisperdog/recording/RecorderForm.java` (if logging done there)
+- `src/main/java/org/whisperdog/LogsForm.java`
+- `src/main/java/org/whisperdog/recording/RecorderForm.java`
+
+## Notes
+
+Quality of life improvement for readability.

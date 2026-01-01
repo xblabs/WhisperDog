@@ -9,6 +9,10 @@ import org.whisperdog.postprocessing.PostProcessingService;
 import org.whisperdog.recording.clients.FasterWhisperTranscribeClient;
 import org.whisperdog.recording.clients.OpenAITranscribeClient;
 import org.whisperdog.recording.clients.OpenWebUITranscribeClient;
+import org.whisperdog.error.ErrorCategory;
+import org.whisperdog.error.ErrorClassifier;
+import org.whisperdog.error.TranscriptionException;
+import org.whisperdog.ui.TranscriptionErrorDialog;
 import org.whisperdog.recording.AudioFileAnalyzer;
 import org.whisperdog.recording.AudioFileAnalyzer.AnalysisResult;
 import org.whisperdog.recording.AudioFileAnalyzer.LargeFileOption;
@@ -16,6 +20,7 @@ import org.whisperdog.recording.WavChunker;
 import org.whisperdog.recording.FfmpegChunker;
 import org.whisperdog.recording.FfmpegCompressor;
 import org.whisperdog.recording.LargeFileOptionsDialog;
+import org.whisperdog.recording.LargeRecordingWarningDialog;
 import org.whisperdog.recording.ChunkedTranscriptionWorker;
 
 import javax.sound.sampled.AudioInputStream;
@@ -83,6 +88,13 @@ public class RecorderForm extends javax.swing.JPanel {
     private boolean isManualPipelineRunning = false;
     private final PipelineExecutionHistory pipelineHistory = new PipelineExecutionHistory();
     private HistoryPanel historyPanel;
+    private boolean isPopulatingComboBox = false;  // Flag to prevent ItemListener firing during repopulation
+
+    // Recording warning timer (ISS_00007)
+    private javax.swing.Timer recordingWarningTimer;
+    private long recordingStartTime = 0;
+    private boolean isRecordingWarningActive = false;
+    private int warningPulseState = 0;  // For pulsing animation
 
     public RecorderForm(ConfigManager configManager) {
         this.configManager = configManager;
@@ -107,18 +119,32 @@ public class RecorderForm extends javax.swing.JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Status colors: green (ready), red (recording), blue (transcribing)
-                g2.setColor(new Color(144, 238, 144)); // Light green - ready/idle
+                // Status colors: green (ready), red (recording), orange-pulsing (warning), blue (transcribing)
+                Color fillColor = new Color(144, 238, 144); // Light green - ready/idle
                 if (isRecording) {
-                    g2.setColor(new Color(255, 99, 71)); // Tomato red - recording
+                    if (isRecordingWarningActive) {
+                        // Pulsing orange-red warning color
+                        int pulse = (warningPulseState % 10);
+                        int intensity = pulse < 5 ? 200 + pulse * 11 : 255 - (pulse - 5) * 11;
+                        fillColor = new Color(255, Math.max(50, 150 - pulse * 10), 0);
+                    } else {
+                        fillColor = new Color(255, 99, 71); // Tomato red - recording
+                    }
                 } else if (isTranscribing) {
-                    g2.setColor(new Color(100, 149, 237)); // Cornflower blue - transcribing/converting
+                    fillColor = new Color(100, 149, 237); // Cornflower blue - transcribing/converting
                 }
+                g2.setColor(fillColor);
                 g2.fillOval(2, 2, 16, 16);
 
-                // Border
-                g2.setColor(Color.DARK_GRAY);
-                g2.drawOval(2, 2, 16, 16);
+                // Border - thicker when warning active
+                if (isRecordingWarningActive && isRecording) {
+                    g2.setColor(new Color(255, 69, 0)); // Orange-red border
+                    g2.setStroke(new BasicStroke(2));
+                    g2.drawOval(1, 1, 18, 18);
+                } else {
+                    g2.setColor(Color.DARK_GRAY);
+                    g2.drawOval(2, 2, 16, 16);
+                }
                 g2.dispose();
             }
         };
@@ -251,6 +277,9 @@ public class RecorderForm extends javax.swing.JPanel {
         postProcessingSelectComboBox.setToolTipText("Select a pipeline to use");
         populatePostProcessingComboBox();
         postProcessingSelectComboBox.addItemListener(e -> {
+            // Ignore events during programmatic repopulation to prevent corrupting saved selection
+            if (isPopulatingComboBox) return;
+
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 PostProcessingItem selectedItem = (PostProcessingItem) e.getItem();
                 if (selectedItem != null) {
@@ -692,6 +721,7 @@ public class RecorderForm extends javax.swing.JPanel {
                     historyPanel.updateResults(pipelineHistory.getResults());
 
                     console.logSuccess("Chunked transcription completed");
+                    console.logTranscript(fullTranscript);
                     Notificationmanager.getInstance().showNotification(ToastNotification.Type.SUCCESS,
                         "Transcription completed!");
 
@@ -807,6 +837,7 @@ public class RecorderForm extends javax.swing.JPanel {
                         historyPanel.updateResults(pipelineHistory.getResults());
 
                         console.logSuccess("Transcription completed");
+                        console.logTranscript(transcript);
                         Notificationmanager.getInstance().showNotification(ToastNotification.Type.SUCCESS,
                             "Transcription completed!");
 
@@ -968,26 +999,34 @@ public class RecorderForm extends javax.swing.JPanel {
     }
 
     private void populatePostProcessingComboBox() {
-        postProcessingSelectComboBox.removeAllItems();
-        // Get the list of pipelines (only show enabled ones)
-        pipelineList = configManager.getPipelines();
-        String lastUsedPipelineUUID = configManager.getLastUsedPipelineUUID();
-        Integer lastUsedIndex = null;
-        for (int index = 0; index < pipelineList.size(); index++) {
-            Pipeline pipeline = pipelineList.get(index);
-            // Only show enabled pipelines in the dropdown
-            if (pipeline.enabled) {
-                PostProcessingItem item = new PostProcessingItem(pipeline.title, pipeline.uuid);
-                if (pipeline.uuid.equals(lastUsedPipelineUUID)) {
-                    lastUsedIndex = postProcessingSelectComboBox.getItemCount(); // Index in filtered list
+        // Set flag to prevent ItemListener from corrupting the saved selection during repopulation
+        isPopulatingComboBox = true;
+        try {
+            postProcessingSelectComboBox.removeAllItems();
+            // Get the list of pipelines (only show enabled ones)
+            pipelineList = configManager.getPipelines();
+            String lastUsedPipelineUUID = configManager.getLastUsedPipelineUUID();
+            Integer lastUsedIndex = null;
+            for (int index = 0; index < pipelineList.size(); index++) {
+                Pipeline pipeline = pipelineList.get(index);
+                // Only show enabled pipelines in the dropdown
+                if (pipeline.enabled) {
+                    PostProcessingItem item = new PostProcessingItem(pipeline.title, pipeline.uuid);
+                    if (pipeline.uuid.equals(lastUsedPipelineUUID)) {
+                        lastUsedIndex = postProcessingSelectComboBox.getItemCount(); // Index in filtered list
+                    }
+                    postProcessingSelectComboBox.addItem(item);
                 }
-                postProcessingSelectComboBox.addItem(item);
             }
-        }
 
-        if (lastUsedIndex != null) {
-            postProcessingSelectComboBox.setSelectedIndex(lastUsedIndex);
+            if (lastUsedIndex != null) {
+                postProcessingSelectComboBox.setSelectedIndex(lastUsedIndex);
+            }
+        } finally {
+            isPopulatingComboBox = false;
         }
+        // Always update button state after repopulation since ItemListener is blocked
+        updateRunPipelineButtonState();
     }
 
     /**
@@ -1021,21 +1060,113 @@ public class RecorderForm extends javax.swing.JPanel {
     private void startRecording() {
         try {
             isRecording = true;
+            isRecordingWarningActive = false;
+            warningPulseState = 0;
+            recordingStartTime = System.currentTimeMillis();
+
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
             File audioFile = new File(System.getProperty("java.io.tmpdir"), "record_" + timeStamp + ".wav");
             recorder = new AudioRecorder(audioFile, configManager);
             new Thread(recorder::start).start();
             logger.info("Recording started: " + audioFile.getPath());
             recordButton.setText("Stop Recording");
+
+            // Start recording warning timer (ISS_00007)
+            startRecordingWarningTimer();
         } catch (Exception e) {
             logger.error("An error occurred while starting the recording", e);
             isRecording = false;
+            stopRecordingWarningTimer();
+        }
+    }
+
+    /**
+     * Starts the recording warning timer. Checks every 500ms if recording exceeds threshold.
+     */
+    private void startRecordingWarningTimer() {
+        int warningDuration = configManager.getRecordingWarningDuration();
+        if (warningDuration <= 0) {
+            // Feature disabled
+            return;
+        }
+
+        if (recordingWarningTimer != null) {
+            recordingWarningTimer.stop();
+        }
+
+        recordingWarningTimer = new javax.swing.Timer(500, e -> {
+            if (!isRecording) {
+                stopRecordingWarningTimer();
+                return;
+            }
+
+            long elapsedSeconds = (System.currentTimeMillis() - recordingStartTime) / 1000;
+            int threshold = configManager.getRecordingWarningDuration();
+
+            if (elapsedSeconds >= threshold && !isRecordingWarningActive) {
+                // Trigger warning
+                isRecordingWarningActive = true;
+                logger.info("Recording warning triggered at " + elapsedSeconds + " seconds");
+                ConsoleLogger.getInstance().log("⚠ Recording exceeds " + formatDurationForLog(threshold));
+
+                // Update tray icon to warning state
+                TrayIconManager trayManager = AudioRecorderUI.getTrayIconManager();
+                if (trayManager != null) {
+                    trayManager.setRecordingWarning(true);
+                }
+            }
+
+            if (isRecordingWarningActive) {
+                // Animate pulse
+                warningPulseState++;
+                statusIndicatorPanel.repaint();
+
+                // Update button text with duration
+                long minutes = elapsedSeconds / 60;
+                long seconds = elapsedSeconds % 60;
+                recordButton.setText(String.format("Stop (%d:%02d) ⚠", minutes, seconds));
+            }
+        });
+        recordingWarningTimer.start();
+    }
+
+    /**
+     * Stops the recording warning timer and resets warning state.
+     */
+    private void stopRecordingWarningTimer() {
+        if (recordingWarningTimer != null) {
+            recordingWarningTimer.stop();
+            recordingWarningTimer = null;
+        }
+        isRecordingWarningActive = false;
+        warningPulseState = 0;
+
+        // Reset tray icon warning state
+        TrayIconManager trayManager = AudioRecorderUI.getTrayIconManager();
+        if (trayManager != null) {
+            trayManager.setRecordingWarning(false);
+        }
+    }
+
+    /**
+     * Formats duration in seconds to a human-readable string for log messages.
+     */
+    private String formatDurationForLog(int seconds) {
+        if (seconds < 60) {
+            return seconds + " seconds";
+        } else if (seconds % 60 == 0) {
+            return (seconds / 60) + " minute" + (seconds >= 120 ? "s" : "");
+        } else {
+            return String.format("%.1f minutes", seconds / 60.0);
         }
     }
 
     private boolean isStoppingInProgress = false;
 
     public void stopRecording(boolean cancelledRecording) {
+        // Stop the recording warning timer first (ISS_00007)
+        stopRecordingWarningTimer();
+
         updateUIForRecordingStop();  // This already sets isTranscribing = true and repaints
         isStoppingInProgress = true;
         recordButton.setText("Converting. Please wait...");
@@ -1176,8 +1307,116 @@ public class RecorderForm extends javax.swing.JPanel {
     }
 
 
+    /**
+     * Transcribes audio using OpenAI with automatic retry for transient errors.
+     * Implements exponential backoff (1s, 2s, 4s) for up to 3 attempts.
+     *
+     * @param audioFile The audio file to transcribe
+     * @param console Console logger for progress updates
+     * @return The transcription result, or null if user cancelled
+     * @throws Exception If transcription fails after all retries
+     */
+    private String transcribeWithRetry(File audioFile, ConsoleLogger console) throws Exception {
+        final int MAX_RETRIES = 3;
+        int attempt = 0;
+        TranscriptionException lastException = null;
+
+        while (attempt < MAX_RETRIES) {
+            attempt++;
+            try {
+                if (attempt > 1) {
+                    console.log(String.format("Retry attempt %d/%d...", attempt, MAX_RETRIES));
+                }
+                return whisperClient.transcribe(audioFile);
+            } catch (TranscriptionException e) {
+                lastException = e;
+                console.log("Error: " + ErrorClassifier.getUserFriendlyMessage(e));
+
+                // Handle based on error category
+                if (e.getCategory() == ErrorCategory.PERMANENT) {
+                    // Don't retry permanent errors
+                    console.logError("Permanent error - cannot retry");
+                    throw e;
+                }
+
+                if (e.getCategory() == ErrorCategory.USER_ACTION) {
+                    // Empty response - ask user if they want to retry
+                    console.log("No speech detected - asking user...");
+                    java.util.concurrent.atomic.AtomicBoolean userRetry =
+                        new java.util.concurrent.atomic.AtomicBoolean(false);
+
+                    try {
+                        SwingUtilities.invokeAndWait(() -> {
+                            // Create a simple retry state for the dialog
+                            org.whisperdog.retry.RetryState state =
+                                new org.whisperdog.retry.RetryState(null, audioFile);
+                            state.recordAttempt(e.getMessage(), e.getHttpStatus());
+                            userRetry.set(TranscriptionErrorDialog.showEmptyResponseDialog(
+                                RecorderForm.this, state));
+                        });
+                    } catch (Exception dialogEx) {
+                        logger.error("Error showing empty response dialog", dialogEx);
+                    }
+
+                    if (userRetry.get()) {
+                        // User wants to retry - reset attempt counter for fresh tries
+                        attempt = 0;
+                        console.log("User chose to retry transcription");
+                        continue;
+                    } else {
+                        console.log("User cancelled transcription");
+                        return null;  // User cancelled
+                    }
+                }
+
+                // Transient error - check if we can retry
+                if (attempt >= MAX_RETRIES) {
+                    console.logError("Max retries exhausted");
+
+                    // Ask user if they want to try again
+                    java.util.concurrent.atomic.AtomicBoolean userRetry =
+                        new java.util.concurrent.atomic.AtomicBoolean(false);
+
+                    try {
+                        SwingUtilities.invokeAndWait(() -> {
+                            org.whisperdog.retry.RetryState state =
+                                new org.whisperdog.retry.RetryState(null, audioFile);
+                            for (int i = 0; i < MAX_RETRIES; i++) {
+                                state.recordAttempt(e.getMessage(), e.getHttpStatus());
+                            }
+                            userRetry.set(TranscriptionErrorDialog.showRetriesExhaustedDialog(
+                                RecorderForm.this, state));
+                        });
+                    } catch (Exception dialogEx) {
+                        logger.error("Error showing retries exhausted dialog", dialogEx);
+                    }
+
+                    if (userRetry.get()) {
+                        attempt = 0;  // Reset for fresh attempts
+                        console.log("User chose to try again");
+                        continue;
+                    } else {
+                        throw e;
+                    }
+                }
+
+                // Wait before retry with exponential backoff (1s, 2s, 4s)
+                long delaySeconds = (long) Math.pow(2, attempt - 1);
+                console.log(String.format("Retrying in %d seconds...", delaySeconds));
+                Thread.sleep(delaySeconds * 1000);
+            }
+        }
+
+        // Should not reach here, but just in case
+        if (lastException != null) {
+            throw lastException;
+        }
+        throw new Exception("Transcription failed after max retries");
+    }
+
     private class AudioTranscriptionWorker extends SwingWorker<String, Void> {
         private final File audioFile;
+        private volatile boolean cancelledByUser = false;  // Track if user cancelled via warning dialog
 
         public AudioTranscriptionWorker(File audioFile) {
             this.audioFile = audioFile;
@@ -1187,10 +1426,89 @@ public class RecorderForm extends javax.swing.JPanel {
         protected String doInBackground() {
             ConsoleLogger console = ConsoleLogger.getInstance();
             try {
+                // Pre-flight analysis for large recordings with high silence
+                // Only when silence removal is enabled (we need the threshold settings)
+                if (configManager.isSilenceRemovalEnabled()) {
+                    console.separator();
+                    console.log("Analyzing audio for silence...");
+
+                    SilenceRemover.SilenceAnalysisResult analysis = SilenceRemover.analyzeForSilence(
+                        audioFile,
+                        configManager.getSilenceThreshold(),
+                        configManager.getMinSilenceDuration()
+                    );
+
+                    if (analysis != null && analysis.exceedsWarningThreshold) {
+                        console.log(String.format("⚠ Large recording detected: %s, %s silence",
+                            analysis.getFormattedDuration(), analysis.getFormattedSilencePercent()));
+
+                        // Show warning dialog on EDT and wait for user decision
+                        java.util.concurrent.atomic.AtomicBoolean userProceed =
+                            new java.util.concurrent.atomic.AtomicBoolean(false);
+
+                        try {
+                            SwingUtilities.invokeAndWait(() -> {
+                                LargeRecordingWarningDialog dialog = new LargeRecordingWarningDialog(
+                                    SwingUtilities.getWindowAncestor(RecorderForm.this),
+                                    analysis
+                                );
+                                userProceed.set(dialog.showAndGetResult());
+                            });
+                        } catch (Exception e) {
+                            logger.error("Error showing warning dialog", e);
+                            // Default to proceeding if dialog fails
+                            userProceed.set(true);
+                        }
+
+                        if (!userProceed.get()) {
+                            console.log("Transcription cancelled by user");
+                            cancelledByUser = true;
+                            return null;  // User cancelled
+                        }
+
+                        console.log("User chose to proceed with transcription");
+                    }
+
+                    // Check minimum speech duration threshold
+                    float minSpeechDuration = configManager.getMinSpeechDuration();
+                    if (analysis != null && minSpeechDuration > 0) {
+                        float estimatedSpeech = analysis.estimatedUsefulSeconds;
+
+                        if (estimatedSpeech < minSpeechDuration) {
+                            console.log(String.format("⚠ Insufficient speech: %.1fs detected (minimum: %.1fs)",
+                                estimatedSpeech, minSpeechDuration));
+
+                            java.util.concurrent.atomic.AtomicBoolean userProceed =
+                                new java.util.concurrent.atomic.AtomicBoolean(false);
+
+                            try {
+                                SwingUtilities.invokeAndWait(() -> {
+                                    MinSpeechDurationDialog dialog = new MinSpeechDurationDialog(
+                                        SwingUtilities.getWindowAncestor(RecorderForm.this),
+                                        estimatedSpeech,
+                                        minSpeechDuration
+                                    );
+                                    userProceed.set(dialog.showAndGetResult());
+                                });
+                            } catch (Exception e) {
+                                logger.error("Error showing min speech dialog", e);
+                                userProceed.set(true);
+                            }
+
+                            if (!userProceed.get()) {
+                                console.log("Recording discarded by user (insufficient speech)");
+                                cancelledByUser = true;
+                                return null;
+                            }
+
+                            console.log("User chose to proceed with transcription despite short speech");
+                        }
+                    }
+                }
+
                 // Apply silence removal if enabled
                 File fileToTranscribe = audioFile;
                 if (configManager.isSilenceRemovalEnabled()) {
-                    console.separator();
                     fileToTranscribe = SilenceRemover.removeSilence(
                         audioFile,
                         configManager.getSilenceThreshold(),
@@ -1210,7 +1528,7 @@ public class RecorderForm extends javax.swing.JPanel {
 
                 if (server.equals("OpenAI")) {
                     logger.info("Transcribing audio using OpenAI");
-                    result = whisperClient.transcribe(fileToTranscribe);
+                    result = transcribeWithRetry(fileToTranscribe, console);
                 } else if (server.equals("Faster-Whisper")) {
                     logger.info("Transcribing audio using Faster-Whisper");
                     result = fasterWhisperTranscribeClient.transcribe(fileToTranscribe);
@@ -1253,6 +1571,7 @@ public class RecorderForm extends javax.swing.JPanel {
                     historyPanel.updateResults(pipelineHistory.getResults());  // Reset history panel
 
                     console.logSuccess("Transcription completed");
+                    console.logTranscript(transcript);
                     console.log("Transcript length: " + transcript.length() + " characters");
                     // Show success notification
                     Notificationmanager.getInstance().showNotification(ToastNotification.Type.SUCCESS,
@@ -1262,6 +1581,11 @@ public class RecorderForm extends javax.swing.JPanel {
                     if (trayManager != null) {
                         trayManager.showSystemNotification("WhisperDog", "Transcription completed");
                     }
+                } else if (cancelledByUser) {
+                    // User cancelled via large recording warning dialog - not an error
+                    logger.info("Transcription cancelled by user (large recording warning)");
+                    Notificationmanager.getInstance().showNotification(ToastNotification.Type.INFO,
+                            "Transcription cancelled");
                 } else {
                     logger.warn("Transcription resulted in null");
                     console.logError("Transcription returned null");

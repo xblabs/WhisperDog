@@ -13,6 +13,9 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.whisperdog.ConfigManager;
+import org.whisperdog.error.ErrorClassifier;
+import org.whisperdog.error.TranscriptionException;
+import org.whisperdog.validation.TranscriptionValidator;
 
 import javax.sound.sampled.*;
 import java.io.File;
@@ -24,6 +27,7 @@ public class OpenAITranscribeClient {
     private static final Logger logger = LogManager.getLogger(OpenAITranscribeClient.class);
     private static final String API_URL = "https://api.openai.com/v1/audio/transcriptions";
     private static final long MAX_FILE_SIZE = 24 * 1024 * 1024; // 24 MB (leaving buffer under 25MB limit)
+    private static final long MAX_COMPRESSED_FILE_SIZE = 26 * 1024 * 1024; // 26 MB hard limit for validation
     private static final int CONNECTION_TIMEOUT = 30000; // 30 seconds
     private static final int SOCKET_TIMEOUT = 600000; // 10 minutes for large file processing
     private final ConfigManager configManager;
@@ -181,13 +185,23 @@ public class OpenAITranscribeClient {
         return compressAudioFileByDownsampling(originalFile);
     }
 
-    public String transcribe(File audioFile) throws IOException {
+    public String transcribe(File audioFile) throws TranscriptionException {
         // Check if file size exceeds limit and compress if necessary
         File fileToTranscribe = audioFile;
         if (audioFile.length() > MAX_FILE_SIZE) {
             logger.warn("Audio file size ({} MB) exceeds OpenAI limit (25 MB). Compressing...",
                 audioFile.length() / (1024.0 * 1024.0));
             fileToTranscribe = compressAudioFile(audioFile);
+        }
+
+        // Pre-submission validation (ISS_00001, Task 0002)
+        try {
+            TranscriptionValidator.validateFileSize(fileToTranscribe);
+        } catch (TranscriptionException e) {
+            logger.error("File size validation failed: {} (size: {})",
+                fileToTranscribe.getName(), TranscriptionValidator.getFileSizeDisplay(fileToTranscribe));
+            org.whisperdog.ConsoleLogger.getInstance().logError(e.getMessage());
+            throw e;
         }
 
         // Configure timeouts to prevent indefinite hanging
@@ -232,20 +246,25 @@ public class OpenAITranscribeClient {
                     logger.error("OpenAI API returned status code: {}. Response: {}", statusCode, responseString);
 
                     // Try to parse as JSON to get error message
+                    String errorMessage;
                     try {
                         ObjectMapper objectMapper = new ObjectMapper();
                         JsonNode jsonNode = objectMapper.readTree(responseString);
-                        String errorMessage = jsonNode.path("error").path("message").asText("Unknown error");
-                        throw new IOException("Error from OpenAI API (HTTP " + statusCode + "): " + errorMessage);
+                        errorMessage = jsonNode.path("error").path("message").asText("Unknown error");
                     } catch (Exception jsonException) {
                         // Response is not valid JSON, use raw response
                         logger.error("Failed to parse error response as JSON", jsonException);
                         // Truncate very long responses
-                        String truncatedResponse = responseString.length() > 500
+                        errorMessage = responseString.length() > 500
                             ? responseString.substring(0, 500) + "..."
                             : responseString;
-                        throw new IOException("Error from OpenAI API (HTTP " + statusCode + "): " + truncatedResponse);
                     }
+                    // Throw TranscriptionException with HTTP status for categorization
+                    throw new TranscriptionException(
+                        "Error from OpenAI API (HTTP " + statusCode + "): " + errorMessage,
+                        statusCode,
+                        responseString
+                    );
                 }
 
                 // Parse successful response
@@ -255,14 +274,41 @@ public class OpenAITranscribeClient {
                     String transcription = jsonNode.path("text").asText();
                     if (transcription == null || transcription.isEmpty()) {
                         logger.warn("OpenAI returned empty transcription");
-                        throw new IOException("OpenAI returned empty transcription");
+                        // Empty response requires user action - they may want to retry
+                        throw new TranscriptionException(
+                            "No speech detected in recording",
+                            200,
+                            responseString
+                        );
                     }
                     return transcription;
+                } catch (TranscriptionException te) {
+                    throw te; // Re-throw our own exceptions
                 } catch (Exception jsonException) {
                     logger.error("Failed to parse successful response as JSON. Response: {}", responseString, jsonException);
-                    throw new IOException("Failed to parse OpenAI response: " + jsonException.getMessage());
+                    // JSON parse error is transient (may succeed on retry)
+                    throw new TranscriptionException(
+                        "Failed to parse OpenAI response: " + jsonException.getMessage(),
+                        jsonException,
+                        true,  // isJsonError
+                        false  // isNetworkError
+                    );
                 }
             }
+        } catch (TranscriptionException te) {
+            throw te; // Re-throw our own exceptions
+        } catch (java.net.SocketTimeoutException e) {
+            logger.error("Socket timeout during transcription", e);
+            throw new TranscriptionException("Connection timed out", e, false, true);
+        } catch (java.net.UnknownHostException e) {
+            logger.error("Cannot reach OpenAI server", e);
+            throw new TranscriptionException("Cannot reach server: " + e.getMessage(), e, false, true);
+        } catch (java.net.ConnectException e) {
+            logger.error("Connection to OpenAI failed", e);
+            throw new TranscriptionException("Connection failed: " + e.getMessage(), e, false, true);
+        } catch (IOException e) {
+            logger.error("IO error during transcription", e);
+            throw new TranscriptionException("Network error: " + e.getMessage(), e, false, true);
         }
     }
 }

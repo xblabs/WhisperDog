@@ -1,0 +1,65 @@
+{
+  "description": "Configuration for context loading and Layer 2 generation",
+  "version": "1.0.0",
+  "nlp_loading_strategy": "pareto",
+  "layer2_disclosure_default": "SUMMARY",
+  "session_start": {
+    "enabled": true,
+    "load_session_summaries": true,
+    "generate_layer2_context": true,
+    "load_current_task": true,
+    "description": "Set enabled: false to skip all SessionStart behaviors for clean sessions"
+  },
+  "loading": {
+    "max_depth": 3,
+    "max_files": 100,
+    "timeout_ms": 5000,
+    "cache_enabled": true,
+    "cache_ttl_seconds": 300
+  },
+  "layer2": {
+    "enabled": true,
+    "output_path": ".scaffoldx/xcontext/current_project_context.md",
+    "token_budget": {
+      "summary": 500,
+      "expanded": 1250,
+      "full": 3000
+    },
+    "auto_regenerate": {
+      "on_task_switch": true,
+      "on_commit": false,
+      "interval_minutes": null
+    }
+  },
+  "exclusions": [
+    "node_modules/**",
+    ".git/**",
+    "*.log",
+    "*.tmp"
+  ],
+  "priority_patterns": [
+    {
+      "pattern": "current_task",
+      "weight": 1.0,
+      "description": "Current task always highest priority"
+    },
+    {
+      "pattern": "recent_files",
+      "weight": 0.8,
+      "description": "Recently modified files"
+    },
+    {
+      "pattern": "related_context",
+      "weight": 0.6,
+      "description": "Semantically related context"
+    }
+  ],
+  "dendritic_traversal": {
+    "enabled": false,
+    "knn_neighbors": 5,
+    "similarity_threshold": 0.7
+  }
+}
+
+
+

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.whisperdog.ConfigManager;
 import org.whisperdog.Notificationmanager;
 import org.whisperdog.ToastNotification;
+import org.whisperdog.ui.MicTestPanel;
 import org.whisperdog.recording.clients.FasterWhisperModel;
 import org.whisperdog.recording.clients.FasterWhisperModelsResponse;
 
@@ -44,6 +45,8 @@ public class SettingsForm extends JPanel {
     private JSlider silenceThresholdSlider;
     private JSlider minSilenceDurationSlider;
     private JSlider minRecordingDurationSlider;
+    private JSlider minSpeechDurationSlider;
+    private JSlider recordingWarningDurationSlider;
     private JCheckBox keepCompressedSwitch;
     private AudioFormat format;
     private TargetDataLine line;
@@ -336,6 +339,37 @@ public class SettingsForm extends JPanel {
 
         row++;
 
+        // Calibrate threshold button - opens MicTestPanel dialog
+        gbc.gridx = 1;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.weightx = 0;
+        gbc.anchor = GridBagConstraints.WEST;
+        JButton calibrateButton = new JButton("Calibrate Threshold...");
+        calibrateButton.setToolTipText("Open microphone test to calibrate silence detection with A/B comparison");
+        calibrateButton.addActionListener(e -> {
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+            JDialog dialog = new JDialog(parentWindow, "Microphone Test", Dialog.ModalityType.APPLICATION_MODAL);
+            MicTestPanel micTestPanel = new MicTestPanel(configManager);
+            dialog.setContentPane(micTestPanel);
+            dialog.pack();
+            dialog.setMinimumSize(new Dimension(450, 500));
+            dialog.setLocationRelativeTo(this);
+            dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosing(java.awt.event.WindowEvent e) {
+                    micTestPanel.cleanup();
+                }
+            });
+            dialog.setVisible(true);
+            // After dialog closes, reload threshold value in case it was changed
+            silenceThresholdSlider.setValue((int)(configManager.getSilenceThreshold() * 1000));
+            volumeBar.setThreshold((int)(configManager.getSilenceThreshold() * 100));
+        });
+        contentPanel.add(calibrateButton, gbc);
+
+        row++;
+
         // Minimum silence duration slider
         gbc.gridx = 0;
         gbc.gridy = row;
@@ -430,6 +464,108 @@ public class SettingsForm extends JPanel {
         minRecDurationHint.setFont(new Font("Dialog", Font.PLAIN, 10));
         minRecDurationHint.setForeground(Color.GRAY);
         contentPanel.add(minRecDurationHint, gbc);
+
+        row++;
+
+        // Minimum speech duration slider
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        gbc.anchor = GridBagConstraints.EAST;
+        JLabel minSpeechDurationLabel = new JLabel("Min speech duration:");
+        contentPanel.add(minSpeechDurationLabel, gbc);
+
+        JPanel minSpeechDurationPanel = new JPanel(new BorderLayout(5, 0));
+        // Slider from 0.0 to 2.0 seconds (stored as 0-20 for integer slider, divided by 10)
+        int initialSpeechValue = (int)(configManager.getMinSpeechDuration() * 10);
+        minSpeechDurationSlider = new JSlider(0, 20, initialSpeechValue);
+        minSpeechDurationSlider.setMajorTickSpacing(5);
+        minSpeechDurationSlider.setMinorTickSpacing(1);
+        minSpeechDurationSlider.setPaintTicks(true);
+        JLabel minSpeechDurationValueLabel = new JLabel(String.format("%.1fs", configManager.getMinSpeechDuration()));
+        minSpeechDurationPanel.add(minSpeechDurationSlider, BorderLayout.CENTER);
+        minSpeechDurationPanel.add(minSpeechDurationValueLabel, BorderLayout.EAST);
+
+        minSpeechDurationSlider.addChangeListener(e -> {
+            float value = minSpeechDurationSlider.getValue() / 10.0f;
+            minSpeechDurationValueLabel.setText(String.format("%.1fs", value));
+            // Auto-save when slider stops moving
+            if (!minSpeechDurationSlider.getValueIsAdjusting()) {
+                configManager.setMinSpeechDuration(value);
+            }
+        });
+
+        gbc.gridx = 1;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        contentPanel.add(minSpeechDurationPanel, gbc);
+
+        row++;
+
+        // Hint for minimum speech duration
+        gbc.gridx = 1;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        JLabel minSpeechDurationHint = new JLabel("<html><i>Warn if detected speech is below this duration (0 = disable)</i></html>");
+        minSpeechDurationHint.setFont(new Font("Dialog", Font.PLAIN, 10));
+        minSpeechDurationHint.setForeground(Color.GRAY);
+        contentPanel.add(minSpeechDurationHint, gbc);
+
+        row++;
+
+        // Recording warning duration slider (ISS_00007)
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        gbc.anchor = GridBagConstraints.EAST;
+        JLabel recordingWarningLabel = new JLabel("Warn after recording:");
+        contentPanel.add(recordingWarningLabel, gbc);
+
+        JPanel recordingWarningPanel = new JPanel(new BorderLayout(5, 0));
+        // Slider from 0 to 600 seconds (10 minutes), step by 30 seconds
+        int initialWarningValue = configManager.getRecordingWarningDuration();
+        recordingWarningDurationSlider = new JSlider(0, 600, initialWarningValue);
+        recordingWarningDurationSlider.setMajorTickSpacing(120);
+        recordingWarningDurationSlider.setMinorTickSpacing(30);
+        recordingWarningDurationSlider.setPaintTicks(true);
+        JLabel recordingWarningValueLabel = new JLabel(formatDurationLabel(initialWarningValue));
+        recordingWarningPanel.add(recordingWarningDurationSlider, BorderLayout.CENTER);
+        recordingWarningPanel.add(recordingWarningValueLabel, BorderLayout.EAST);
+
+        recordingWarningDurationSlider.addChangeListener(e -> {
+            int value = recordingWarningDurationSlider.getValue();
+            recordingWarningValueLabel.setText(formatDurationLabel(value));
+            // Auto-save when slider stops moving
+            if (!recordingWarningDurationSlider.getValueIsAdjusting()) {
+                configManager.setRecordingWarningDuration(value);
+            }
+        });
+
+        gbc.gridx = 1;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        contentPanel.add(recordingWarningPanel, gbc);
+
+        row++;
+
+        // Hint for recording warning duration
+        gbc.gridx = 1;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        JLabel recordingWarningHint = new JLabel("<html><i>Show visual warning when recording exceeds this duration (0 = disable)</i></html>");
+        recordingWarningHint.setFont(new Font("Dialog", Font.PLAIN, 10));
+        recordingWarningHint.setForeground(Color.GRAY);
+        contentPanel.add(recordingWarningHint, gbc);
 
         row++;
 
@@ -831,6 +967,22 @@ public class SettingsForm extends JPanel {
         }
     }
 
+    /**
+     * Formats a duration in seconds to a human-readable label.
+     * Examples: 0 -> "Off", 30 -> "30s", 60 -> "1 min", 90 -> "1.5 min", 120 -> "2 min"
+     */
+    private String formatDurationLabel(int seconds) {
+        if (seconds == 0) {
+            return "Off";
+        } else if (seconds < 60) {
+            return seconds + "s";
+        } else if (seconds % 60 == 0) {
+            return (seconds / 60) + " min";
+        } else {
+            return String.format("%.1f min", seconds / 60.0);
+        }
+    }
+
     private void startAudioTest(String microphoneName) {
         testMicrophoneButton.setEnabled(false);
         format = configManager.getAudioFormat();
@@ -1125,6 +1277,7 @@ public class SettingsForm extends JPanel {
         configManager.setSilenceThreshold(silenceThresholdSlider.getValue() / 1000.0f);
         configManager.setMinSilenceDuration(minSilenceDurationSlider.getValue());
         configManager.setMinRecordingDurationForSilenceRemoval(minRecordingDurationSlider.getValue());
+        configManager.setMinSpeechDuration(minSpeechDurationSlider.getValue() / 10.0f);
         configManager.setKeepCompressedFile(keepCompressedSwitch.isSelected());
 
         configManager.saveConfig();

@@ -17,10 +17,11 @@ After recording stops, the pipeline execution button becomes disabled and cannot
 
 ## Status
 
-- **Current Status**: open
+- **Current Status**: resolved
 - **Priority**: high
 - **Type**: bug
 - **Created**: 2025-12-30
+- **Resolved**: 2025-12-31
 
 ## Tags
 
@@ -101,6 +102,29 @@ private void updatePipelineButtonState() {
 ## Related Files
 
 - `src/main/java/org/whisperdog/recording/RecorderForm.java`
+
+## Work Log
+
+### 2025-12-31 - Session 1
+
+**Diagnosis**: The `populatePostProcessingComboBox()` method uses an `isPopulatingComboBox` flag to prevent the ItemListener from corrupting saved selection during dropdown repopulation. However, this also prevented `updateRunPipelineButtonState()` from being called after the dropdown is repopulated, leaving the button in a stale state.
+
+**Approach**: Add explicit call to `updateRunPipelineButtonState()` after `populatePostProcessingComboBox()` completes, outside the try-finally block where `isPopulatingComboBox` is cleared.
+
+**Steps Taken**:
+1. Traced button state management in `RecorderForm.java`
+2. Identified `updateRunPipelineButtonState()` as the control method for button enable/disable
+3. Found the `isPopulatingComboBox` flag was blocking ItemListener events during dropdown population
+4. Added explicit call to `updateRunPipelineButtonState()` at line 1002 after `isPopulatingComboBox` is cleared
+
+**Outcome**: Button state now properly refreshes after dropdown repopulation, ensuring the button is enabled when transcription is available.
+
+**Code Change**:
+```java
+// RecorderForm.java:1001-1002
+// Always update button state after repopulation since ItemListener is blocked
+updateRunPipelineButtonState();
+```
 
 ## Notes
 

@@ -3,10 +3,13 @@ issue_id: ISS_00002
 title: Post-processing dropdown resets on hotkey activation
 type: bug
 priority: high
-status: open
+status: resolved
 created: 2025-12-30
 tags: [state-management, hotkeys, ui]
 alias: BUG-001
+started: 2025-12-31T03:29:15.958Z
+id: ISS_00002
+updated: 2025-12-31T03:29:15.964Z
 ---
 
 # ISS_00002: Post-processing dropdown resets on hotkey activation

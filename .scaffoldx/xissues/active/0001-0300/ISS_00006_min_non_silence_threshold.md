@@ -17,10 +17,11 @@ Add a minimum non-silence duration threshold setting that discards recordings wh
 
 ## Status
 
-- **Current Status**: open
+- **Current Status**: resolved
 - **Priority**: low
 - **Type**: enhancement
 - **Created**: 2025-12-30
+- **Resolved**: 2025-12-31
 
 ## Tags
 
@@ -82,3 +83,19 @@ Settings → Audio → "Minimum speech duration: [slider] 0.5s"
 ## Notes
 
 Feature request for improved user experience.
+
+## Work Log
+
+### 2025-12-31 - Session 1
+
+**Diagnosis**: No minimum speech duration check existed. Short/accidental recordings went directly to API.
+
+**Approach**: Add configurable threshold with UI slider and warning dialog, reusing existing silence analysis.
+
+**Steps Taken**:
+1. Added `getMinSpeechDuration()`/`setMinSpeechDuration()` to `ConfigManager.java:333-341`
+2. Added slider (0-2.0s range) to `SettingsForm.java:437-486`
+3. Created `MinSpeechDurationDialog.java` with Discard/Transcribe Anyway buttons
+4. Integrated check in `RecorderForm.java:1249-1283` after silence analysis
+
+**Outcome**: Success - build compiles. Feature uses existing `estimatedUsefulSeconds` from silence analysis.

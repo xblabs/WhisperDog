@@ -1,17 +1,8 @@
 {
   "description": "Configuration for context loading and Layer 2 generation",
   "version": "1.0.0",
-  "nlp_strategy": {
-    "mode": "semantic_expansion",
-    "description": "How to interpret natural language queries",
-    "semantic_triggers": {
-      "enabled": true,
-      "examples": [
-        "When user asks about 'authentication', load auth-related context",
-        "When discussing 'performance', load optimization patterns"
-      ]
-    }
-  },
+  "nlp_loading_strategy": "minimal",
+  "layer2_disclosure_default": "SUMMARY",
   "loading": {
     "max_depth": 3,
     "max_files": 100,

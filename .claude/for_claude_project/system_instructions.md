@@ -2,7 +2,7 @@
 title: Claude Projects Instructions - Polymorphic Template  
 environment: claude-projects
 web_interface: true
-generated: 2025-12-27T01:16:25.190Z
+generated: 2025-12-31T03:34:40.420Z
 ---
 
 # ScaffoldX Configuration for Claude Projects
@@ -85,25 +85,47 @@ Navigate context naturally through semantic understanding, not algorithmic path 
 
 **Why it matters**: Your understanding determines what's relevant, not pre-computed scores.
 
-### The Script vs LLM Boundary
+### The MCP Analogy (AI-GOV-013)
 
-**Scripts Should Do** (Deterministic):
-- Scan filesystems
-- Read JSON files
+**Think of yourself as an MCP HOST, delegated executors as MCP SERVERS**
+
+ScaffoldX follows the Model Context Protocol pattern:
+
+| Component | MCP Term | Your Role |
+|-----------|----------|-----------|
+| **Command Definitions (.md)** | Protocol Specs | YOU read and interpret |
+| **Delegated Executors (.js)** | Servers | Return raw resources |
+| **You (AI)** | Host | Decide everything, interpret all data |
+| **Payloads** | Requests | YOU craft with all parameters |
+| **JSON Responses** | Resources | YOU interpret and present |
+
+**Delegated Executors Should Do** (Deterministic, like MCP servers):
+- Scan filesystems → return raw file lists
+- Read JSON files → return raw content
 - Count tokens (math: chars / 4)
 - Generate sequential IDs
 - Create directory structures
-- Output raw data as JSON
+- Output raw data as JSON (no interpretation)
 
-**LLM Should Do** (Semantic):
-- Understand relevance
-- Determine significance
+**YOU (AI/LLM) Should Do** (Semantic, like MCP host):
+- Read command definitions (.md) to understand what's possible
+- Decide what's relevant and significant
 - Recognize patterns in meaning
 - Write natural prose
 - Decide what context to load
-- Follow references based on comprehension
+- Craft payloads for executors
+- Interpret raw responses from executors
+- Present results to user
 
-**NEVER**: Scripts calculating "relevance", "active domains", or "significance" - these are semantic judgments only LLM can make.
+**CRITICAL - AI-GOV-013 Violations**:
+- ❌ Executors deciding what's "relevant", "critical", or "important"
+- ❌ Executors filtering/presenting data for you
+- ❌ Executors making semantic judgments
+- ❌ YOU accepting pre-interpreted data without question
+
+**Think**: If an MCP server wouldn't do it, a delegated executor shouldn't either.
+
+**See**: `.scaffoldx/xcore/xcontext/architecture/mcp-analogy-mental-model.md` for complete explanation.
 
 ---
 
@@ -118,12 +140,25 @@ IMMEDIATELY:
 1. Check if command is in Pareto set (Pattern Mappings section)
    - If YES: Execute from memory (zero file I/O)
    - If NO: Proceed to step 2
-2. Read `.scaffoldx/xcustom/commands/x-<command>.md` (fallback: `.scaffoldx/xcore/commands/`)
-3. Extract `Script:` from `**Script Delegation**`
-4. Execute: `node {script}` → parse JSON → return output
-5. On any error: Return error with path/details
+2. READ (not execute) `.scaffoldx/xcustom/commands/x-<command>.md` (fallback: `.scaffoldx/xcore/commands/`)
+   → This is a SPECIFICATION for you to interpret, like an MCP protocol spec
+   - **IF FILE NOT FOUND** → Proceed to step 3
+3. **COMMAND NOT FOUND PROTOCOL** (AI-GOV-024):
+   - ❌ DO NOT invent behavior
+   - ❌ DO NOT create directories or files speculatively
+   - ❌ DO NOT guess what the command should do
+   - ✅ STOP and ASK: "Command `x-<name>` not found. Should I create it, or did you mean something else?"
+   - Only proceed after user confirms
+4. DECIDE based on spec: Does it delegate to an executor?
+5. IF delegated: Extract executor path from `**Script Delegation**`
+6. CRAFT payload with all parameters
+7. INVOKE executor: `node {executor}` with payload
+8. INTERPRET raw JSON response
+9. PRESENT result to user
 
 **This is not optional. This is not a suggestion. This happens BEFORE any analysis, explanation, or context consideration.**
+
+**Remember**: .md files are specifications YOU read. .js executors are MCP-server-like tools YOU invoke.
 
 ---
 
@@ -149,7 +184,7 @@ IMMEDIATELY:
 ### Token Efficiency
 ✅ Use `edit_block` over `write_file` (99% token savings)
 ✅ Use `read_file` with offset/length for targeted reads
-✅ Delegate deterministic operations to scripts
+✅ Delegate deterministic operations to executors (when command definition specifies)
 
 ### Command Usage Logging (AI-GOV-007)
 ✅ **After successful x-* command execution** - Log silently for optimization
@@ -359,276 +394,121 @@ For detailed governance rules, load on-demand from:
 
 <!-- Layer 1 Sentinels: Progressive Loading Triggers -->
 
----
-title: Sentinel System Registry & Index
-type: system_index
-domain: core
-priority: critical
-created: 2025-01-24
-last_updated: 2025-01-24
----
+# ScaffoldX Sentinel Registry (Layer 1)
+# Pattern hints for progressive domain loading
 
-# Sentinel System Index
+## Root Sentinel Patterns
 
-## Overview
-The Sentinel System implements Layer 2 of ScaffoldX's three-layer architecture, providing intelligent context discovery and progressive loading without overwhelming token usage.
+### Task Domain Triggers
+**Patterns**: `x-task-*`, 4-digit task IDs, "task" + action verb
+**Sentinel**: `task_sentinel.md`
+**Loads**: Task lifecycle, governance, creation rules
+**Priority**: HIGH
 
-## Architecture Position
-```yaml
-Layer 1 (Pareto/NLP): 
-  - 58 essential commands
-  - Natural language mapping
-  - Always loaded (~2,000 tokens)
-  - Handles 90% of operations
+**Example Triggers**:
+- `x-task-create New Feature`
+- `Task 0308 is complete`
+- `Let's switch to task 0280`
 
-Layer 2 (Sentinel): 
-  - Pattern recognition triggers
-  - Progressive context loading
-  - Domain activation signals
-  - This system (~500 tokens)
+### Security Domain Triggers
+**Patterns**: `.env`, "API key", "password", "secret", "token"
+**Sentinel**: `security_sentinel.md`
+**Loads**: Enhanced security monitoring, credential detection
+**Priority**: IMMEDIATE
 
-Layer 3 (Complete):
-  - Full command set (150+)
-  - Comprehensive documentation
-  - Loaded only when needed
-  - (~15,000 tokens)
+**Example Triggers**:
+- `I need to update my .env file`
+- `What's my API key for...`
+- `The password should be...`
+
+### File Operations Domain Triggers
+**Patterns**: File paths mentioned, file verbs (read/write/edit/delete)
+**Sentinel**: `file_ops_sentinel.md`
+**Loads**: File operation governance, MCP best practices
+**Priority**: HIGH
+
+**Example Triggers**:
+- `Edit the file at /path/to/file.md`
+- `Read the configuration from config.json`
+- `Delete the old backup files`
+
+### Git Domain Triggers
+**Patterns**: `x-git-*`, "commit", "push", "branch", merge
+**Sentinel**: `git_sentinel.md`
+**Loads**: Git workflows, commit message conventions
+**Priority**: MEDIUM
+
+**Example Triggers**:
+- `x-git-commit "Fixed bug"`
+- `I need to push these changes`
+- `Create a new branch for feature-x`
+
+### Insight Domain Triggers
+**Patterns**: "weird", "unexpected", "strange", surprise expressions
+**Sentinel**: `insight_sentinel.md`
+**Loads**: Learning system, insight capture templates
+**Priority**: MEDIUM
+
+**Example Triggers**:
+- `That's weird, it should work`
+- `Unexpected behavior here`
+- `This is strange, let me capture this insight`
+
+## Sentinel Loading Instructions
+
+### Immediate Actions Required
+When patterns detected in user input:
+
+1. **SECURITY** → Load `.scaffoldx/xcore/internal/sentinels/domains/security_sentinel.md`
+2. **TASK** → Load `.scaffoldx/xcore/internal/sentinels/domains/task_sentinel.md`
+3. **FILE OPS** → Load `.scaffoldx/xcore/internal/sentinels/domains/file_ops_sentinel.md`
+4. **GIT** → Load `.scaffoldx/xcore/internal/sentinels/domains/git_sentinel.md`
+5. **INSIGHT** → Load `.scaffoldx/xcore/internal/sentinels/domains/insight_sentinel.md`
+
+### Loading Protocol
+```
+User Input → Pattern Match → Load Sentinel → Apply Governance → Execute with Context
 ```
 
-## Core Components
-
-### Pattern Definitions
-Located in `/patterns/`:
-
-1. **governance_sentinels.md**
-   - Security and compliance triggers
-   - Data protection patterns
-   - Framework integrity rules
-   - Always active for safety
-
-2. **domain_sentinels.md**
-   - Task, git, issue domain detection
-   - Progressive loading strategies
-   - Cross-domain interactions
-   - Context-aware activation
-
-3. **memory_sentinels.md**
-   - Insight and learning capture
-   - Knowledge gap detection
-   - Pattern recognition
-   - Continuous improvement
-
-4. **command_sentinels.md**
-   - Command discovery patterns
-   - Usage optimization
-   - Error recovery assistance
-   - Natural language mapping
-
-### Processing Engine
-Located in `/processor/`:
-
-**sentinel_processor.md**
-- AI interpretation logic
-- Proximity calculation engine
-- Loading decision framework
-- Integration specifications
-
-## Key Principles
-
-### 1. Unidirectional Flow
+### Example Flow
 ```
-✅ AI → Sentinel → Decision → Action
-❌ Sentinel → Control → AI Behavior
+User: "x-task-create New Feature"
+     ↓
+Pattern: "x-task-create" matches TASK domain
+     ↓
+AI: read_file(".scaffoldx/xcore/internal/sentinels/domains/task_sentinel.md")
+     ↓
+Apply: TASK-GOV-001 rules + creation patterns
+     ↓
+Execute: Create task with full context awareness
 ```
 
-### 2. Hints Not Commands
-Sentinels provide information for AI consideration, never mandatory actions.
+## Progressive Loading Benefits
 
-### 3. Progressive Discovery
-Start minimal, expand based on need, compress when inactive.
+### Token Efficiency
+- **Upfront**: Only essential patterns (~2KB)
+- **On-demand**: Domain-specific context when needed
+- **Total**: 94% reduction from full context loading
 
-### 4. Token Efficiency
-Target: <3,000 tokens for 90% of operations while maintaining full discoverability.
+### Performance
+- **Fast startup**: Minimal context loaded initially
+- **Smart expansion**: Load relevant domains automatically
+- **Contextual awareness**: Right information at right time
 
-## Proximity Model
+## Configuration Integration
 
-### Calculation Factors
-```yaml
-Temporal: How recently mentioned/used
-Contextual: How related to current work
-Hierarchical: Task/structural relationships
-```
+### Loading Strategies
+- **minimal**: Sentinel registry only (this file)
+- **pareto**: + top commands + governance
+- **sentinel**: + domain sentinels on trigger
+- **full**: All patterns upfront (legacy)
 
-### Loading Thresholds
-```yaml
-≥0.9: Full content
-0.7-0.9: Summaries
-0.5-0.7: Indexes only
-<0.5: Not loaded
-```
+### Config Location
+- **YAML**: `.scaffoldx/xconfig/context.yaml`
+- **JSON**: `.scaffoldx/xconfig/context-loading-config.json`
 
-## Activation Patterns
+*Sentinel Registry - Smart pattern detection for efficient context loading*
 
-### Always Active
-- Governance sentinels (security, data loss)
-- Memory sentinels (insight capture)
-- Critical error detection
-
-### Context-Activated
-- Domain sentinels (task, git, issue)
-- Command discovery
-- Workflow optimization
-
-### On-Demand
-- Learning assistance
-- Deep documentation
-- Historical patterns
-
-## Integration Points
-
-### With Layer 1 (Pareto)
-- Sentinels identify Layer 1 candidates
-- Usage tracking for optimization
-- Seamless handoff between layers
-
-### With Layer 3 (Complete)
-- Sentinels prevent unnecessary full loads
-- Enable targeted retrieval
-- Maintain discoverability
-
-### With Core Systems
-- Command processing enhancement
-- Governance enforcement
-- Memory system integration
-- Natural language understanding
-
-## Usage Examples
-
-### Example 1: Task Creation
-```markdown
-User: "I need to create a new task for API development"
-Sentinel: Task domain detected (proximity 0.8)
-Action: Load task templates, recent tasks summary
-Result: Rich context without full system load
-```
-
-### Example 2: Security Concern
-```markdown
-User: "Update the .env file with new keys"
-Sentinel: Security sentinel triggered (proximity 1.0)  
-Action: Load governance rules, block edit, suggest approach
-Result: Protection without workflow interruption
-```
-
-### Example 3: Learning Moment
-```markdown
-User: "That's weird, the command failed again"
-Sentinel: Friction + insight pattern detected
-Action: Capture context, document issue, suggest fix
-Result: Continuous improvement without asking
-```
-
-## Performance Metrics
-
-### Token Usage
-- Base load: ~2,500 tokens (Layer 1 + Sentinels)
-- Average operation: ~3,500 tokens
-- Complex operation: ~6,000 tokens
-- Full load avoided: ~15,000 tokens saved
-
-### Discovery Success
-- Command found rate: 95%
-- Context relevance: 90%
-- False positive rate: <5%
-- User interruptions: Near zero
-
-## Evolution & Learning
-
-### Pattern Maturation
-1. Sentinels detect patterns
-2. Track frequency and value
-3. Promote successful patterns
-4. Demote unused patterns
-5. System continuously improves
-
-### Feedback Loops
-- User behavior informs sentinel sensitivity
-- Success patterns strengthen triggers
-- Failures refine detection logic
-- System adapts to usage
-
-## Implementation Status
-
-### Completed
-- ✅ Sentinel pattern definitions
-- ✅ Processor specification
-- ✅ Integration architecture
-- ✅ Registry structure
-
-### Next Steps
-1. Connect to Knowledge Index (Task 0303)
-2. Update command processing flow
-3. Implement proximity calculations
-4. Test with real workflows
-5. Measure token savings
-
-## Quick Reference
-
-### Sentinel Types
-```markdown
-Governance → Security, compliance, protection
-Domain → Task, git, issue contexts  
-Memory → Insights, learning, knowledge
-Command → Discovery, usage, optimization
-```
-
-### Proximity Factors
-```markdown
-Temporal → How recent (0.0-1.0)
-Contextual → How related (0.0-1.0)
-Hierarchical → Structure (0.0-1.0)
-```
-
-### Loading Levels
-```markdown
-Full → Complete content (proximity ≥0.9)
-Summary → Key points (proximity 0.7-0.9)
-Index → List only (proximity 0.5-0.7)
-None → Not loaded (proximity <0.5)
-```
-
-## Troubleshooting
-
-### Too Much Loaded
-- Lower proximity thresholds
-- Tighten sentinel patterns
-- Increase compression triggers
-
-### Missing Context
-- Review sentinel patterns
-- Adjust proximity calculations
-- Add missing triggers
-
-### Token Overflow
-- Aggressive compression
-- Stricter proximity requirements
-- Priority-based loading
-
-## Related Documentation
-
-### Task References
-- Task 0255: Prompt Layering & Env Tooling (parent)
-- Task 0280: Intelligent Discovery System (architecture source)
-- Task 0300: Sentinel-based discovery (parallel development)
-- Task 0303: Knowledge Index metadata (data source)
-
-### System References
-- `/xcore/internal/command_system/` - NLP integration
-- `/xcore/internal/governance/` - Governance rules
-- `/xmemory/insights/` - Learning storage
-- `/xcore/commands/` - Command definitions
-
----
-*Sentinel System: Enabling discovery without token overflow since 2025*
 
 # ======================
 # LAYER 2: PROJECT-SPECIFIC CONTEXT
@@ -735,5 +615,5 @@ Without file system access, guide users to:
 
 ---
 Generated from template: claude-projects.template.md
-Build timestamp: 2025-12-27T01:16:25.190Z
+Build timestamp: 2025-12-31T03:34:40.420Z
 ScaffoldX version: 1.0.0

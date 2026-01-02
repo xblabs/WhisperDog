@@ -330,6 +330,16 @@ public class ConfigManager {
         saveConfig();
     }
 
+    // Minimum speech duration threshold (in seconds, e.g., 0.5)
+    public float getMinSpeechDuration() {
+        return Float.parseFloat(properties.getProperty("minSpeechDuration", "0.5"));
+    }
+
+    public void setMinSpeechDuration(float durationSeconds) {
+        properties.setProperty("minSpeechDuration", String.valueOf(durationSeconds));
+        saveConfig();
+    }
+
     // openwebUIApiKey
     public String getOpenWebUIApiKey() {
         return properties.getProperty("openWebUIApiKey", "");
@@ -785,6 +795,29 @@ public class ConfigManager {
      */
     public void clearLargeFileDefaultOption() {
         properties.remove("largeFileDefaultOption");
+        saveConfig();
+    }
+
+    // ========== Recording Warning Settings ==========
+
+    /**
+     * Gets the recording duration threshold (in seconds) after which a warning is shown.
+     * Default is 120 seconds (2 minutes). 0 means disabled.
+     *
+     * @return The warning threshold in seconds
+     */
+    public int getRecordingWarningDuration() {
+        return Integer.parseInt(properties.getProperty("recordingWarningDuration", "120"));
+    }
+
+    /**
+     * Sets the recording duration threshold (in seconds) after which a warning is shown.
+     * Set to 0 to disable the warning.
+     *
+     * @param durationSeconds The threshold in seconds
+     */
+    public void setRecordingWarningDuration(int durationSeconds) {
+        properties.setProperty("recordingWarningDuration", String.valueOf(durationSeconds));
         saveConfig();
     }
 

@@ -16,9 +16,11 @@ public class TrayIconManager {
     private MenuItem recordToggleMenuItem;
     private boolean isRecording;
     private boolean isProcessing;
+    private boolean isRecordingWarning;  // ISS_00007: Long recording warning state
     private final String trayIconPath = "/whisperdog_tray.png";
     private final String trayIconRecordingPath = "/whisperdog_recording.png";
     private final String trayIconProcessingPath = "/whisperdog_processing.png";
+    private final String trayIconWarningPath = "/whisperdog_warning.png";  // ISS_00007
 
     private static final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger(TrayIconManager.class);
 
@@ -74,9 +76,36 @@ public class TrayIconManager {
         updateTrayIcon();
     }
 
-    // Update tray icon based on current state (recording takes priority over processing)
+    /**
+     * Called when recording warning state changes (ISS_00007).
+     * Shows visual indicator when recording exceeds configured duration threshold.
+     */
+    public void setRecordingWarning(boolean warning) {
+        this.isRecordingWarning = warning;
+        updateTrayIcon();
+        // Update tooltip to indicate warning state
+        if (systemTray != null) {
+            if (warning) {
+                systemTray.setStatus("⚠ Recording is getting long...");
+            } else if (isRecording) {
+                systemTray.setStatus("Recording...");
+            } else {
+                systemTray.setStatus("WhisperDog");
+            }
+        }
+    }
+
+    // Update tray icon based on current state (warning > recording > processing > idle)
     private void updateTrayIcon() {
-        if (isRecording) {
+        if (isRecordingWarning && isRecording) {
+            // Warning state during recording (use warning icon if available, otherwise fall back to recording)
+            URL warningURL = TrayIconManager.class.getResource(trayIconWarningPath);
+            if (warningURL != null) {
+                setTrayImage(trayIconWarningPath);
+            } else {
+                setTrayImage(trayIconRecordingPath);  // Fallback if warning icon doesn't exist
+            }
+        } else if (isRecording) {
             setTrayImage(trayIconRecordingPath);
         } else if (isProcessing) {
             setTrayImage(trayIconProcessingPath);

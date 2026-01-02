@@ -3,8 +3,9 @@ issue_id: ISS_00007
 title: Sticky Recording Warning for Long Recordings
 type: enhancement
 priority: low
-status: open
+status: resolved
 created: 2025-12-30
+resolved: 2026-01-01
 tags: [recording, ui, user-experience]
 alias: WD-0007
 ---
@@ -17,10 +18,11 @@ Show a persistent visual warning indicator when recording exceeds a configurable
 
 ## Status
 
-- **Current Status**: open
+- **Current Status**: resolved ✅
 - **Priority**: low
 - **Type**: enhancement
 - **Created**: 2025-12-30
+- **Resolved**: 2026-01-01
 
 ## Tags
 
@@ -93,3 +95,40 @@ Settings → Audio → "Warn after recording: [slider] 2 min"
 ## Notes
 
 Feature request for improved user experience.
+
+---
+
+## Work Log
+
+### 2026-01-01 - Session 1
+
+**Diagnosis**: N/A - New feature implementation
+
+**Approach**: Implement configurable recording duration warning with:
+1. ConfigManager setting (recordingWarningDuration)
+2. Settings slider (0-10 min range, 0 = disabled)
+3. Timer-based duration check in RecorderForm
+4. Visual indicators (pulsing orange status circle, button text with elapsed time)
+5. Tray icon status update for minimized app
+
+**Steps Taken**:
+1. Added `getRecordingWarningDuration()` / `setRecordingWarningDuration()` to ConfigManager (default: 120s)
+2. Added slider to SettingsForm in Audio section with `formatDurationLabel()` helper
+3. Added Timer fields and `startRecordingWarningTimer()` / `stopRecordingWarningTimer()` methods to RecorderForm
+4. Modified status circle paint logic to pulse orange when warning active
+5. Button text shows elapsed time with warning icon when threshold exceeded
+6. Added `setRecordingWarning()` to TrayIconManager with tooltip update
+7. Console log shows warning message when triggered
+8. Build successful with `mvn compile`
+
+**Outcome**: Feature implemented successfully. All acceptance criteria met:
+- ✅ Setting added to ConfigManager
+- ✅ UI slider in Settings → Audio
+- ✅ Visual warning when threshold exceeded (pulsing circle + button text)
+- ✅ Tray icon indication for minimized state (status text update)
+
+**Code Locations**:
+- `ConfigManager.java:801-822`
+- `SettingsForm.java:48, 489-537, 942-952`
+- `RecorderForm.java:89-93, 110-148, 1056-1158`
+- `TrayIconManager.java:19, 23, 79-115`

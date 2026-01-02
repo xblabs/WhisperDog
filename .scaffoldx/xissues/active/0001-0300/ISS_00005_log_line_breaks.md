@@ -17,10 +17,11 @@ Add blank lines before and after transcribed text in the log output. This makes 
 
 ## Status
 
-- **Current Status**: open
+- **Current Status**: resolved
 - **Priority**: low
 - **Type**: enhancement
 - **Created**: 2025-12-30
+- **Resolved**: 2025-12-31
 
 ## Tags
 
@@ -103,3 +104,20 @@ appendLog("");
 ## Notes
 
 Quality of life improvement for readability.
+
+## Work Log
+
+### 2025-12-31 - Session 1
+
+**Diagnosis**: Transcription text was not being logged to the UI console panel (ConsoleLogger). Only status messages like "Transcription completed" appeared in the console.
+
+**Approach**: Add a new `logTranscript()` method to ConsoleLogger that outputs transcript text with blank lines before/after and without timestamp prefix for easy selection.
+
+**Steps Taken**:
+1. Added `logTranscript(String transcript)` method to `ConsoleLogger.java:60-68`
+2. Integrated in `RecorderForm.java` at all three transcription completion points:
+   - Line 700: Chunked transcription
+   - Line 816: Faster-Whisper transcription
+   - Line 1315: Standard transcription
+
+**Outcome**: Success - build compiles, transcript text will now appear in console log with visual separation.

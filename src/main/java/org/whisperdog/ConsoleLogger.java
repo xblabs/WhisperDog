@@ -53,6 +53,21 @@ public class ConsoleLogger {
         log("✓ " + message);
     }
 
+    /**
+     * Logs transcription text with blank lines before and after for visual separation.
+     * The transcript is logged without a timestamp prefix for easier text selection.
+     */
+    public void logTranscript(String transcript) {
+        if (consoleArea != null && transcript != null && !transcript.trim().isEmpty()) {
+            SwingUtilities.invokeLater(() -> {
+                consoleArea.append("\n");  // blank line before
+                consoleArea.append(transcript + "\n");  // transcript without timestamp
+                consoleArea.append("\n");  // blank line after
+                consoleArea.setCaretPosition(consoleArea.getDocument().getLength());
+            });
+        }
+    }
+
     public void clear() {
         if (consoleArea != null) {
             SwingUtilities.invokeLater(() -> consoleArea.setText(""));

@@ -3,7 +3,7 @@ issue_id: ISS_00004
 title: Prompt before transcribing large recordings with high silence
 type: enhancement
 priority: low
-status: open
+status: resolved
 created: 2025-12-30
 tags: [user-experience, validation]
 alias: WD-0005
@@ -108,3 +108,41 @@ if (duration > LONG_DURATION_THRESHOLD &&
 ## Notes
 
 Feature request for improved user experience.
+
+## Work Log
+
+### Session: 2025-12-31
+
+**Diagnosis**:
+- Need to warn users before transcribing recordings with high silence ratio
+- Existing `SilenceRemover.removeSilence()` calculates metrics but doesn't expose them
+- `AudioTranscriptionWorker.doInBackground()` is the integration point
+
+**Approach**:
+- Add pre-flight analysis capability to `SilenceRemover`
+- Create modal dialog for user confirmation
+- Integrate into transcription flow before silence removal
+
+**Steps Taken**:
+1. Created `SilenceAnalysisResult` class in `SilenceRemover.java` with:
+   - `durationSeconds`, `silenceRatio`, `estimatedUsefulSeconds`
+   - `exceedsWarningThreshold` flag (>600s AND >50% silence)
+   - Formatted display methods
+2. Added `analyzeForSilence()` method for pre-flight analysis
+3. Added `detectSilenceQuiet()` helper (no console logging)
+4. Created `LargeRecordingWarningDialog.java`:
+   - Displays duration, silence %, estimated useful audio
+   - "Transcribe Anyway" and "Cancel" buttons
+5. Modified `AudioTranscriptionWorker.doInBackground()`:
+   - Pre-flight analysis before silence removal
+   - Shows dialog via `SwingUtilities.invokeAndWait()` if threshold exceeded
+   - Tracks `cancelledByUser` for graceful abort handling
+6. Updated `AudioTranscriptionWorker.done()`:
+   - Handles user cancellation without error messages
+   - Shows "Transcription cancelled" notification
+7. Verified build: `mvn compile` → BUILD SUCCESS
+
+**Outcome**:
+- Feature implemented as specified
+- Thresholds: 600s (10 min) duration AND 50% silence
+- Status: resolved (pending manual testing)

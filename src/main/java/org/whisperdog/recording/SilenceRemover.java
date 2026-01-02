@@ -22,6 +22,45 @@ public class SilenceRemover {
         org.apache.logging.log4j.LogManager.getLogger(SilenceRemover.class);
 
     /**
+     * Result of silence analysis containing duration and silence metrics.
+     * Used for pre-flight checks before processing large recordings.
+     */
+    public static class SilenceAnalysisResult {
+        public final float durationSeconds;
+        public final float silenceRatio;  // 0.0 to 1.0
+        public final float estimatedUsefulSeconds;
+        public final boolean exceedsWarningThreshold;
+
+        public SilenceAnalysisResult(float durationSeconds, float silenceRatio) {
+            this.durationSeconds = durationSeconds;
+            this.silenceRatio = silenceRatio;
+            this.estimatedUsefulSeconds = durationSeconds * (1.0f - silenceRatio);
+            // Threshold: duration > 600s (10 min) AND silence > 50%
+            this.exceedsWarningThreshold = durationSeconds > 600.0f && silenceRatio > 0.5f;
+        }
+
+        public String getFormattedDuration() {
+            int minutes = (int) (durationSeconds / 60);
+            int seconds = (int) (durationSeconds % 60);
+            return String.format("%d min %d sec", minutes, seconds);
+        }
+
+        public String getFormattedSilencePercent() {
+            return String.format("%.0f%%", silenceRatio * 100);
+        }
+
+        public String getFormattedUsefulDuration() {
+            int minutes = (int) (estimatedUsefulSeconds / 60);
+            int seconds = (int) (estimatedUsefulSeconds % 60);
+            if (minutes > 0) {
+                return String.format("~%d min %d sec", minutes, seconds);
+            } else {
+                return String.format("~%d sec", seconds);
+            }
+        }
+    }
+
+    /**
      * Represents a silent region in the audio.
      */
     private static class SilenceRegion {
@@ -185,6 +224,119 @@ public class SilenceRemover {
             console.log("Using original audio file");
             return originalFile;
         }
+    }
+
+    /**
+     * Analyzes an audio file for silence without processing it.
+     * Used for pre-flight checks to warn about long recordings with high silence.
+     *
+     * @param audioFile The audio file to analyze
+     * @param silenceThresholdRMS RMS threshold for silence detection
+     * @param minSilenceDurationMs Minimum duration to consider as silence
+     * @return Analysis result with duration and silence metrics, or null if analysis fails
+     */
+    public static SilenceAnalysisResult analyzeForSilence(File audioFile, float silenceThresholdRMS,
+                                                           int minSilenceDurationMs) {
+        try {
+            // Read audio file
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
+            AudioFormat format = audioStream.getFormat();
+
+            // Validate format
+            if (format.getEncoding() != AudioFormat.Encoding.PCM_SIGNED) {
+                audioStream.close();
+                return null;  // Can't analyze non-PCM audio
+            }
+
+            // Read all audio data into memory
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = audioStream.read(buffer)) != -1) {
+                baos.write(buffer, 0, bytesRead);
+            }
+            audioStream.close();
+
+            byte[] audioData = baos.toByteArray();
+
+            // Calculate duration
+            float sampleRate = format.getSampleRate();
+            int frameSize = format.getFrameSize();
+            long totalFrames = audioData.length / frameSize;
+            float durationSec = totalFrames / sampleRate;
+
+            if (durationSec < 1.0f) {
+                return new SilenceAnalysisResult(durationSec, 0.0f);  // Too short, no silence analysis
+            }
+
+            // Detect silence regions (without logging)
+            List<SilenceRegion> silences = detectSilenceQuiet(audioData, format,
+                silenceThresholdRMS, minSilenceDurationMs);
+
+            // Calculate silence ratio
+            long totalSilenceFrames = silences.stream()
+                .mapToLong(SilenceRegion::getDurationFrames)
+                .sum();
+            float silenceRatio = (float) totalSilenceFrames / totalFrames;
+
+            return new SilenceAnalysisResult(durationSec, silenceRatio);
+
+        } catch (Exception e) {
+            logger.error("Error analyzing audio for silence", e);
+            return null;
+        }
+    }
+
+    /**
+     * Detects silence regions without console logging.
+     * Used by analyzeForSilence() for quiet pre-flight analysis.
+     */
+    private static List<SilenceRegion> detectSilenceQuiet(byte[] audioData, AudioFormat format,
+                                                          float silenceThresholdRMS, int minSilenceDurationMs) {
+        List<SilenceRegion> silences = new ArrayList<>();
+
+        float sampleRate = format.getSampleRate();
+        int frameSize = format.getFrameSize();
+        int sampleSizeInBytes = format.getSampleSizeInBits() / 8;
+        boolean isBigEndian = format.isBigEndian();
+
+        int windowFrames = (int) (sampleRate * 0.1);  // 100ms windows
+        int windowBytes = windowFrames * frameSize;
+        long minSilenceFrames = (long) ((minSilenceDurationMs / 1000.0) * sampleRate);
+
+        long silenceStartFrame = -1;
+
+        for (int offset = 0; offset < audioData.length; offset += windowBytes) {
+            int length = Math.min(windowBytes, audioData.length - offset);
+            float rms = calculateRMS(audioData, offset, length, sampleSizeInBytes, isBigEndian);
+
+            long currentFrame = offset / frameSize;
+
+            if (rms < silenceThresholdRMS) {
+                if (silenceStartFrame == -1) {
+                    silenceStartFrame = currentFrame;
+                }
+            } else {
+                if (silenceStartFrame != -1) {
+                    long silenceDuration = currentFrame - silenceStartFrame;
+                    if (silenceDuration >= minSilenceFrames) {
+                        silences.add(new SilenceRegion(silenceStartFrame, currentFrame));
+                    }
+                    silenceStartFrame = -1;
+                }
+            }
+        }
+
+        // Handle silence at end of file
+        if (silenceStartFrame != -1) {
+            long endFrame = audioData.length / frameSize;
+            long silenceDuration = endFrame - silenceStartFrame;
+            if (silenceDuration >= minSilenceFrames) {
+                silences.add(new SilenceRegion(silenceStartFrame, endFrame));
+            }
+        }
+
+        return silences;
     }
 
     /**

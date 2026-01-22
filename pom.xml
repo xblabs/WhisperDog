@@ -11,12 +11,19 @@
     <description>Your attentive audio companion for transcription and text processing</description>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
+
+        <!-- XT-Audio for WASAPI loopback (system audio capture) -->
+        <dependency>
+            <groupId>com.github.sjoerdvankreel</groupId>
+            <artifactId>xt.audio</artifactId>
+            <version>2.0</version>
+        </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
         <dependency>
@@ -100,6 +107,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- SLF4J to Log4j2 bridge -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>2.20.0</version>
+        </dependency>
         <!-- Apache HttpClient -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -133,6 +146,12 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <mainClass>org.whisperdog.AudioRecorderUI</mainClass>
+                    <options>
+                        <option>--enable-native-access=ALL-UNNAMED</option>
+                    </options>
+                </configuration>
             </plugin>
 
             <plugin>

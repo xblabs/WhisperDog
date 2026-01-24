@@ -3,23 +3,25 @@
     {
       "id": "0002",
       "name": "Error Handling & Retry Mechanism",
-      "status": "todo",
+      "status": "review",
+      "progress": 95,
       "priority": "critical",
       "created": "2025-12-30",
-      "updated": "2025-12-30",
+      "updated": "2026-01-02",
       "task_type": "executable",
       "tags": ["reliability", "error-handling", "retry", "openai-api", "user-experience"],
-      "dependencies": ["BUG-003"],
+      "dependencies": [],
       "directory": ".scaffoldx/xtasks/0002_error_handling_retry_mechanism",
       "description": "Implement intelligent error handling and retry mechanism for OpenAI transcription failures with automatic retry for transient errors and user prompts for actionable errors"
     },
     {
       "id": "0003",
       "name": "Mic Test Screen",
-      "status": "todo",
+      "status": "review",
+      "progress": 95,
       "priority": "medium",
       "created": "2025-12-30",
-      "updated": "2025-12-30",
+      "updated": "2026-01-02",
       "task_type": "executable",
       "tags": ["audio", "mic-test", "silence-detection", "calibration", "user-experience"],
       "directory": ".scaffoldx/xtasks/0003_audio_processing_pipeline",
@@ -28,10 +30,11 @@
     {
       "id": "0004",
       "name": "UI/UX Improvements",
-      "status": "todo",
+      "status": "review",
+      "progress": 78,
       "priority": "medium",
       "created": "2025-12-30",
-      "updated": "2025-12-30",
+      "updated": "2026-01-22",
       "task_type": "executable",
       "tags": ["ui", "ux", "post-processing", "search", "polish"],
       "directory": ".scaffoldx/xtasks/0004_ui_ux_improvements",
@@ -41,6 +44,7 @@
       "id": "0005",
       "name": "MP4 Drag-Drop Support",
       "status": "todo",
+      "progress": 0,
       "priority": "low",
       "created": "2025-12-30",
       "updated": "2025-12-30",
@@ -48,11 +52,39 @@
       "tags": ["audio", "mp4", "ffmpeg", "drag-drop", "file-handling"],
       "directory": ".scaffoldx/xtasks/0005_mp4_drag_drop_support",
       "description": "Add support for dragging MP4 files onto the app window, auto-extracting audio via ffmpeg for transcription"
+    },
+    {
+      "id": "0006",
+      "name": "System Audio Capture",
+      "status": "todo",
+      "progress": 0,
+      "priority": "high",
+      "created": "2026-01-22",
+      "updated": "2026-01-22",
+      "task_type": "executable",
+      "tags": ["audio", "dual-source", "system-audio", "attribution", "recording", "wasapi"],
+      "dependencies": [],
+      "directory": ".scaffoldx/xtasks/0006_system_audio_capture",
+      "description": "Dual-source recording: capture mic (User) and system audio (External) simultaneously with source-level attribution"
+    }
+    ,{
+      "id": "0007",
+      "name": "Whisper Vocabulary Hints",
+      "status": "todo",
+      "progress": 0,
+      "priority": "medium",
+      "created": "2026-01-23",
+      "updated": "2026-01-23",
+      "task_type": "executable",
+      "tags": ["transcription", "whisper", "vocabulary", "prompt", "accuracy"],
+      "dependencies": [],
+      "directory": ".scaffoldx/xtasks/0007_whisper_vocabulary_hints",
+      "description": "Add vocabulary hints setting that sends prompt parameter to Whisper API for proper noun/acronym priming"
     }
   ],
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2025-12-30T16:00:00.000Z",
-    "total_tasks": 5
+    "last_updated": "2026-01-23T00:00:00.000Z",
+    "total_tasks": 6
   }
 }

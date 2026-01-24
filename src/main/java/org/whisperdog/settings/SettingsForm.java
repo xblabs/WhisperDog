@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.whisperdog.ConfigManager;
 import org.whisperdog.Notificationmanager;
 import org.whisperdog.ToastNotification;
+import org.whisperdog.audio.SystemAudioCapture;
 import org.whisperdog.ui.MicTestPanel;
 import org.whisperdog.recording.clients.FasterWhisperModel;
 import org.whisperdog.recording.clients.FasterWhisperModelsResponse;
@@ -131,6 +132,7 @@ public class SettingsForm extends JPanel {
         gbc.anchor = GridBagConstraints.EAST;
         contentPanel.add(new JLabel("Global key combination:"), gbc);
         keyCombinationTextField = new KeyCombinationTextField();
+        keyCombinationTextField.setOnChangeCallback(() -> settingsDirty = true);
         gbc.gridx = 1;
         gbc.gridy = row;
         gbc.gridwidth = 1;
@@ -146,6 +148,7 @@ public class SettingsForm extends JPanel {
         clearKeybindButton.addActionListener(e -> {
             keyCombinationTextField.setText("");
             keyCombinationTextField.setKeysDisplayed(new HashSet<>());
+            settingsDirty = true;
         });
 
         // Row: Global key sequence
@@ -157,6 +160,7 @@ public class SettingsForm extends JPanel {
         gbc.anchor = GridBagConstraints.EAST;
         contentPanel.add(new JLabel("Global key sequence:"), gbc);
         keySequenceTextField = new KeySequenceTextField();
+        keySequenceTextField.setOnChangeCallback(() -> settingsDirty = true);
         gbc.gridx = 1;
         gbc.gridy = row;
         gbc.gridwidth = 1;
@@ -172,6 +176,7 @@ public class SettingsForm extends JPanel {
         clearKeySequenceButton.addActionListener(e -> {
             keySequenceTextField.setText("");
             keySequenceTextField.setKeysDisplayed(new ArrayList<>());
+            settingsDirty = true;
         });
 
         // Row: Microphone selection
@@ -296,24 +301,28 @@ public class SettingsForm extends JPanel {
         contentPanel.add(thresholdLabel, gbc);
 
         JPanel thresholdPanel = new JPanel(new BorderLayout(5, 0));
-        silenceThresholdSlider = new JSlider(1, 50, (int)(configManager.getSilenceThreshold() * 1000));
+        // Use dB scale (-60dB to -20dB) for more intuitive control
+        int initialDb = rmsToDb(configManager.getSilenceThreshold());
+        silenceThresholdSlider = new JSlider(-60, -20, Math.max(-60, Math.min(-20, initialDb)));
         silenceThresholdSlider.setMajorTickSpacing(10);
         silenceThresholdSlider.setMinorTickSpacing(5);
         silenceThresholdSlider.setPaintTicks(true);
-        JLabel thresholdValueLabel = new JLabel(String.format("%.3f", configManager.getSilenceThreshold()));
+        silenceThresholdSlider.setPaintLabels(true);
+        JLabel thresholdValueLabel = new JLabel(formatDbLabel(initialDb, configManager.getSilenceThreshold()));
         thresholdPanel.add(silenceThresholdSlider, BorderLayout.CENTER);
         thresholdPanel.add(thresholdValueLabel, BorderLayout.EAST);
 
         silenceThresholdSlider.addChangeListener(e -> {
-            float value = silenceThresholdSlider.getValue() / 1000.0f;
-            thresholdValueLabel.setText(String.format("%.3f", value));
+            int dbValue = silenceThresholdSlider.getValue();
+            double rmsValue = dbToRms(dbValue);
+            thresholdValueLabel.setText(formatDbLabel(dbValue, rmsValue));
             // Update threshold indicator on volume bar
-            volumeBar.setThreshold((int)(value * 100));
+            volumeBar.setThreshold((int)(rmsValue * 100));
             // Mark settings as dirty when user interacts
             settingsDirty = true;
             // Auto-save when slider stops moving (not dragging)
             if (!silenceThresholdSlider.getValueIsAdjusting()) {
-                configManager.setSilenceThreshold(value);
+                configManager.setSilenceThreshold((float) rmsValue);
             }
         });
 
@@ -363,7 +372,8 @@ public class SettingsForm extends JPanel {
             });
             dialog.setVisible(true);
             // After dialog closes, reload threshold value in case it was changed
-            silenceThresholdSlider.setValue((int)(configManager.getSilenceThreshold() * 1000));
+            int reloadedDb = rmsToDb(configManager.getSilenceThreshold());
+            silenceThresholdSlider.setValue(Math.max(-60, Math.min(-20, reloadedDb)));
             volumeBar.setThreshold((int)(configManager.getSilenceThreshold() * 100));
         });
         contentPanel.add(calibrateButton, gbc);
@@ -586,6 +596,74 @@ public class SettingsForm extends JPanel {
         contentPanel.add(keepCompressedSwitch, gbc);
 
         row++;
+
+        // System Audio Settings (only shown when WASAPI loopback is available)
+        if (SystemAudioCapture.isAvailable()) {
+            gbc.gridx = 0;
+            gbc.gridy = row;
+            gbc.gridwidth = 1;
+            gbc.weightx = 0;
+            gbc.anchor = GridBagConstraints.EAST;
+            contentPanel.add(new JLabel("System audio capture:"), gbc);
+
+            JCheckBox systemAudioDefaultSwitch = new JCheckBox("Enable by default");
+            systemAudioDefaultSwitch.setSelected(configManager.isSystemAudioEnabled());
+            systemAudioDefaultSwitch.setToolTipText("When checked, system audio capture will be enabled by default on the recording panel");
+            systemAudioDefaultSwitch.addActionListener(e -> {
+                configManager.setSystemAudioEnabled(systemAudioDefaultSwitch.isSelected());
+                settingsDirty = true;
+            });
+            gbc.gridx = 1;
+            gbc.gridy = row;
+            gbc.gridwidth = 2;
+            gbc.weightx = 1.0;
+            gbc.anchor = GridBagConstraints.WEST;
+            contentPanel.add(systemAudioDefaultSwitch, gbc);
+
+            row++;
+
+            // Loopback device selector
+            gbc.gridx = 0;
+            gbc.gridy = row;
+            gbc.gridwidth = 1;
+            gbc.weightx = 0;
+            gbc.anchor = GridBagConstraints.EAST;
+            contentPanel.add(new JLabel("Loopback device:"), gbc);
+
+            String[] loopbackDevices = SystemAudioCapture.listLoopbackDevices();
+            JComboBox<String> loopbackDeviceCombo = new JComboBox<>();
+            loopbackDeviceCombo.addItem("(Default)");
+            for (String dev : loopbackDevices) {
+                loopbackDeviceCombo.addItem(dev);
+            }
+            String savedDevice = configManager.getSystemAudioDevice();
+            if (savedDevice != null && !savedDevice.isEmpty()) {
+                for (int i = 0; i < loopbackDeviceCombo.getItemCount(); i++) {
+                    if (loopbackDeviceCombo.getItemAt(i).contains(savedDevice)) {
+                        loopbackDeviceCombo.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+            loopbackDeviceCombo.setToolTipText("Select which audio output device to capture system audio from");
+            loopbackDeviceCombo.addActionListener(e -> {
+                int idx = loopbackDeviceCombo.getSelectedIndex();
+                if (idx <= 0) {
+                    configManager.setSystemAudioDevice("");
+                } else {
+                    configManager.setSystemAudioDevice((String) loopbackDeviceCombo.getSelectedItem());
+                }
+                settingsDirty = true;
+            });
+            gbc.gridx = 1;
+            gbc.gridy = row;
+            gbc.gridwidth = 2;
+            gbc.weightx = 1.0;
+            gbc.anchor = GridBagConstraints.WEST;
+            contentPanel.add(loopbackDeviceCombo, gbc);
+
+            row++;
+        }
 
         JPanel apiSettingsPanel = new JPanel(new GridBagLayout());
         apiSettingsPanel.setBorder(BorderFactory.createTitledBorder("API Settings"));
@@ -1061,15 +1139,29 @@ public class SettingsForm extends JPanel {
     }
 
     private class TestWorker extends SwingWorker<Void, Integer> {
+        // 100ms window at 16kHz, 16-bit = 3200 bytes (matches SilenceRemover)
+        private static final int WINDOW_BYTES = 3200;
+        private final byte[] windowBuffer = new byte[WINDOW_BYTES];
+        private int windowPosition = 0;
+
         @Override
         protected Void doInBackground() {
             byte[] buffer = new byte[1024];
             while (!isCancelled()) {
                 int bytesRead = line.read(buffer, 0, buffer.length);
                 if (bytesRead > 0) {
-                    double rms = calculateRMS(buffer, bytesRead);
-                    int volume = (int) (rms * 100);
-                    publish(volume);
+                    // Accumulate into 100ms window buffer
+                    int bytesToCopy = Math.min(bytesRead, WINDOW_BYTES - windowPosition);
+                    System.arraycopy(buffer, 0, windowBuffer, windowPosition, bytesToCopy);
+                    windowPosition += bytesToCopy;
+
+                    // When window is full, calculate RMS and reset
+                    if (windowPosition >= WINDOW_BYTES) {
+                        double rms = calculateRMS(windowBuffer, WINDOW_BYTES);
+                        int volume = (int) (rms * 100);
+                        publish(volume);
+                        windowPosition = 0;
+                    }
                 }
             }
             return null;
@@ -1274,7 +1366,7 @@ public class SettingsForm extends JPanel {
 
         // Save silence removal settings
         configManager.setSilenceRemovalEnabled(silenceRemovalSwitch.isSelected());
-        configManager.setSilenceThreshold(silenceThresholdSlider.getValue() / 1000.0f);
+        configManager.setSilenceThreshold((float) dbToRms(silenceThresholdSlider.getValue()));
         configManager.setMinSilenceDuration(minSilenceDurationSlider.getValue());
         configManager.setMinRecordingDurationForSilenceRemoval(minRecordingDurationSlider.getValue());
         configManager.setMinSpeechDuration(minSpeechDurationSlider.getValue() / 10.0f);
@@ -1305,5 +1397,35 @@ public class SettingsForm extends JPanel {
      */
     public void saveSettings() {
         saveSettings(null);
+    }
+
+    /**
+     * Convert RMS value to decibels.
+     * @param rms RMS value (0.0 to 1.0)
+     * @return dB value (clamped to -60 to 0)
+     */
+    private static int rmsToDb(double rms) {
+        if (rms <= 0) return -60;
+        int db = (int) Math.round(20 * Math.log10(rms));
+        return Math.max(-60, Math.min(0, db));
+    }
+
+    /**
+     * Convert decibels to RMS value.
+     * @param db Decibel value
+     * @return RMS value (0.0 to 1.0)
+     */
+    private static double dbToRms(int db) {
+        return Math.pow(10, db / 20.0);
+    }
+
+    /**
+     * Format the dB label to show both dB and RMS values.
+     * @param db Decibel value
+     * @param rms RMS value
+     * @return Formatted string like "-40dB (0.010)"
+     */
+    private static String formatDbLabel(int db, double rms) {
+        return String.format("%ddB (%.3f)", db, rms);
     }
 }

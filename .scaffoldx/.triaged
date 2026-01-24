@@ -13,9 +13,9 @@ version: 3.2.0
 
 ## Summary
 
-- Tasks created: 4
+- Tasks created: 5
 - Tasks modified: 1
-- Issues created: 7
+- Issues created: 9
 
 ## Decisions
 
@@ -35,6 +35,7 @@ version: 3.2.0
 | 0003 | Mic Test Screen | todo | created |
 | 0004 | UI/UX Improvements | todo | modified |
 | 0005 | MP4 Drag-Drop Support | todo | created |
+| 0006 | System Audio Capture | todo | created |
 
 ### Issues
 
@@ -47,6 +48,8 @@ version: 3.2.0
 | ISS_00005 | WD-0010 | Log line breaks for readability |
 | ISS_00006 | WD-0006 | Min non-silence threshold |
 | ISS_00007 | WD-0007 | Sticky recording warning |
+| ISS_00008 | - | Validate file type before OpenAI submission |
+| ISS_00009 | - | RMS window size mismatch in calibration |
 
 ## Disposition
 
@@ -268,6 +271,95 @@ mvn package          # Build app
 
 ---
 
+### [8] ISS_00008 - File Type Validation ✅
+
+**Back-reference**: `x-issue-start 00008` → `.scaffoldx/xissues/active/0001-0300/ISS_00008_file_type_validation.md`
+**Related Task**: Task 0002 (Error Handling)
+**Code Location**: `TranscriptionValidator.java:50-95` | `OpenAITranscribeClient.java:188-196`
+
+**What was done**:
+
+- Added SUPPORTED_EXTENSIONS constant (flac, m4a, mp3, mp4, mpeg, mpga, oga, ogg, wav, webm)
+- Added validateFileType() method to check extension before API call
+- Added isSupportedFileType() helper for non-throwing validation
+- Added getSupportedFormatsDisplay() for user-friendly format list
+- Integrated into transcribe() method - fails fast before any processing
+
+**Root cause**: Non-audio files (images, PDFs) sent to OpenAI API returned cryptic HTTP 400 "Could not parse multipart form" errors instead of helpful user messages.
+
+**To test**:
+
+- [ ] Build: `mvn package`
+- [ ] Drag/drop a .jpg or .pdf file → verify error dialog shows supported formats
+- [ ] Verify NO API call made (check logs)
+- [ ] Drag/drop valid .wav or .mp3 → verify transcription proceeds normally
+
+**Test result**:
+
+---
+
+### [9] ISS_00009 - RMS Window Size Mismatch ✅
+
+**Back-reference**: `x-issue-start 00009` → `.scaffoldx/xissues/active/0001-0300/ISS_00009_rms_window_mismatch.md`
+**Related Task**: Task 0003 (Mic Test Screen)
+**Code Location**: `AudioAnalyzer.java:81` | `SettingsForm.java:1087`
+
+**What was done**:
+
+- Standardized all RMS analysis to 100ms windows (matching SilenceRemover)
+- AudioAnalyzer.java: Changed from 20ms to 100ms windows
+- SettingsForm.java: Added rolling buffer for 100ms sample accumulation
+
+**Root cause**: Three different RMS window sizes (20ms, 32ms, 100ms) caused calibration in MicTest to not match actual silence removal behavior. Shorter windows showed more variance, making calibrated thresholds appear to "chop into audio".
+
+**To test**:
+
+- [ ] Build: `mvn package`
+- [ ] Open Settings → Audio tab, watch live VU meter
+- [ ] Note the RMS values shown for normal speech
+- [ ] Open MicTest screen, calibrate threshold with moderate speech
+- [ ] Record same speech in main app
+- [ ] Verify silence removal matches calibration preview (no unexpected cutting)
+
+**Test result**:
+
+---
+
+### [10] Task 0004 Phase 3 - ProcessProgressPanel ✅
+
+**Back-reference**: Task 0004 Phase 3 → `.scaffoldx/xtasks/0004_ui_ux_improvements/03_checklist.md`
+**Related Task**: Task 0004 (UI/UX Improvements)
+**Code Location**: `ui/ProcessProgressPanel.java` | `ui/Spacing.java` | `ui/Icons.java` | `RecorderForm.java`
+
+**What was done**:
+
+- Created Spacing.java - 8px base unit spacing utilities
+- Created Icons.java - FlatSVGIcon manager with caching
+- Created ProcessProgressPanel.java - Full-featured progress panel:
+  - File path display with truncation
+  - Copy Path button (clipboard integration)
+  - Open Folder button (file explorer)
+  - Cancel button with operation abort
+  - Retry button for failed operations
+  - Dismiss button
+  - Stage-aware progress bar integration
+- Integrated into RecorderForm with helper methods
+
+**To test**:
+
+- [ ] Build: `mvn package`
+- [ ] Drag/drop an audio file → verify ProcessProgressPanel appears
+- [ ] Verify file path shown (truncated if long)
+- [ ] Click Copy Path → paste in text editor → verify correct path
+- [ ] Click Open Folder → verify explorer opens to file location
+- [ ] Click Cancel during transcription → verify operation aborts
+- [ ] After error, click Retry → verify transcription restarts
+- [ ] After success, click Dismiss → verify panel hides
+
+**Test result**:
+
+---
+
 ## Pending Work
 
 > Entries added as work completes. Each includes back-reference and test steps.
@@ -277,10 +369,11 @@ mvn package          # Build app
 | ID | Name | Status |
 |----|------|--------|
 | 0001 | WhisperDog Rebranding | 🟡 In Progress |
-| 0002 | Error Handling & Retry Mechanism | 🔴 Todo |
-| 0003 | Mic Test Screen | 🔴 Todo |
-| 0004 | UI/UX Improvements | 🔴 Todo |
+| 0002 | Error Handling & Retry Mechanism | 🟡 Review |
+| 0003 | Mic Test Screen | 🟡 Review |
+| 0004 | UI/UX Improvements | ✅ Complete |
 | 0005 | MP4 Drag-Drop Support | 🔴 Todo |
+| 0006 | System Audio Capture | 🔴 Todo |
 
 ### Issues
 
@@ -292,6 +385,8 @@ mvn package          # Build app
 | ISS_00005 | WD-0010 | Task 0004 | ✅ Resolved |
 | ISS_00006 | WD-0006 | (from 0003) | ✅ Resolved |
 | ISS_00007 | WD-0007 | (from 0003) | ✅ Resolved |
+| ISS_00008 | - | Task 0002 | ✅ Resolved |
+| ISS_00009 | - | Task 0003 | ✅ Resolved |
 
 ---
 
@@ -309,3 +404,8 @@ mvn package          # Build app
 | 2025-12-31 | ISS_00005 resolved - log line breaks for transcription text |
 | 2025-12-31 | ISS_00006 resolved - min speech duration threshold feature |
 | 2026-01-01 | ISS_00007 resolved - sticky recording warning (pulsing indicator + tray status) |
+| 2026-01-02 | ISS_00008 resolved - file type validation before API call |
+| 2026-01-06 | Task 0004 Phase 3 complete - ProcessProgressPanel implementation |
+| 2026-01-06 | ISS_00009 resolved - RMS window size mismatch (standardized to 100ms) |
+| 2026-01-06 | Session transition: TRANS_2026_01_06_002 |
+| 2026-01-22 | Task 0006 created - System Audio Capture (triaged from WB 030) |

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 public class KeyCombinationTextField extends JTextField {
     private final Set<Integer> keysPressed = new HashSet<>();
     private Set<Integer> keysDisplayed = new HashSet<>();
+    private Runnable onChangeCallback;
 
     public KeyCombinationTextField() {
         disableDefaultKeyBindings();
@@ -56,6 +57,13 @@ public class KeyCombinationTextField extends JTextField {
                 .collect(Collectors.joining("+"));
         setText(newKeyCombination);
         keysDisplayed = new HashSet<>(keysPressed);
+        if (onChangeCallback != null) {
+            onChangeCallback.run();
+        }
+    }
+
+    public void setOnChangeCallback(Runnable callback) {
+        this.onChangeCallback = callback;
     }
 
     public Set<Integer> getKeysDisplayed() {

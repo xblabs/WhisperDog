@@ -3,8 +3,9 @@ issue_id: ISS_00003
 title: Pipeline button disabled after recording stops
 type: bug
 priority: high
-status: open
+status: resolved
 created: 2025-12-30
+resolved: 2025-12-31
 tags: [state-management, ui]
 alias: BUG-002
 ---

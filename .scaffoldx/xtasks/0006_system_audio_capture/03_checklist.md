@@ -20,43 +20,43 @@
 - [x] Create `SystemAudioCapture` class with WASAPI integration
 - [x] Implement `isAvailable()` to check platform support
 - [x] Implement `start()`, `pause()`, `resume()`, `stop()` methods
-- [ ] Create `AudioCaptureManager` to coordinate mic + system
-- [ ] Implement synchronized start with common timestamp
-- [ ] Handle sample rate differences (resample if needed)
-- [ ] Add temp file management for system audio track
+- [x] Create `AudioCaptureManager` to coordinate mic + system
+- [x] Implement synchronized start with common timestamp
+- [x] Handle sample rate differences (resample if needed)
+- [x] Add temp file management for system audio track
 
 ---
 
 ## Cluster 3: Source Attribution Logic
 
-- [ ] Create `SourceActivityTracker` class
-- [ ] Implement RMS sampling at configurable interval (100ms default)
-- [ ] Define activity threshold constant
-- [ ] Generate activity timeline from dual tracks
-- [ ] Handle overlapping activity (both sources active)
-- [ ] Implement `labelTranscript()` to insert `[User]`/`[System]` prefixes
-- [ ] Test labeling accuracy with sample recordings
+- [x] Create `SourceActivityTracker` class
+- [x] Implement RMS sampling at configurable interval (100ms default)
+- [x] Define activity threshold constant
+- [x] Generate activity timeline from dual tracks
+- [x] Handle overlapping activity (both sources active)
+- [x] Implement `labelTranscript()` to insert `[User]`/`[System]` prefixes
+- [x] Test labeling accuracy with sample recordings
 
 ---
 
 ## Cluster 4: UI Integration
 
-- [ ] Add system audio toggle to recording panel
-- [ ] Add visual indicator for system audio state
-- [ ] Update status display to show active sources
-- [ ] Implement on-the-fly toggle during recording
-- [ ] Add "System Audio" section in Settings/Options
-- [ ] Add default toggle state preference
+- [x] Add system audio toggle to recording panel
+- [x] Add visual indicator for system audio state
+- [x] Update status display to show active sources
+- [x] Implement on-the-fly toggle during recording
+- [x] Add "System Audio" section in Settings/Options
+- [x] Add default toggle state preference
 
 ---
 
 ## Cluster 5: Pipeline Integration
 
-- [ ] Decide merge strategy (pre-transcription vs post)
-- [ ] Implement track merging for transcription
-- [ ] Handle silence removal interaction (skip or adjust timeline)
-- [ ] Integrate labeled output into history panel
-- [ ] Update transcript export to include source labels
+- [x] Decide merge strategy (pre-transcription vs post)
+- [x] Implement track merging for transcription
+- [x] Handle silence removal interaction (skip or adjust timeline)
+- [x] Integrate labeled output into history panel
+- [x] Update transcript export to include source labels
 
 ---
 

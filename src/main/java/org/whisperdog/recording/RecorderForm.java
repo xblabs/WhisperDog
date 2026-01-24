@@ -13,9 +13,15 @@ import org.whisperdog.error.ErrorCategory;
 import org.whisperdog.error.ErrorClassifier;
 import org.whisperdog.error.TranscriptionException;
 import org.whisperdog.ui.TranscriptionErrorDialog;
+import org.whisperdog.ui.IndeterminateProgressBar;
+import org.whisperdog.ui.ProcessProgressPanel;
 import org.whisperdog.recording.AudioFileAnalyzer;
 import org.whisperdog.recording.AudioFileAnalyzer.AnalysisResult;
 import org.whisperdog.recording.AudioFileAnalyzer.LargeFileOption;
+import org.whisperdog.audio.FFmpegUtil;
+import org.whisperdog.audio.SystemAudioCapture;
+import org.whisperdog.audio.AudioCaptureManager;
+import org.whisperdog.audio.SourceActivityTracker;
 import org.whisperdog.recording.WavChunker;
 import org.whisperdog.recording.FfmpegChunker;
 import org.whisperdog.recording.FfmpegCompressor;
@@ -50,7 +56,12 @@ import java.util.Optional;
 public class RecorderForm extends javax.swing.JPanel {
 
     private final JTextArea processedText = new JTextArea(3, 20);
-    private final JCheckBox enablePostProcessingCheckBox = new JCheckBox("Enable Post Processing");
+    private final JCheckBox enablePostProcessingCheckBox = new JCheckBox("Enable automatic post-processing");
+    private final JCheckBox showPipelineSectionCheckBox = new JCheckBox("Show pipeline section");
+    private JPanel postProcessingContainerPanel;
+    private JLabel pipelineActiveIndicator;
+    private IndeterminateProgressBar progressBar;
+    private ProcessProgressPanel processProgressPanel;
     private final JButton recordButton;
     private final int baseIconSize = 40;  // Reduced from 200 for status indicator
     private final OpenAITranscribeClient whisperClient;
@@ -59,15 +70,47 @@ public class RecorderForm extends javax.swing.JPanel {
     private final OpenWebUITranscribeClient openWebUITranscribeClient;
     private boolean isRecording = false;
     private boolean isTranscribing = false;  // Track transcription/conversion state
+    private boolean isPostProcessing = false;  // Track post-processing state
 
     // Helper to set processing state and update tray icon
     private void setProcessingState(boolean processing) {
-        isTranscribing = processing;
+        setProcessingState(processing, IndeterminateProgressBar.Stage.TRANSCRIPTION);
+    }
+
+    // Overload with stage control for progress bar
+    private void setProcessingState(boolean processing, IndeterminateProgressBar.Stage stage) {
+        isTranscribing = processing && (stage == IndeterminateProgressBar.Stage.TRANSCRIPTION);
+        isPostProcessing = processing && (stage == IndeterminateProgressBar.Stage.POST_PROCESSING);
         statusIndicatorPanel.repaint();
         TrayIconManager trayManager = AudioRecorderUI.getTrayIconManager();
         if (trayManager != null) {
             trayManager.setProcessing(processing);
         }
+
+        // Control progress bar
+        if (progressBar != null) {
+            if (processing) {
+                progressBar.start(stage);
+            } else {
+                progressBar.stop();
+            }
+        }
+    }
+
+    // Switch progress bar stage without stopping (for transitioning transcription -> post-processing)
+    private void setProgressStage(IndeterminateProgressBar.Stage stage) {
+        // Update main progress bar (for voice recording flow)
+        if (progressBar != null && progressBar.isAnimating()) {
+            progressBar.setStage(stage);
+        }
+        // Update ProcessProgressPanel progress bar (for file drop flow)
+        if (processProgressPanel != null && processProgressPanel.isVisible()) {
+            processProgressPanel.setProgressStage(stage);
+        }
+        // Update status indicator color
+        isTranscribing = (stage == IndeterminateProgressBar.Stage.TRANSCRIPTION);
+        isPostProcessing = (stage == IndeterminateProgressBar.Stage.POST_PROCESSING);
+        statusIndicatorPanel.repaint();
     }
     private AudioRecorder recorder;
     private final JTextArea transcriptionTextArea;
@@ -89,6 +132,11 @@ public class RecorderForm extends javax.swing.JPanel {
     private final PipelineExecutionHistory pipelineHistory = new PipelineExecutionHistory();
     private HistoryPanel historyPanel;
     private boolean isPopulatingComboBox = false;  // Flag to prevent ItemListener firing during repopulation
+
+    // System audio toggle and indicator
+    private JCheckBox systemAudioToggle;
+    private JPanel systemAudioIndicator;
+    private AudioCaptureManager audioCaptureManager;
 
     // Recording warning timer (ISS_00007)
     private javax.swing.Timer recordingWarningTimer;
@@ -119,7 +167,7 @@ public class RecorderForm extends javax.swing.JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Status colors: green (ready), red (recording), orange-pulsing (warning), blue (transcribing)
+                // Status colors: green (ready), red (recording), orange-pulsing (warning), blue (transcribing), purple (post-processing)
                 Color fillColor = new Color(144, 238, 144); // Light green - ready/idle
                 if (isRecording) {
                     if (isRecordingWarningActive) {
@@ -130,6 +178,8 @@ public class RecorderForm extends javax.swing.JPanel {
                     } else {
                         fillColor = new Color(255, 99, 71); // Tomato red - recording
                     }
+                } else if (isPostProcessing) {
+                    fillColor = new Color(138, 103, 201); // Bluish purple - post-processing
                 } else if (isTranscribing) {
                     fillColor = new Color(100, 149, 237); // Cornflower blue - transcribing/converting
                 }
@@ -158,6 +208,70 @@ public class RecorderForm extends javax.swing.JPanel {
 
         statusIndicatorPanel.add(statusCircle);
         statusIndicatorPanel.add(recordButton);
+
+        // System audio indicator (small circle showing system capture state)
+        systemAudioIndicator = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                Color fillColor;
+                if (isRecording) {
+                    fillColor = new Color(0, 191, 255); // Deep sky blue - system audio active
+                } else {
+                    fillColor = new Color(100, 200, 200); // Teal - system audio enabled, idle
+                }
+                g2.setColor(fillColor);
+                g2.fillOval(2, 2, 12, 12);
+                g2.setColor(Color.DARK_GRAY);
+                g2.drawOval(2, 2, 12, 12);
+                g2.dispose();
+            }
+        };
+        systemAudioIndicator.setPreferredSize(new Dimension(16, 16));
+        systemAudioIndicator.setOpaque(false);
+        systemAudioIndicator.setToolTipText("System audio capture active");
+        systemAudioIndicator.setVisible(configManager.isSystemAudioEnabled());
+
+        // System audio toggle - only visible when WASAPI loopback is available
+        systemAudioToggle = new JCheckBox("System Audio");
+        systemAudioToggle.setToolTipText("Include system audio (what you hear) in the recording");
+        systemAudioToggle.setSelected(configManager.isSystemAudioEnabled());
+        systemAudioToggle.addActionListener(e -> {
+            boolean enabled = systemAudioToggle.isSelected();
+            configManager.setSystemAudioEnabled(enabled);
+            systemAudioIndicator.setVisible(enabled);
+
+            // On-the-fly toggle during active recording
+            if (isRecording && audioCaptureManager != null) {
+                try {
+                    boolean success = audioCaptureManager.toggleSystemAudio(enabled);
+                    if (!success) {
+                        // Revert toggle if operation failed
+                        systemAudioToggle.setSelected(!enabled);
+                        configManager.setSystemAudioEnabled(!enabled);
+                        systemAudioIndicator.setVisible(!enabled);
+                        logger.warn("Failed to toggle system audio during recording");
+                    }
+                } catch (Exception ex) {
+                    // Catch any exceptions to prevent UI crash
+                    logger.error("Exception while toggling system audio: {}", ex.getMessage(), ex);
+                    // Revert toggle
+                    systemAudioToggle.setSelected(!enabled);
+                    configManager.setSystemAudioEnabled(!enabled);
+                    systemAudioIndicator.setVisible(!enabled);
+                }
+            }
+
+            statusIndicatorPanel.revalidate();
+            statusIndicatorPanel.repaint();
+        });
+        if (SystemAudioCapture.isAvailable()) {
+            statusIndicatorPanel.add(systemAudioIndicator);
+            statusIndicatorPanel.add(systemAudioToggle);
+        }
 
         JPanel transcriptionPanel = new JPanel();
         transcriptionPanel.setLayout(new BoxLayout(transcriptionPanel, BoxLayout.Y_AXIS));
@@ -198,46 +312,46 @@ public class RecorderForm extends javax.swing.JPanel {
         centerPanel.add(Box.createVerticalStrut(15));
 
         // Drag & drop hint
-        JLabel dragDropLabel = new JLabel("Drag & drop an audio file here.");
+        JLabel dragDropLabel = new JLabel("Drag & drop an audio or video file here.");
         dragDropLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         dragDropLabel.setForeground(Color.GRAY);
         centerPanel.add(dragDropLabel);
         centerPanel.add(Box.createVerticalStrut(20));  // Section spacing
         centerPanel.add(Box.createVerticalGlue());
 
-        centerPanel.setTransferHandler(new TransferHandler() {
-            @Override
-            public boolean canImport(TransferSupport support) {
-                // Accept file list flavor
-                return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
-            }
-
-            @Override
-            public boolean importData(TransferSupport support) {
-                try {
-                    @SuppressWarnings("unchecked")
-                    java.util.List<File> fileList = (java.util.List<File>) support.getTransferable()
-                            .getTransferData(DataFlavor.javaFileListFlavor);
-                    if (!fileList.isEmpty()) {
-                        File droppedFile = fileList.get(0);
-                        String lowerName = droppedFile.getName().toLowerCase();
-                        if (!(lowerName.endsWith(".wav") || lowerName.endsWith(".mp3"))) {
-                            Notificationmanager.getInstance().showNotification(ToastNotification.Type.WARNING, "Only .wav and .mp3 files allowed.");
-                            return false;
-                        }
-                        // Call the unified stopRecording method with the dropped file.
-                        stopRecording(droppedFile);
-                        return true;
-                    }
-                } catch (Exception ex) {
-                    logger.error("Error importing dropped file", ex);
-                }
-                return false;
-            }
-        });
+        // TransferHandler is set up in setupDragAndDrop() at the end of constructor
 
 
-        JPanel postProcessingContainerPanel = new JPanel();
+        // Indeterminate progress bar for transcription/post-processing
+        progressBar = new IndeterminateProgressBar();
+        progressBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Process progress panel for file-based operations (drag & drop, chunked transcription)
+        processProgressPanel = new ProcessProgressPanel();
+        processProgressPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        processProgressPanel.setOnCancel(this::cancelCurrentOperation);
+        processProgressPanel.setOnRetry(this::retryCurrentOperation);
+        processProgressPanel.setOnDismiss(() -> processProgressPanel.hidePanel());
+
+        // Pipeline section header with visibility toggle and status indicator
+        JPanel pipelineSectionHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        pipelineSectionHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pipelineSectionHeader.setBorder(new EmptyBorder(0, 50, 0, 50));
+
+        showPipelineSectionCheckBox.setToolTipText(
+            "<html>Show or hide the pipeline processing section.<br>" +
+            "Auto-processing can still run when section is hidden.</html>");
+        showPipelineSectionCheckBox.setSelected(configManager.isShowPipelineSection());
+
+        pipelineActiveIndicator = new JLabel("\u26A1 Auto-pipeline active");
+        pipelineActiveIndicator.setForeground(new Color(255, 165, 0)); // Orange color
+        pipelineActiveIndicator.setToolTipText("Automatic post-processing is enabled but section is hidden");
+        pipelineActiveIndicator.setVisible(false);
+
+        pipelineSectionHeader.add(showPipelineSectionCheckBox);
+        pipelineSectionHeader.add(pipelineActiveIndicator);
+
+        postProcessingContainerPanel = new JPanel();
         postProcessingContainerPanel.setLayout(new BoxLayout(postProcessingContainerPanel, BoxLayout.Y_AXIS));
         postProcessingContainerPanel.setBorder(new EmptyBorder(10, 50, 50, 50));
         postProcessingContainerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -259,6 +373,14 @@ public class RecorderForm extends javax.swing.JPanel {
         enablePostProcessingCheckBox.setToolTipText(
             "<html>When enabled, automatically runs the selected pipeline after each recording.<br>" +
             "You can still manually run pipelines using the 'Run Pipeline' button when this is off.</html>");
+
+        // Show pipeline section checkbox controls visibility of the container panel
+        showPipelineSectionCheckBox.addActionListener(e -> {
+            boolean show = showPipelineSectionCheckBox.isSelected();
+            configManager.setShowPipelineSection(show);
+            postProcessingContainerPanel.setVisible(show);
+            updatePipelineActiveIndicator();
+        });
 
         JCheckBox loadOnStartupCheckBox = new JCheckBox("Activate on startup");
         loadOnStartupCheckBox.setVisible(false); // initially hidden
@@ -355,6 +477,7 @@ public class RecorderForm extends javax.swing.JPanel {
             configManager.setPostProcessingEnabled(selected);
             // Show/hide the "Activate on startup" checkbox
             loadOnStartupCheckBox.setVisible(selected);
+            updatePipelineActiveIndicator();
             postProcessingContainerPanel.revalidate();
             postProcessingContainerPanel.repaint();
         });
@@ -371,6 +494,11 @@ public class RecorderForm extends javax.swing.JPanel {
             }
         }
 
+        // Set initial visibility of pipeline section based on saved config
+        boolean showSection = configManager.isShowPipelineSection();
+        postProcessingContainerPanel.setVisible(showSection);
+        updatePipelineActiveIndicator();
+
         // Console log panel
         JPanel consolePanel = new JPanel(new BorderLayout());
         consolePanel.setBorder(BorderFactory.createTitledBorder("Execution Log"));
@@ -378,7 +506,7 @@ public class RecorderForm extends javax.swing.JPanel {
         consoleLogArea.setEditable(false);
         consoleLogArea.setLineWrap(true);
         consoleLogArea.setWrapStyleWord(true);
-        consoleLogArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
+        consoleLogArea.setFont(org.whisperdog.ui.FontUtil.getMonospacedFont(Font.PLAIN, 11));
         JScrollPane consoleScrollPane = new JScrollPane(consoleLogArea);
         consoleScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         consolePanel.add(consoleScrollPane, BorderLayout.CENTER);
@@ -444,6 +572,9 @@ public class RecorderForm extends javax.swing.JPanel {
         layout.setHorizontalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                         .addComponent(centerPanel)
+                        .addComponent(progressBar)
+                        .addComponent(processProgressPanel)
+                        .addComponent(pipelineSectionHeader)
                         .addComponent(postProcessingContainerPanel)
                         .addComponent(consolePanel)
         );
@@ -452,7 +583,13 @@ public class RecorderForm extends javax.swing.JPanel {
                 layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(centerPanel)
-                        .addGap(10)  // Reduced spacing between sections (was 20)
+                        .addGap(5)
+                        .addComponent(progressBar, 3, 3, 3)  // Fixed 3px height
+                        .addGap(5)
+                        .addComponent(processProgressPanel)  // Shows during file-based operations
+                        .addGap(5)
+                        .addComponent(pipelineSectionHeader)
+                        .addGap(5)
                         .addComponent(postProcessingContainerPanel)
                         .addGap(10)  // Reduced spacing between sections (was 20)
                         .addComponent(consolePanel, 250, 300, 350)  // Increased height for taller log (was 150)
@@ -490,7 +627,14 @@ public class RecorderForm extends javax.swing.JPanel {
                     if (files != null && files.size() == 1) {
                         File file = files.get(0);
                         String fileName = file.getName().toLowerCase();
-                        // Accept WAV, MP3, OGG, M4A, FLAC files
+
+                        // Check for video files first (MP4, MOV, MKV, AVI, WEBM)
+                        if (FFmpegUtil.isVideoFile(file)) {
+                            handleDroppedVideoFile(file);
+                            return true;
+                        }
+
+                        // Accept audio files: WAV, MP3, OGG, M4A, FLAC
                         if (fileName.endsWith(".wav") || fileName.endsWith(".mp3") ||
                             fileName.endsWith(".ogg") || fileName.endsWith(".m4a") ||
                             fileName.endsWith(".flac")) {
@@ -498,7 +642,8 @@ public class RecorderForm extends javax.swing.JPanel {
                             return true;
                         } else {
                             Notificationmanager.getInstance().showNotification(ToastNotification.Type.ERROR,
-                                    "Unsupported file type. Please drop WAV, MP3, OGG, M4A, or FLAC files.");
+                                    "Unsupported file type. Please drop audio (WAV, MP3, OGG, M4A, FLAC) or video (" +
+                                    FFmpegUtil.getSupportedFormatsDisplay() + ") files.");
                             return false;
                         }
                     }
@@ -520,10 +665,18 @@ public class RecorderForm extends javax.swing.JPanel {
         logger.info("Dropped file: " + file.getName());
         ConsoleLogger console = ConsoleLogger.getInstance();
 
-        // Set transcribing state (blue indicator) and update tray icon
-        setProcessingState(true);
+        // Update UI state (don't start main progress bar - ProcessProgressPanel has its own)
+        isTranscribing = true;
+        statusIndicatorPanel.repaint();
+        TrayIconManager trayManager = AudioRecorderUI.getTrayIconManager();
+        if (trayManager != null) {
+            trayManager.setProcessing(true);
+        }
         recordButton.setText("Analyzing...");
         recordButton.setEnabled(false);
+
+        // Show progress panel for file-based operations (has its own progress bar)
+        showProgressPanel(file, "Analyzing audio file...", IndeterminateProgressBar.Stage.TRANSCRIPTION);
 
         // Pre-flight analysis
         AnalysisResult analysis = AudioFileAnalyzer.analyze(file);
@@ -536,6 +689,125 @@ public class RecorderForm extends javax.swing.JPanel {
 
         // Normal flow for files within limits
         processAudioFile(file);
+    }
+
+    /**
+     * Handles a dropped video file by extracting audio via ffmpeg and transcribing.
+     * Supports MP4, MOV, MKV, AVI, and WEBM formats.
+     */
+    private void handleDroppedVideoFile(File videoFile) {
+        logger.info("Dropped video file: " + videoFile.getName());
+        ConsoleLogger console = ConsoleLogger.getInstance();
+
+        // Check ffmpeg availability first
+        if (!FFmpegUtil.isFFmpegAvailable()) {
+            logger.warn("FFmpeg not available for video extraction");
+            Notificationmanager.getInstance().showNotification(ToastNotification.Type.ERROR,
+                    "Video transcription requires ffmpeg.\n" +
+                    "Install ffmpeg and ensure it's in your PATH.\n" +
+                    "Download: https://ffmpeg.org/download.html");
+            console.logError("FFmpeg not available - cannot extract audio from video");
+            console.log("Install ffmpeg from: https://ffmpeg.org/download.html");
+            return;
+        }
+
+        // Update UI state (but don't start main progress bar - ProcessProgressPanel has its own)
+        isTranscribing = true;
+        statusIndicatorPanel.repaint();
+        TrayIconManager trayManager = AudioRecorderUI.getTrayIconManager();
+        if (trayManager != null) {
+            trayManager.setProcessing(true);
+        }
+        recordButton.setText("Extracting audio...");
+        recordButton.setEnabled(false);
+
+        // Show progress panel for extraction (has its own progress bar)
+        showProgressPanel(videoFile, "Extracting audio from video...", IndeterminateProgressBar.Stage.TRANSCRIPTION);
+
+        console.separator();
+        console.log("Extracting audio from video: " + videoFile.getName());
+
+        // Run extraction asynchronously
+        FFmpegUtil.extractAudioAsync(videoFile, progress -> {
+            // Update progress on EDT
+            SwingUtilities.invokeLater(() -> {
+                int percent = (int) (progress * 100);
+                updateProgressPanelStage("Extracting audio... " + percent + "%");
+            });
+        }).thenAccept(result -> {
+            SwingUtilities.invokeLater(() -> {
+                if (result.success) {
+                    console.logSuccess("Audio extracted successfully");
+                    console.log("Extracted file: " + result.audioFile.getName() +
+                               " (" + (result.audioFile.length() / 1024) + " KB)");
+
+                    // Register temp file for cleanup
+                    registerExtractedTempFile(result.audioFile);
+
+                    // Update status and proceed with transcription
+                    updateProgressPanelStage("Starting transcription...");
+                    Notificationmanager.getInstance().showNotification(ToastNotification.Type.INFO,
+                            "Audio extracted. Starting transcription...");
+
+                    // Feed extracted audio into existing pipeline
+                    handleDroppedAudioFile(result.audioFile);
+                } else if (result.noAudioTrack) {
+                    console.logError("Video has no audio track");
+                    Notificationmanager.getInstance().showNotification(ToastNotification.Type.ERROR,
+                            "This video contains no audio track.");
+                    processProgressPanel.showError("No audio track in video");
+                    resetUIAfterTranscription();
+                } else {
+                    console.logError("Extraction failed: " + result.errorMessage);
+                    Notificationmanager.getInstance().showNotification(ToastNotification.Type.ERROR,
+                            "Failed to extract audio: " + result.errorMessage);
+                    processProgressPanel.showError("Extraction failed");
+                    resetUIAfterTranscription();
+                }
+            });
+        }).exceptionally(ex -> {
+            SwingUtilities.invokeLater(() -> {
+                logger.error("Video extraction failed", ex);
+                console.logError("Extraction failed: " + ex.getMessage());
+                Notificationmanager.getInstance().showNotification(ToastNotification.Type.ERROR,
+                        "Failed to extract audio from video.");
+                processProgressPanel.showError("Extraction failed");
+                resetUIAfterTranscription();
+            });
+            return null;
+        });
+    }
+
+    // ========== Video Extraction Temp File Management ==========
+
+    private final java.util.List<File> extractedTempFiles = new java.util.ArrayList<>();
+
+    /**
+     * Registers an extracted audio file for cleanup after transcription.
+     */
+    private void registerExtractedTempFile(File file) {
+        extractedTempFiles.add(file);
+    }
+
+    /**
+     * Cleans up all extracted temp files.
+     * Called after transcription completes or on application exit.
+     */
+    private void cleanupExtractedTempFiles() {
+        for (File file : extractedTempFiles) {
+            if (file != null && file.exists()) {
+                try {
+                    if (file.delete()) {
+                        logger.debug("Cleaned up temp file: " + file.getName());
+                    } else {
+                        logger.warn("Could not delete temp file: " + file.getAbsolutePath());
+                    }
+                } catch (Exception e) {
+                    logger.warn("Error deleting temp file: " + e.getMessage());
+                }
+            }
+        }
+        extractedTempFiles.clear();
     }
 
     /**
@@ -596,6 +868,7 @@ public class RecorderForm extends javax.swing.JPanel {
         ConsoleLogger console = ConsoleLogger.getInstance();
 
         recordButton.setText("Converting...");
+        updateProgressPanelStage("Preparing audio file...");
 
         File fileToTranscribe = file;
 
@@ -604,6 +877,7 @@ public class RecorderForm extends javax.swing.JPanel {
         if (fileName.endsWith(".ogg")) {
             logger.info("Converting OGG file to WAV...");
             console.log("Converting OGG file to WAV using ffmpeg...");
+            updateProgressPanelStage("Converting OGG to WAV...");
             Notificationmanager.getInstance().showNotification(ToastNotification.Type.INFO,
                     "Converting OGG to WAV...");
             fileToTranscribe = convertOggToWav(file);
@@ -611,6 +885,7 @@ public class RecorderForm extends javax.swing.JPanel {
                 console.logError("Failed to convert OGG file");
                 Notificationmanager.getInstance().showNotification(ToastNotification.Type.ERROR,
                         "Failed to convert OGG file. Please convert to WAV manually.");
+                processProgressPanel.showError("Failed to convert OGG file");
                 resetUIAfterTranscription();
                 return;
             }
@@ -624,6 +899,7 @@ public class RecorderForm extends javax.swing.JPanel {
         console.separator();
         console.log("Starting transcription using " + configManager.getWhisperServer());
         console.log("Audio file: " + fileToTranscribe.getName());
+        updateProgressPanelStage("Transcribing with " + configManager.getWhisperServer() + "...");
         Notificationmanager.getInstance().showNotification(ToastNotification.Type.INFO,
                 "Transcribing audio file...");
         new AudioTranscriptionWorker(fileToTranscribe).execute();
@@ -871,6 +1147,7 @@ public class RecorderForm extends javax.swing.JPanel {
             if (selectedItem != null && selectedItem.uuid != null) {
                 Pipeline pipeline = configManager.getPipelineByUuid(selectedItem.uuid);
                 if (pipeline != null) {
+                    setProgressStage(IndeterminateProgressBar.Stage.POST_PROCESSING);  // Switch to orange
                     new PostProcessingWorker(transcript, pipeline).execute();
                     return;  // PostProcessingWorker will handle clipboard
                 }
@@ -1038,12 +1315,25 @@ public class RecorderForm extends javax.swing.JPanel {
     }
 
     private boolean isToggleInProgress = false;
+    private volatile AudioTranscriptionWorker activeTranscriptionWorker;
 
     public void toggleRecording() {
 
 
-        if (isToggleInProgress || isStoppingInProgress) {
-            logger.info("Toggle in progress or stopping in progress. Ignoring.");
+        if (isToggleInProgress) {
+            logger.info("Toggle in progress. Ignoring.");
+            return;
+        }
+        // Allow cancellation during transcription/conversion
+        if (isStoppingInProgress && activeTranscriptionWorker != null) {
+            logger.info("Cancelling transcription worker");
+            activeTranscriptionWorker.cancel(true);
+            activeTranscriptionWorker = null;
+            ConsoleLogger.getInstance().log("Transcription cancelled by user");
+            resetUIAfterTranscription();
+            return;
+        }
+        if (isStoppingInProgress) {
             return;
         }
         if (!isRecording) {
@@ -1064,11 +1354,27 @@ public class RecorderForm extends javax.swing.JPanel {
             warningPulseState = 0;
             recordingStartTime = System.currentTimeMillis();
 
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            File audioFile = new File(System.getProperty("java.io.tmpdir"), "record_" + timeStamp + ".wav");
-            recorder = new AudioRecorder(audioFile, configManager);
-            new Thread(recorder::start).start();
-            logger.info("Recording started: " + audioFile.getPath());
+            boolean useSystemAudio = systemAudioToggle.isSelected() && SystemAudioCapture.isAvailable();
+
+            if (useSystemAudio) {
+                // Use AudioCaptureManager for dual-source recording
+                audioCaptureManager = new AudioCaptureManager(configManager);
+                String preferredDevice = configManager.getSystemAudioDevice();
+                if (preferredDevice != null && !preferredDevice.isEmpty()) {
+                    audioCaptureManager.setPreferredLoopbackDevice(preferredDevice);
+                }
+                audioCaptureManager.startCapture(true);
+                recorder = null;
+                logger.info("Recording started with system audio capture");
+            } else {
+                // Standard mic-only recording
+                audioCaptureManager = null;
+                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                File audioFile = new File(System.getProperty("java.io.tmpdir"), "record_" + timeStamp + ".wav");
+                recorder = new AudioRecorder(audioFile, configManager);
+                new Thread(recorder::start).start();
+                logger.info("Recording started: " + audioFile.getPath());
+            }
             recordButton.setText("Stop Recording");
 
             // Start recording warning timer (ISS_00007)
@@ -1170,15 +1476,30 @@ public class RecorderForm extends javax.swing.JPanel {
         updateUIForRecordingStop();  // This already sets isTranscribing = true and repaints
         isStoppingInProgress = true;
         recordButton.setText("Converting. Please wait...");
-        //recordButton.setEnabled(false);
-        if (recorder != null) {
+
+        if (audioCaptureManager != null) {
+            // Dual-source recording - stop via AudioCaptureManager
+            File micFile = audioCaptureManager.stopCapture();
+            File sysFile = audioCaptureManager.getSystemTrackFile();
+            logger.info("Recording stopped (dual-source)");
+            if (!cancelledRecording && micFile != null) {
+                activeTranscriptionWorker = new RecorderForm.AudioTranscriptionWorker(micFile, sysFile);
+                activeTranscriptionWorker.execute();
+            } else {
+                logger.info("Recording cancelled");
+                audioCaptureManager.cleanupTempFiles();
+                setProcessingState(false);
+                updateTrayMenu();
+            }
+            audioCaptureManager = null;
+        } else if (recorder != null) {
             recorder.stop();
             logger.info("Recording stopped");
             if (!cancelledRecording) {
-                new RecorderForm.AudioTranscriptionWorker(recorder.getOutputFile()).execute();
+                activeTranscriptionWorker = new RecorderForm.AudioTranscriptionWorker(recorder.getOutputFile());
+                activeTranscriptionWorker.execute();
             } else {
                 logger.info("Recording cancelled");
-                // Reset transcribing state if cancelled
                 setProcessingState(false);
                 updateTrayMenu();
             }
@@ -1191,9 +1512,10 @@ public class RecorderForm extends javax.swing.JPanel {
         // Set transcribing state (blue indicator) - same as dropped files
         setProcessingState(true);
 
-        recordButton.setText("Converting. Please wait...");
-        recordButton.setEnabled(false);
-        new RecorderForm.AudioTranscriptionWorker(audioFile).execute();
+        recordButton.setText("Cancel");
+        recordButton.setEnabled(true);
+        activeTranscriptionWorker = new RecorderForm.AudioTranscriptionWorker(audioFile);
+        activeTranscriptionWorker.execute();
     }
 
     public void playFinishSound() {
@@ -1241,7 +1563,10 @@ public class RecorderForm extends javax.swing.JPanel {
         transcriptionTextArea.setFocusable(false);
         transcriptionTextArea.setFocusable(true);
 
-        // Repaint status indicator to show recording state (red circle)
+        // Disable system audio toggle during recording (avoid mid-recording initialization crashes)
+        systemAudioToggle.setEnabled(false);
+
+        // Repaint status indicator to show recording state (red circle + system audio indicator)
         statusIndicatorPanel.repaint();
 
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
@@ -1268,8 +1593,8 @@ public class RecorderForm extends javax.swing.JPanel {
         isRecording = false;  // Must set this BEFORE isTranscribing, or circle stays red!
         setProcessingState(true);
 
-        recordButton.setText("Converting. Please wait...");
-        recordButton.setEnabled(false);
+        recordButton.setText("Cancel");
+        recordButton.setEnabled(true);
     }
 
     private void resetUIAfterTranscription() {
@@ -1278,6 +1603,15 @@ public class RecorderForm extends javax.swing.JPanel {
 
         recordButton.setText("Start Recording");
         recordButton.setEnabled(true);
+
+        // Re-enable system audio toggle (was disabled during recording)
+        systemAudioToggle.setEnabled(SystemAudioCapture.isAvailable());
+
+        // Hide progress panel for file-based operations
+        hideProgressPanel();
+
+        // Clean up any extracted temp files from video processing
+        cleanupExtractedTempFiles();
 
         // Update Run Pipeline button state now that transcription is complete
         updateRunPipelineButtonState();
@@ -1416,99 +1750,155 @@ public class RecorderForm extends javax.swing.JPanel {
 
     private class AudioTranscriptionWorker extends SwingWorker<String, Void> {
         private final File audioFile;
+        private final File systemTrackFile;  // null for mic-only recordings
         private volatile boolean cancelledByUser = false;  // Track if user cancelled via warning dialog
 
         public AudioTranscriptionWorker(File audioFile) {
+            this(audioFile, null);
+        }
+
+        public AudioTranscriptionWorker(File audioFile, File systemTrackFile) {
             this.audioFile = audioFile;
+            this.systemTrackFile = systemTrackFile;
         }
 
         @Override
         protected String doInBackground() {
             ConsoleLogger console = ConsoleLogger.getInstance();
+            // Emergency logging to catch silent failures on second recording
+            String workerThreadName = Thread.currentThread().getName();
+            System.err.println("[EMERGENCY] Worker started: " + workerThreadName);
+            System.err.println("[EMERGENCY] Audio file: " + audioFile);
+            System.err.println("[EMERGENCY] System file: " + systemTrackFile);
+
             try {
-                // Pre-flight analysis for large recordings with high silence
-                // Only when silence removal is enabled (we need the threshold settings)
-                if (configManager.isSilenceRemovalEnabled()) {
-                    console.separator();
-                    console.log("Analyzing audio for silence...");
+                logger.info("AudioTranscriptionWorker started on thread: {}", workerThreadName);
+                logger.info("Audio file to analyze: {}", audioFile.getAbsolutePath());
 
-                    SilenceRemover.SilenceAnalysisResult analysis = SilenceRemover.analyzeForSilence(
-                        audioFile,
-                        configManager.getSilenceThreshold(),
-                        configManager.getMinSilenceDuration()
-                    );
+                // Pre-flight validation
+                if (!audioFile.exists()) {
+                    String msg = "Audio file does not exist: " + audioFile.getAbsolutePath();
+                    logger.error(msg);
+                    console.logError(msg);
+                    return null;
+                }
 
-                    if (analysis != null && analysis.exceedsWarningThreshold) {
-                        console.log(String.format("⚠ Large recording detected: %s, %s silence",
-                            analysis.getFormattedDuration(), analysis.getFormattedSilencePercent()));
+                // Check if system track file is valid (if provided)
+                File validatedSystemTrack = systemTrackFile;
+                if (systemTrackFile != null && !systemTrackFile.exists()) {
+                    logger.warn("System track file does not exist, proceeding with mic only");
+                    validatedSystemTrack = null;
+                }
 
-                        // Show warning dialog on EDT and wait for user decision
+                // Pre-flight analysis for speech content and silence detection
+                // Runs for both min speech check and large recording warning
+                console.separator();
+                console.log("Analyzing audio...");
+
+                SilenceRemover.SilenceAnalysisResult analysis = SilenceRemover.analyzeForSilence(
+                    audioFile,
+                    configManager.getSilenceThreshold(),
+                    configManager.getMinSilenceDuration()
+                );
+
+                // Large recording warning (only when silence removal is enabled)
+                if (configManager.isSilenceRemovalEnabled() && analysis != null && analysis.exceedsWarningThreshold) {
+                    console.log(String.format("⚠ Large recording detected: %s, %s silence",
+                        analysis.getFormattedDuration(), analysis.getFormattedSilencePercent()));
+
+                    // Show warning dialog on EDT and wait for user decision
+                    java.util.concurrent.atomic.AtomicBoolean userProceed =
+                        new java.util.concurrent.atomic.AtomicBoolean(false);
+
+                    try {
+                        SwingUtilities.invokeAndWait(() -> {
+                            LargeRecordingWarningDialog dialog = new LargeRecordingWarningDialog(
+                                SwingUtilities.getWindowAncestor(RecorderForm.this),
+                                analysis
+                            );
+                            userProceed.set(dialog.showAndGetResult());
+                        });
+                    } catch (Exception e) {
+                        logger.error("Error showing warning dialog", e);
+                        // Default to proceeding if dialog fails
+                        userProceed.set(true);
+                    }
+
+                    if (!userProceed.get()) {
+                        console.log("Transcription cancelled by user");
+                        cancelledByUser = true;
+                        return null;  // User cancelled
+                    }
+
+                    console.log("User chose to proceed with transcription");
+                }
+
+                // Check minimum speech duration threshold (ISS_00011: works regardless of silence removal setting)
+                float minSpeechDuration = configManager.getMinSpeechDuration();
+                if (minSpeechDuration > 0 && analysis != null) {
+                    float estimatedSpeech = analysis.estimatedUsefulSeconds;
+
+                    // For dual-source: if mic is silent, check system track for content
+                    if (estimatedSpeech < minSpeechDuration && validatedSystemTrack != null && validatedSystemTrack.exists()) {
+                        SilenceRemover.SilenceAnalysisResult systemAnalysis = SilenceRemover.analyzeForSilence(
+                            validatedSystemTrack,
+                            configManager.getSilenceThreshold(),
+                            configManager.getMinSilenceDuration()
+                        );
+                        if (systemAnalysis != null && systemAnalysis.estimatedUsefulSeconds >= minSpeechDuration) {
+                            estimatedSpeech = systemAnalysis.estimatedUsefulSeconds;
+                            console.log(String.format("Mic silent but system audio has %.1fs of content", estimatedSpeech));
+                        }
+                    }
+
+                    if (estimatedSpeech < minSpeechDuration) {
+                        final float speechForDialog = estimatedSpeech;
+                        console.log(String.format("⚠ Insufficient speech: %.1fs detected (minimum: %.1fs)",
+                            speechForDialog, minSpeechDuration));
+
                         java.util.concurrent.atomic.AtomicBoolean userProceed =
                             new java.util.concurrent.atomic.AtomicBoolean(false);
 
                         try {
                             SwingUtilities.invokeAndWait(() -> {
-                                LargeRecordingWarningDialog dialog = new LargeRecordingWarningDialog(
+                                MinSpeechDurationDialog dialog = new MinSpeechDurationDialog(
                                     SwingUtilities.getWindowAncestor(RecorderForm.this),
-                                    analysis
+                                    speechForDialog,
+                                    minSpeechDuration
                                 );
                                 userProceed.set(dialog.showAndGetResult());
                             });
                         } catch (Exception e) {
-                            logger.error("Error showing warning dialog", e);
-                            // Default to proceeding if dialog fails
+                            logger.error("Error showing min speech dialog", e);
                             userProceed.set(true);
                         }
 
                         if (!userProceed.get()) {
-                            console.log("Transcription cancelled by user");
+                            console.log("Recording discarded by user (insufficient speech)");
                             cancelledByUser = true;
-                            return null;  // User cancelled
+                            return null;
                         }
 
-                        console.log("User chose to proceed with transcription");
-                    }
-
-                    // Check minimum speech duration threshold
-                    float minSpeechDuration = configManager.getMinSpeechDuration();
-                    if (analysis != null && minSpeechDuration > 0) {
-                        float estimatedSpeech = analysis.estimatedUsefulSeconds;
-
-                        if (estimatedSpeech < minSpeechDuration) {
-                            console.log(String.format("⚠ Insufficient speech: %.1fs detected (minimum: %.1fs)",
-                                estimatedSpeech, minSpeechDuration));
-
-                            java.util.concurrent.atomic.AtomicBoolean userProceed =
-                                new java.util.concurrent.atomic.AtomicBoolean(false);
-
-                            try {
-                                SwingUtilities.invokeAndWait(() -> {
-                                    MinSpeechDurationDialog dialog = new MinSpeechDurationDialog(
-                                        SwingUtilities.getWindowAncestor(RecorderForm.this),
-                                        estimatedSpeech,
-                                        minSpeechDuration
-                                    );
-                                    userProceed.set(dialog.showAndGetResult());
-                                });
-                            } catch (Exception e) {
-                                logger.error("Error showing min speech dialog", e);
-                                userProceed.set(true);
-                            }
-
-                            if (!userProceed.get()) {
-                                console.log("Recording discarded by user (insufficient speech)");
-                                cancelledByUser = true;
-                                return null;
-                            }
-
-                            console.log("User chose to proceed with transcription despite short speech");
-                        }
+                        console.log("User chose to proceed with transcription despite short speech");
                     }
                 }
 
-                // Apply silence removal if enabled
+                // Prepare file for transcription
                 File fileToTranscribe = audioFile;
-                if (configManager.isSilenceRemovalEnabled()) {
+
+                if (validatedSystemTrack != null && validatedSystemTrack.exists()) {
+                    // Dual-source recording: merge mic + system tracks
+                    console.log("Merging mic + system audio tracks...");
+                    File mergedFile = FFmpegUtil.mergeAudioTracks(audioFile, validatedSystemTrack);
+                    if (mergedFile != null) {
+                        fileToTranscribe = mergedFile;
+                        console.log("Audio tracks merged successfully");
+                    } else {
+                        console.log("Track merge failed, using mic track only");
+                    }
+                    // Skip silence removal for dual-source (breaks timeline alignment)
+                } else if (configManager.isSilenceRemovalEnabled()) {
+                    // Mic-only: apply silence removal as usual
                     fileToTranscribe = SilenceRemover.removeSilence(
                         audioFile,
                         configManager.getSilenceThreshold(),
@@ -1545,6 +1935,33 @@ public class RecorderForm extends javax.swing.JPanel {
 
                 long transcriptionTime = System.currentTimeMillis() - transcriptionStartTime;
                 console.log(String.format("Transcription took %dms", transcriptionTime));
+
+                // Apply source attribution labels for dual-source recordings
+                if (result != null && systemTrackFile != null && systemTrackFile.exists()) {
+                    try {
+                        console.log("Applying source attribution...");
+                        SourceActivityTracker tracker = new SourceActivityTracker();
+                        List<SourceActivityTracker.ActivitySegment> timeline =
+                            tracker.trackActivity(audioFile, systemTrackFile);
+
+                        // Only label if both sources have activity — single source is implied
+                        boolean hasUserActivity = timeline.stream()
+                            .anyMatch(s -> s.source == SourceActivityTracker.Source.USER || s.source == SourceActivityTracker.Source.BOTH);
+                        boolean hasSystemActivity = timeline.stream()
+                            .anyMatch(s -> s.source == SourceActivityTracker.Source.SYSTEM || s.source == SourceActivityTracker.Source.BOTH);
+
+                        if (hasUserActivity && hasSystemActivity) {
+                            result = tracker.labelTranscript(result, timeline);
+                            console.log(String.format("Source attribution complete (%d segments)", timeline.size()));
+                        } else {
+                            console.log("Single source detected, skipping attribution labels");
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Source attribution failed, returning unlabeled transcript: {}", e.getMessage());
+                        console.log("Source attribution skipped: " + e.getMessage());
+                    }
+                }
+
                 return result;
             } catch (Exception e) {
                 logger.error("Error during transcription", e);
@@ -1557,6 +1974,10 @@ public class RecorderForm extends javax.swing.JPanel {
 
         @Override
         protected void done() {
+            activeTranscriptionWorker = null;
+            if (isCancelled()) {
+                return;  // User cancelled — UI already reset by toggleRecording()
+            }
             ConsoleLogger console = ConsoleLogger.getInstance();
             String transcript = null;
             try {
@@ -1604,6 +2025,8 @@ public class RecorderForm extends javax.swing.JPanel {
                     if (selectedItem != null && selectedItem.uuid != null) {
                         Pipeline pipeline = configManager.getPipelineByUuid(selectedItem.uuid);
                         if (pipeline != null) {
+                            // Switch progress bar to post-processing stage (orange)
+                            setProgressStage(IndeterminateProgressBar.Stage.POST_PROCESSING);
                             // Run post-processing in separate worker to avoid blocking UI
                             new PostProcessingWorker(transcript, pipeline).execute();
                         } else {
@@ -1728,6 +2151,22 @@ public class RecorderForm extends javax.swing.JPanel {
     }
 
     /**
+     * Updates the "Auto-pipeline active" indicator visibility.
+     * Shows when section is hidden but automatic post-processing is enabled.
+     */
+    private void updatePipelineActiveIndicator() {
+        if (pipelineActiveIndicator == null) {
+            return; // Not yet initialized
+        }
+
+        boolean sectionHidden = !showPipelineSectionCheckBox.isSelected();
+        boolean autoEnabled = enablePostProcessingCheckBox.isSelected();
+
+        // Show indicator only when section is hidden but auto-processing is enabled
+        pipelineActiveIndicator.setVisible(sectionHidden && autoEnabled);
+    }
+
+    /**
      * Runs the selected pipeline manually on the current transcription text.
      * Works regardless of "Enable Post Processing" checkbox state.
      */
@@ -1757,7 +2196,7 @@ public class RecorderForm extends javax.swing.JPanel {
         isManualPipelineRunning = true;
         runPipelineButton.setText("Running...");
         runPipelineButton.setEnabled(false);
-        setProcessingState(true);  // Show blue indicator and update tray
+        setProcessingState(true, IndeterminateProgressBar.Stage.POST_PROCESSING);  // Orange progress bar
 
         ConsoleLogger.getInstance().separator();
         ConsoleLogger.getInstance().log("Manual pipeline run: " + pipeline.title);
@@ -1962,6 +2401,63 @@ public class RecorderForm extends javax.swing.JPanel {
         currentSearchIndex = -1;
         searchResultLabel.setText("");
         consoleLogArea.getHighlighter().removeAllHighlights();
+    }
+
+    // ========== Process Progress Panel Support ==========
+
+    private File currentProcessingFile;  // Track file for retry functionality
+    private SwingWorker<?, ?> currentWorker;  // Track current worker for cancellation
+
+    /**
+     * Cancels the current file processing operation.
+     */
+    private void cancelCurrentOperation() {
+        ConsoleLogger.getInstance().log("Operation cancelled by user");
+        if (currentWorker != null && !currentWorker.isDone()) {
+            currentWorker.cancel(true);
+        }
+        processProgressPanel.hidePanel();
+        resetUIAfterTranscription();
+        updateTrayMenu();
+    }
+
+    /**
+     * Retries the last failed file processing operation.
+     */
+    private void retryCurrentOperation() {
+        if (currentProcessingFile != null && currentProcessingFile.exists()) {
+            ConsoleLogger.getInstance().log("Retrying operation on: " + currentProcessingFile.getName());
+            processProgressPanel.reset();
+            handleDroppedAudioFile(currentProcessingFile);
+        } else {
+            ConsoleLogger.getInstance().logError("Cannot retry - no file available");
+            processProgressPanel.hidePanel();
+        }
+    }
+
+    /**
+     * Shows the process progress panel for file-based operations.
+     */
+    private void showProgressPanel(File file, String stage, IndeterminateProgressBar.Stage progressStage) {
+        currentProcessingFile = file;
+        processProgressPanel.setFile(file);
+        processProgressPanel.start(progressStage, stage);
+    }
+
+    /**
+     * Updates the process progress panel stage text.
+     */
+    private void updateProgressPanelStage(String stage) {
+        processProgressPanel.setStage(stage);
+    }
+
+    /**
+     * Hides the process progress panel.
+     */
+    private void hideProgressPanel() {
+        processProgressPanel.hidePanel();
+        currentProcessingFile = null;
+        currentWorker = null;
     }
 
 }

@@ -64,7 +64,7 @@ public class ToastNotification extends JDialog {
         messageArea.setForeground(new Color(50, 50, 50));
         messageArea.setOpaque(false);
         messageArea.setBackground(new Color(0, 0, 0, 0));
-        messageArea.setFont(new Font(UIManager.getFont("Label.font").getName(), Font.PLAIN, 13));
+        messageArea.setFont(UIManager.getFont("Label.font"));
         messageArea.setBorder(null);
 
         messageArea.addMouseListener(new MouseAdapter() {

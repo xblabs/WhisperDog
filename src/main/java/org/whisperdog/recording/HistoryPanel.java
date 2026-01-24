@@ -159,7 +159,7 @@ public class HistoryPanel extends JPanel {
         textArea.setWrapStyleWord(true);
         textArea.setEditable(false);
         textArea.setRows(3);
-        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
+        textArea.setFont(org.whisperdog.ui.FontUtil.getMonospacedFont(Font.PLAIN, 11));
         textArea.setBackground(UIManager.getColor("TextField.background"));
 
         JScrollPane textScrollPane = new JScrollPane(textArea);

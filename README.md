@@ -154,10 +154,57 @@ whisperdog/
 ## Version History
 
 ### WhisperDog Releases
-- **v2.0.0** - Initial WhisperDog release (rebrand from WhisperCat-xblabs)
-  - Complete rebrand with new identity
-  - All features from WhisperCat-xblabs preserved
-  - Updated UI icons and branding
+
+#### v2.1.0
+
+##### Error Handling & Resilience
+
+- Automatic retry with exponential backoff for transient API errors (429, 500, 502, 503, 504)
+- User-friendly error dialogs with actionable guidance
+- Pre-submission file validation with supported format checking
+- Graceful timeout handling (120s default)
+
+##### Mic Test Screen
+
+- Real-time VU meter for audio level visualization
+- Silence threshold calibration slider
+- Test recording with playback functionality
+- Accessible via Options → Mic Test tab
+
+##### UI/UX Improvements
+
+- **Post-Processing UI Reorganization**
+  - Separate "Show section" and "Auto-execute" controls
+  - Hidden-but-active indicator when section collapsed but auto-processing enabled
+  - Persistent visibility state across sessions
+- **Searchable Log Screen**
+  - Incremental search with yellow/orange highlighting
+  - Previous/Next navigation with match counter
+  - Ctrl+F keyboard shortcut
+- **Long-Running Process UX**
+  - Process progress panel with file path display
+  - Copy Path and Open Folder buttons
+  - Cancel and Retry functionality for file operations
+  - Stage-aware indeterminate progress bar
+
+##### Bug Fixes & Enhancements
+
+- File size validation before API submission
+- Dropdown reset hotkey functionality
+- Pipeline button disabled state fix
+- Large recording warning dialog with configurable threshold
+- Visual separators in transcript log for readability
+- Minimum speech duration threshold with user prompt
+- Recording warning indicator in system tray
+- File type validation with supported formats list
+
+---
+
+#### v2.0.0 - Initial WhisperDog release (rebrand from WhisperCat-xblabs)
+
+- Complete rebrand with new identity
+- All features from WhisperCat-xblabs preserved
+- Updated UI icons and branding
 
 ### WhisperCat-xblabs Legacy
 See the original [WhisperCat-xblabs repository](https://github.com/xblabs/whispercat-xb) for pre-2.0.0 changelog.

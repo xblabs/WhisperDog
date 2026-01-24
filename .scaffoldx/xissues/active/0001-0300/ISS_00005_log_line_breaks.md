@@ -3,7 +3,7 @@ issue_id: ISS_00005
 title: Add line breaks around transcribed text in logs
 type: enhancement
 priority: low
-status: open
+status: resolved
 created: 2025-12-30
 tags: [ui, logs, readability]
 alias: WD-0010

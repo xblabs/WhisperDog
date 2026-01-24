@@ -1,413 +1,411 @@
 ---
-title: Claude Desktop Instructions - Polymorphic Template
-environment: claude-desktop
+title: ScaffoldX Configuration - Claude Code
+environment: claude-code
 mcp_enabled: true
-generated: 2025-12-31T03:34:40.420Z
+generated: 2026-01-22T04:54:27.225Z
 ---
 
-# ScaffoldX Configuration for Claude Desktop
-# ============================================
-# IMPORTANT: This file is generated from templates - DO NOT EDIT DIRECTLY
-# Edit: .scaffoldx/xcore/templates/core_instructions/claude-desktop.template.md
+<!-- GENERATED FILE - DO NOT EDIT DIRECTLY
+To modify Layer 2 (project-specific): Edit .scaffoldx/xcontext/_core_agent_instructions_layer_source.md
+To modify Layer 1/3 (framework/behavioral): Edit templates in .scaffoldx/xcore/templates/core_instructions/
+Then run: x-instruction-build -->
+
+# ScaffoldX Configuration
 
 SCAFFOLDX_REPO_ROOT=C:\__dev\_projects\whisperdog
 REPO_ROOT=C:\__dev\_projects\whisperdog
-PROJECT_NAME=ScaffoldX
-USER_NAME=User
+PROJECT_NAME=whisperdog
+USER_NAME=Henry
 
-# ======================
-# CLAUDE DESKTOP SPECIFIC SETUP
-# ======================
+---
 
-## MCP (Model Context Protocol) Configuration
+## Claude Code Environment Setup
 
-Claude Desktop uses MCP for file system operations through Desktop Commander.
-This provides powerful file manipulation capabilities while maintaining security.
+{{MCP_SECTION}}
 
-### MCP Hierarchy - STRICT PRIORITY
+---
 
-ONLY use the Desktop Commander MCP for file operations:
-- ✅ read_file, write_file, edit_block, list_directory, create_directory
-- ✅ execute_command for script delegation when specified
-- ❌ DO NOT use MySQL, Trello, REPL, or other MCP tools even if available
-- ❌ DO NOT create chat artifacts - use file operations instead
-
-### Token-Efficient Operations
-
-**ALWAYS prioritize edit_block over write_file:**
-- edit_block: Shows only the diff (minimal tokens)
-- write_file: Shows entire file content (maximum tokens)
-
-# ======================
-# CONTEXT LOADING CONFIGURATION
-# ======================
+## Context Loading Configuration
 
 <!-- Context Loading: Based on .scaffoldx/xconfig/context.yaml -->
-<!-- nlp: minimal | layer2: SUMMARY | commands: pareto -->
+<!-- nlp: pareto | layer2: enabled | commands: common -->
 
-# ======================
-# LAYER 1: CORE FRAMEWORK RULES
-# ======================
+---
+
+## Layer 1: Core Framework Rules
 
 <!-- Layer 1 Core: Always loaded (bootstrap + config-dependent modules) -->
-# ScaffoldX Minimal Bootstrap - claude_desktop
+# Base ScaffoldX Instructions
 
-**Environment**: claude_desktop
-**Repo**: C:\__dev\_projects\whisperdog
-**User**: User
+ScaffoldX is an AI-assisted development scaffold for project management.
+
+## Core Principles
+- Markdown-first architecture
+- File-based state management
+- Command-driven workflow
+- Token efficiency
+
+## Framework Structure
+- Commands in `.scaffoldx/xcore/commands/`
+- Tasks in `.scaffoldx/xtasks/`
+- Memory in `.scaffoldx/xmemory/`
+- Context in `.scaffoldx/xcontext/`
+
+<!-- Config-dependent Layer 1 modules -->
+
+<!-- ScaffoldX Pareto Command Set (Layer 1) - Top 80% usage coverage with NLP patterns -->
+
+### Universal Core Commands (Always Available)
+
+### Task Management (Most Used)
+
+x-task-create | create task {name}, make a task for {name}, new task {name}, add task {name}, start working on {name}
+x-task-switch | switch to task {id}, work on task {id}, continue task {id}, focus on {id}, change to task {id}
+x-task-list | list tasks, show all tasks, what tasks exist, display task list, show me the tasks
+x-task-status | task status, current task status, what's the status, show task progress, where are we on the task
+x-task-complete | complete task, mark task done, finish task, task is complete, done with task
+
+### Git Operations (High Frequency)
+
+x-git-commit | commit changes, git commit, save changes, commit with message {msg}, save my work
+x-checkpoint-create | save session, checkpoint, save progress, create checkpoint, save my work, save session state
+x-checkpoint-load | continue session, load checkpoint {id}, resume from checkpoint, pick up where I left off, restore checkpoint {id}
+
+### Core System
+
+x-help | help, show help, help with {cmd}, how do I use {cmd}, what commands are available
+x-insight-capture | capture insight {insight}, save learning {insight}, record insight {insight}, add insight {insight}, document learning {insight}
+x-checkpoint-create | create checkpoint, save checkpoint {type}, checkpoint this session, create save point, save session state, create milestone checkpoint
+
+### Domain Commands (Loaded by Sentinel)
+
+### Task Operations
+
+x-task-start | start task {id}, begin task {id}, work on {id}, activate task {id}
+x-task-pause | pause task, stop working, take a break, suspend task
+x-task-resume | resume task {id}, continue paused task {id}, unpause {id}, restart task {id}
+x-task-archive | archive task, archive completed tasks, move finished tasks to archive, cleanup completed work
+x-task-activate | activate task {id}, make task {id} active, start draft {id}, enable task {id}
+x-task-dependencies | show dependencies for {id}, add dependency {deps} to {id}, task {id} depends on {deps}, link tasks {id} and {deps}
+x-task-consolidate | consolidate task {source} into {target}, merge task {source} with {target}, combine tasks {source} and {target}
+x-task-improve | improve task {id}, enhance task {id}, optimize task {id}, refine task {id}
+x-task-review | review task {id}, check task {id}, examine task {id}, audit task {id}
+
+### Git Workflow
+
+x-git-status | git status, show git changes, what changed, show modifications
+x-git-push | push changes, git push, upload changes, sync to remote
+
+### Knowledge Management
+
+x-knowledge-extract | extract knowledge from {id}, get learnings from task {id}, harvest insights from {id}, document knowledge from {id}
+x-knowledge-create | create knowledge {title}, document {title}, add knowledge article {title}, write documentation for {title}
+x-knowledge-add | add knowledge to {id}, document learning in {id}, save insight to task {id}
+x-archive-search | search archives for {query}, find in archive {query}, look up {query} in history, search old {query}
+
+## Command Processing Rules
+
+### NLP Resolution Flow
+1. Check Pareto patterns (this file)
+2. Load domain shards if needed
+3. Use fuzzy matching for typos
+
+### Script vs LLM Execution
+- **Scripts handle**: File operations, ID generation, data processing
+- **LLM handles**: Content creation, semantic decisions, pattern recognition
+
+### Location Priority
+1. Custom: `.scaffoldx/xcustom/commands/` (user overrides)
+2. Core: `.scaffoldx/xcore/commands/` (framework defaults)
+
+### Delegation Markers
+- `SCRIPT: node path/to/script.js` - Execute script, process JSON result
+- `LLM: direct` - Implement behavior in markdown specification
+
+## Usage Logging (AI-GOV-007)
+After successful command execution, log silently:
+```bash
+node .scaffoldx/xcore/scripts/log-command-usage.js log '{"command":"x-task-create","resolution_method":"NLP_TIER_1","confidence":1.0}'
+```
+
+## Natural Language Command Resolution (NLP)
+
+### Overview
+
+You have a three-tier system for resolving natural language to x-commands:
+
+- **Tier 1 (80%)**: Patterns in Pareto command set (instant, already loaded)
+- **Tier 2 (15%)**: Domain-specific patterns (load on-demand)
+- **Tier 3 (5%)**: Fuzzy matching for typos (call script)
+
+### How to Use the Three Tiers
+
+#### Tier 1: Check Pareto Patterns First
+
+Look at the natural language patterns listed with each command in the Pareto set in CLAUDE.md.
+
+**Example**:
+
+```text
+User: "load checkpoint CP_2025_10_24_001"
+You: Check x-checkpoint-load patterns
+You: Match "load checkpoint {id}"
+You: Execute x-checkpoint-load CP_2025_10_24_001
+```
+
+#### Tier 2: Load Domain Patterns if Tier 1 Misses
+
+If no Pareto match, load the command NLP sentinel and then appropriate shard:
+
+**Example**:
+
+```text
+User: "archive all completed tasks"
+You: No Pareto match
+You: read_file(".scaffoldx/xcore/internal/sentinels/domains/command_nlp_sentinel.md")
+You: Detect "archive" keyword -> task domain
+You: read_file(".scaffoldx/xcore/nlp/domains/task_nlp.md")
+You: Match pattern and execute
+```
+
+#### Tier 3: Use Fuzzy Matching for Typos
+
+When Tiers 1 & 2 fail and typos are suspected:
+
+**Example**:
+
+```text
+User: "creat a taks for auth"
+You: No match in Tiers 1 & 2, obvious typos
+You: Bash("node .scaffoldx/xcore/scripts/x-nlp-resolve.js 'creat a taks for auth'")
+Result: {
+  "success": true,
+  "command": "x-task-create",
+  "parameters": { "name": "auth" },
+  "corrections": { "creat": "create", "taks": "task" }
+}
+You: Execute x-task-create auth
+```
+
+### Important NLP Rules
+
+1. **You make ALL semantic decisions** - Scripts only match text
+2. **Try tiers in order** - 1 -> 2 -> 3
+3. **Preserve parameters** - Extract and pass them correctly
+4. **Log resolution** - Track which tier resolved the command using NLP_TIER_1, NLP_TIER_2, or NLP_TIER_3
+5. **Fall back gracefully** - Suggest explicit format if all tiers fail
+
+### Common Patterns Reference
+
+Most frequent natural language patterns you'll encounter:
+
+- "load checkpoint X" -> x-checkpoint-load X
+- "create task for Y" -> x-task-create Y
+- "switch to task NNNN" -> x-task-switch NNNN
+- "list all tasks" -> x-task-list
+- "commit changes" -> x-git-commit
+- "save checkpoint" -> x-checkpoint-create
+- "help with X" -> x-help --command X
+- "archive completed tasks" -> x-task-archive --completed
+- "what's the status" -> x-task-status
+- "capture insight X" -> x-insight-capture X
+
+*Layer 1 Commands with NLP Patterns - 80% usage coverage*
+
+
+<!-- Layer 1 Core Governance -->
+
+### Framework Development Mode (AI-GOV-008)
+
+**This Repository Context**: You are working ON ScaffoldX itself
+
+### What This Means:
+- **ALL .scaffoldx/ operations**: LLM-first approach
+- **Sentinels**: Patterns YOU recognize, not JavaScript monitoring
+- **Context loading**: YOU decide when to read files
+- **Commands (x-*)**: Markdown specs YOU interpret
+
+### Deviation Check:
+Before suggesting ANY implementation, ask:
+1. Am I in .scaffoldx/ directories? → LLM does it
+2. Am I suggesting scripts calculate relevance? → STOP
+3. Am I building "runtime monitoring"? → You ARE the runtime
+4. Am I violating unidirectionality? → Scripts collect, LLM decides
+
+### User Counter-Steering:
+If user says these phrases, you've deviated:
+- "That's a deviation"
+- "LLM-first"
+- "You ARE the runtime"
+→ Immediately reframe your suggestion
+
+### Exception:
+If working in /src/ or /app/ (user project code) → Traditional implementation OK
 
 ---
 
-## Core Framework Identity
+## Semantic Boundary Detection (AI-GOV-010 Trigger)
 
-**ScaffoldX**: AI-assisted development scaffold for project management and execution.
+**When user mentions ambiguous terms**, check if they mean ScaffoldX concepts:
 
-**Markdown-First**: .md files ARE executable specifications, NOT documentation.
+### Quick Reference (Load full atoms if confusion)
+- **sentinel** + "pattern/context" → ScaffoldX (load SEMANTIC_ATOMS.md)
+- **task** + 4-digit ID → ScaffoldX
+- **context** + "Layer 1/2" → ScaffoldX
+- **command** + "x-" prefix → ScaffoldX
+- **knowledge** + "/knowledge/" → ScaffoldX (task insights)
+- **checkpoint** + "session state" → ScaffoldX
+- **transition** + "TRANS_" → ScaffoldX
+- **insight** + "capture" → ScaffoldX
+- **issue** + "ISS-" → ScaffoldX
 
-**Two-Layer Architecture**:
-- **LLM Layer**: Reasoning, content generation, decisions
-- **Script Layer**: Deterministic operations (100x+ speed)
+### When Ambiguous:
+```
+IF user term matches above patterns BUT context unclear
+THEN: read_file(".scaffoldx/xcore/internal/governance/SEMANTIC_ATOMS.md")
+```
 
----
-
-## Core Philosophy (Evolution, Not Revolution)
-
-**CRITICAL**: These principles have ALWAYS been ScaffoldX's foundation. We're making them explicit, not introducing them.
-
-### Contextual Expansion
-Load information on-demand, when you need it, not upfront.
-
-**How it works**:
-- Start with minimal context (this bootstrap)
-- When you encounter expansion triggers, load specific files
-- Progressive disclosure: summary → details → deep dive
-- Natural references guide you to additional context
-
-**Why it matters**: Keeps token usage minimal while maintaining full access to knowledge.
-
-### Traversability
-Navigate context naturally through semantic understanding, not algorithmic path calculation.
-
-**How it works**:
-- Read expansion triggers as natural language
-- Decide what to load based on comprehension (not keyword matching)
-- Follow file references when semantically relevant
-- Explore tangential context when it makes sense
-
-**Why it matters**: Your understanding determines what's relevant, not pre-computed scores.
-
-### The MCP Analogy (AI-GOV-013)
-
-**Think of yourself as an MCP HOST, delegated executors as MCP SERVERS**
-
-ScaffoldX follows the Model Context Protocol pattern:
-
-| Component | MCP Term | Your Role |
-|-----------|----------|-----------|
-| **Command Definitions (.md)** | Protocol Specs | YOU read and interpret |
-| **Delegated Executors (.js)** | Servers | Return raw resources |
-| **You (AI)** | Host | Decide everything, interpret all data |
-| **Payloads** | Requests | YOU craft with all parameters |
-| **JSON Responses** | Resources | YOU interpret and present |
-
-**Delegated Executors Should Do** (Deterministic, like MCP servers):
-- Scan filesystems → return raw file lists
-- Read JSON files → return raw content
-- Count tokens (math: chars / 4)
-- Generate sequential IDs
-- Create directory structures
-- Output raw data as JSON (no interpretation)
-
-**YOU (AI/LLM) Should Do** (Semantic, like MCP host):
-- Read command definitions (.md) to understand what's possible
-- Decide what's relevant and significant
-- Recognize patterns in meaning
-- Write natural prose
-- Decide what context to load
-- Craft payloads for executors
-- Interpret raw responses from executors
-- Present results to user
-
-**CRITICAL - AI-GOV-013 Violations**:
-- ❌ Executors deciding what's "relevant", "critical", or "important"
-- ❌ Executors filtering/presenting data for you
-- ❌ Executors making semantic judgments
-- ❌ YOU accepting pre-interpreted data without question
-
-**Think**: If an MCP server wouldn't do it, a delegated executor shouldn't either.
-
-**See**: `.scaffoldx/xcore/xcontext/architecture/mcp-analogy-mental-model.md` for complete explanation.
+**Full atom definitions**: 15+ concepts with boundaries, precedence, signatures
+**Load only when**: Term collision or ambiguity detected
 
 ---
 
-## Command Processing Basics
+## Oracle Usage Enforcement (AI-GOV-009)
 
-### x-Command Execution - NON-NEGOTIABLE
+**NEVER reason about external state - ALWAYS invoke oracle**
 
-**NO EXCEPTIONS. NO ANALYSIS. NO QUESTIONS.**
+### Scope
+This rule applies to ALL operations involving:
+- Date and time
+- File system state
+- Git repository state
+- Project version information
+- Any deterministic external data
 
-When you see: `x-<command>`
-IMMEDIATELY:
-1. Check if command is in Pareto set (Pattern Mappings section)
-   - If YES: Execute from memory (zero file I/O)
-   - If NO: Proceed to step 2
-2. READ (not execute) `.scaffoldx/xcustom/commands/x-<command>.md` (fallback: `.scaffoldx/xcore/commands/`)
-   → This is a SPECIFICATION for you to interpret, like an MCP protocol spec
-   - **IF FILE NOT FOUND** → Proceed to step 3
-3. **COMMAND NOT FOUND PROTOCOL** (AI-GOV-024):
-   - ❌ DO NOT invent behavior
-   - ❌ DO NOT create directories or files speculatively
-   - ❌ DO NOT guess what the command should do
-   - ✅ STOP and ASK: "Command `x-<name>` not found. Should I create it, or did you mean something else?"
-   - Only proceed after user confirms
-4. DECIDE based on spec: Does it delegate to an executor?
-5. IF delegated: Extract executor path from `**Script Delegation**`
-6. CRAFT payload with all parameters
-7. INVOKE executor: `node {executor}` with payload
-8. INTERPRET raw JSON response
-9. PRESENT result to user
+### Prohibited Behavior
+❌ **NEVER reason about**:
+- Dates: "Today is probably...", "Based on the last session..."
+- Files: "The file probably exists because...", "We just created it..."
+- Git: "The branch is probably still...", "The repo should be clean..."
 
-**This is not optional. This is not a suggestion. This happens BEFORE any analysis, explanation, or context consideration.**
+### Required Behavior
+✅ **ALWAYS invoke oracle** for external state:
+```bash
+# For dates/times
+node .scaffoldx/xcore/scripts/oracles/oracle-cli.js temporal getCurrentDate
+node .scaffoldx/xcore/scripts/oracles/oracle-cli.js temporal getCurrentTimestamp
 
-**Remember**: .md files are specifications YOU read. .js executors are MCP-server-like tools YOU invoke.
+# For file operations
+node .scaffoldx/xcore/scripts/oracles/oracle-cli.js filesystem fileExists "./path/to/file"
+node .scaffoldx/xcore/scripts/oracles/oracle-cli.js filesystem getLastModified "./file"
+
+# For project state
+node .scaffoldx/xcore/scripts/oracles/oracle-cli.js project getBranchInfo
+node .scaffoldx/xcore/scripts/oracles/oracle-cli.js project getRepoStatus
+```
+
+### Success Criteria
+- Zero date errors in session logs
+- Zero file assumption errors
+- 90%+ oracle usage rate for deterministic queries
+
+**Full Documentation**: `.scaffoldx/xcore/scripts/oracles/README.md`
+**Governance Rule**: `.scaffoldx/xcore/internal/governance/AI-GOV-009_oracle_usage_enforcement.md`
 
 ---
 
-## Critical Governance (Always Enforced)
+## Checklist Discipline (AI-GOV-012)
 
-### Checklist Discipline (AI-GOV-012)
-✅ **Read checklist FIRST** when resuming task - `.scaffoldx/xtasks/<task-id>/03_checklist.md`
-✅ **Update checklist BEFORE commit** - Check [x] all completed items
-✅ **Work sequentially** - Resume from first unchecked [ ] item
+### Resume Protocol
+✅ **FIRST ACTION** when resuming any task:
+- Read `.scaffoldx/xtasks/<task-id>/03_checklist.md`
+- Find first unchecked `[ ]` item
+- Resume work from that point
 
-### File System Protection
-❌ **NEVER modify .env files** - READ-ONLY with redaction
-❌ **NEVER create task directories directly** - Use `x-task-create` command
-❌ **NEVER modify archived content** - Archives are read-only
-❌ **NEVER edit framework files** - Use x-commands for modifications
+### Commit Protocol
+✅ **BEFORE ANY COMMIT**:
+- Update checklist with completed work `[x]`
+- Verify all previous items remain checked
+- Commit message includes task progress
 
-### Security Rules
-✅ Always redact API keys (patterns: `sk-*`, `pk-*`, `AIza*`)
-✅ Never expose passwords or tokens in responses
-✅ Scan for credentials before displaying any content
-✅ Protected files: `.env`, `credentials.json`, SSH keys
+### Sequential Execution
+✅ **WORK ORDER**:
+- Complete items in checklist order
+- Never skip ahead
+- Update checklist after each meaningful unit of work
 
-### Token Efficiency
-✅ Use `edit_block` over `write_file` (99% token savings)
-✅ Use `read_file` with offset/length for targeted reads
-✅ Delegate deterministic operations to executors (when command definition specifies)
+---
 
-### Command Usage Logging (AI-GOV-007)
-✅ **After successful x-* command execution** - Log silently for optimization
-✅ **Fire-and-forget** - Don't announce, don't wait, don't fail on log errors
-✅ **Privacy-safe** - Log command names only, not arguments or content
-✅ **Enables adaptation** - Feeds `x-pareto-optimize` for personalized system
+## File System Protection (CRITICAL)
 
-**Quick log**:
+### Never Modify Files
+❌ **PROHIBITED**: `.env` files (READ-ONLY, redact content)
+❌ **PROHIBITED**: Framework files in `.scaffoldx/xcore/`
+❌ **PROHIBITED**: Archived content (read-only by design)
+❌ **PROHIBITED**: Direct task directory creation
+
+### Use Commands Instead
+✅ `x-task-create` - Creates properly structured task directories
+✅ `x-env-sync` - Updates environment files safely
+✅ `x-config-set` - Modifies configuration files
+
+---
+
+## Security Rules (IMMEDIATE PRIORITY)
+
+### Credential Protection
+❌ **NEVER expose**:
+- API keys (patterns: `sk-*`, `pk-*`, `AIza*`)
+- Passwords, tokens, secrets
+- Private SSH keys
+
+### Content Redaction
+✅ **ALWAYS redact** sensitive content before displaying
+✅ **ALWAYS scan** for credentials before file operations
+✅ **PROTECTED FILES**: `.env`, `credentials.json`, SSH keys
+
+---
+
+## Command Usage Logging (AI-GOV-007)
+
+### Implementation
+✅ **AFTER successful x-* command execution**:
 ```bash
 node .scaffoldx/xcore/scripts/log-command-usage.js log '{"command":"x-task-create","resolution_method":"EXPLICIT","confidence":1.0}'
 ```
 
----
-
-## Sentinel System - Domain Detection
-
-### Root Sentinel Registry
-
-**Task Domain** (`task_sentinel.md`):
-- Triggers: `x-task-*` commands, task ID (4 digits), "task" + action verb
-- Loads: Task lifecycle, governance, creation rules
-
-**Security Domain** (`security_sentinel.md`) - **IMMEDIATE PRIORITY**:
-- Triggers: `.env` mention, "API key", "password", "secret", "token"
-- Loads: Enhanced security monitoring, credential detection patterns
-
-**File Operations Domain** (`file_ops_sentinel.md`):
-- Triggers: File paths mentioned, file verbs (read/write/edit/delete)
-- Loads: File operation governance, MCP best practices
-
-**Git Domain** (`git_sentinel.md`):
-- Triggers: `x-git-*` commands, "commit", "push", "branch"
-- Loads: Git workflows, commit message conventions
-
-**Insight Domain** (`insight_sentinel.md`):
-- Triggers: "weird", "unexpected", "strange", surprise expressions
-- Loads: Learning system, insight capture templates
-
-### How Sentinels Work
-
-```
-1. User input arrives
-2. Root sentinel scans for domain patterns
-3. Match found → Load domain sentinel file
-4. Domain sentinel activates specific governance
-5. Additional context loaded on-demand within domain
-```
-
-### CRITICAL: Sentinel Loading Instructions
-
-**IMMEDIATE ACTION REQUIRED** - When patterns detected, immediately load sentinels:
-
-1. **Task Pattern Detected** → IMMEDIATELY read `.scaffoldx/xcore/internal/sentinels/domains/task_sentinel.md`
-   - Triggers: `x-task-*`, 4-digit task IDs, "task" + action verb
-
-2. **Security Pattern Detected** → IMMEDIATELY read `.scaffoldx/xcore/internal/sentinels/domains/security_sentinel.md`
-   - Triggers: `.env`, "API key", "password", "secret", "token"
-   - **PRIORITY**: Always load first when detected
-
-3. **File Operation Pattern** → IMMEDIATELY read `.scaffoldx/xcore/internal/sentinels/domains/file_ops_sentinel.md`
-   - Triggers: file paths, read/write/edit/delete operations
-
-4. **Git Pattern Detected** → IMMEDIATELY read `.scaffoldx/xcore/internal/sentinels/domains/git_sentinel.md`
-   - Triggers: `x-git-*`, "commit", "push", "branch"
-
-5. **Insight Pattern Detected** → IMMEDIATELY read `.scaffoldx/xcore/internal/sentinels/domains/insight_sentinel.md`
-   - Triggers: "weird", "unexpected", "strange", surprise expressions
-
-**Example Flow**:
-```
-User: "x-task-create New Feature"
-    ↓
-Root detects: "x-task-create" pattern
-    ↓
-AI: read_file(".scaffoldx/xcore/internal/sentinels/domains/task_sentinel.md")
-    ↓
-Task sentinel provides: TASK-GOV-001 rules + creation patterns
-    ↓
-Execute with full context
-```
+### Requirements
+✅ **Fire-and-forget**: Don't announce, don't wait, don't fail on errors
+✅ **Privacy-safe**: Command names only, no arguments or content
+✅ **Optimization data**: Enables `x-pareto-optimize` adaptation
 
 ---
 
-## Session Initialization & Layer 2 Context
+## MCP File Operations Efficiency (AI-GOV-019 Trigger)
 
-### SessionStart Behavior
+**CRITICAL**: Desktop Commander is third-party - minimize exposure
 
-**IMMEDIATE ACTIONS** when starting a new session:
+**Core Principle**:
+- ✅ Scripts MUST use Node.js fs (self-sufficient, no MCP dependency)
+- ❌ Scripts NEVER depend on MCP servers
+- ✅ MCP is for Claude interactive work only (optional convenience)
 
-1. **Generate Layer 2 Context**:
-   ```
-   node .scaffoldx/xcore/scripts/x-context-reindex.js
-   ```
-   - Creates `.scaffoldx/xcontext/current_project_context.md`
-   - Loads current task, recent session summaries, active domains
+**When Working With Files**:
+- Large files (>10K lines): Check size first, use splice or delegate to script
+- xcontext indexing: Scripts read frontmatter only (first 2KB)
+- Interactive exploration: MCP get_file_info → check size → read safely
 
-2. **Load Generated Context**:
-   ```
-   read_file(".scaffoldx/xcontext/current_project_context.md")
-   ```
-   - Provides current work awareness
-   - Shows relevant commands and project knowledge
-
-3. **Monitor for Sentinel Triggers**:
-   - Watch user input for domain patterns
-   - Load appropriate sentinels when triggered
-   - Update Layer 2 when domains activate
-
-### Task Switch Updates
-
-When user switches tasks (`x-task-switch`):
-1. Re-run Layer 2 generation script
-2. Load updated context
-3. Adjust sentinel sensitivity to new domain
+**Detailed Protocol**: Load on-demand when file operations mentioned
+**File**: `.scaffoldx/xcore/internal/governance/patterns/ai/AI-GOV-019_mcp_file_operations_efficiency.md`
 
 ---
 
-## Environment Capabilities
-
-**File Operations**: MCP Desktop Commander
-**MCP Enabled**: true
-**Native Operations**: Limited shell via execute_command
-
-### Environment-Specific Notes
-- Use Desktop Commander for all file operations
-- MCP provides secure file system access
-- Shell commands via execute_command only
-
----
-
-*Minimal Bootstrap v2.0 - Dynamic loading via sentinels*
-*Size: ~190 lines | <6KB | 88% reduction from v1.0*
+*Core governance - Always loaded, minimal weight, triggers deeper loading when needed*
 
 
-<!-- Config-dependent Layer 1 modules -->
+<!-- ScaffoldX Sentinel Registry (Layer 1) - Pattern hints for progressive domain loading -->
 
-<!-- Layer 1 Commands: On-Demand Loading (minimal strategy) -->
-
-**Command Discovery**: When you need to execute a ScaffoldX command:
-1. Check .scaffoldx/xcore/internal/command_system/patterns/pareto_patterns.md for common patterns
-2. Use `./sx.ps1 help` or `./sx.sh help` to see available commands
-3. Load specific command docs from .scaffoldx/xcore/internal/commands/ as needed
-
-
-<!-- Layer 1 Governance: Essential Rules -->
-
-## File Operation Governance
-
-# File Operations Governance
-
-## CRITICAL: Path Access Validation - MANDATORY BLOCKING CHECK
-
-**This MUST be checked BEFORE any other file operation rules.**
-
-### Pre-Operation Path Validation
-
-**BEFORE ANY file operation**:
-1. **VERIFY** the target path is within the configured REPO_ROOT
-2. **CHECK** MCP access to the target directory
-3. **IF MCP cannot access REPO_ROOT or target path**:
-   - **STOP IMMEDIATELY** - This is a BLOCKING condition
-   - **DO NOT** fall back to any other path (especially not ScaffoldX_Dev)
-   - **DO NOT** use alternative locations as "workaround"
-   - **WARN** the user with explicit message:
-     ```
-     ❌ CRITICAL: Cannot access project path: [path]
-        MCP restrictions prevent operations outside: [allowed_paths]
-        NO file operations will be performed.
-     ```
-
-**See**: `.scaffoldx/xcore/internal/governance/patterns/critical/PATH-ACCESS-001.md` for full pattern
-
-## Critical Rules
-
-1. **NEVER modify .env files** - Read only with redaction
-2. **Use x-task-create for task directories** - Never create directly
-3. **Archive files are read-only** - No modifications allowed
-4. **Framework files need permission** - Direct edits require explicit approval
-
-## Token Efficiency
-
-- Always use `edit_block` for modifications (saves 90% tokens)
-- Use `read_file` with offset/length for targeted reads
-- Check for scripts before bulk operations
-- Never rewrite entire files for small changes
-
-## Decision Flow
-
-```
-Need to modify file?
-├─ File exists?
-│  ├─ YES → Use edit_block
-│  └─ NO → Use write_file
-└─ Need to read file?
-   ├─ Know location? → read_file with offset
-   └─ Don't know? → search_code first
-```
-
-
-## Additional Governance
-
-For detailed governance rules, load on-demand from:
-- .scaffoldx/xcore/internal/governance/ (full governance rules)
-- Critical rules: file_operations.md, command_discovery_guard.md
-
-
-<!-- Layer 1 Sentinels: Progressive Loading Triggers -->
-
-# ScaffoldX Sentinel Registry (Layer 1)
-# Pattern hints for progressive domain loading
-
-## Root Sentinel Patterns
+### Root Sentinel Patterns
 
 ### Task Domain Triggers
 **Patterns**: `x-task-*`, 4-digit task IDs, "task" + action verb
@@ -519,12 +517,14 @@ Execute: Create task with full context awareness
 
 *Sentinel Registry - Smart pattern detection for efficient context loading*
 
+{{SESSION_PROTOCOL}}
 
-# ======================
-# LAYER 2: PROJECT-SPECIFIC CONTEXT
-# ======================
+---
+
+## Layer 2: Project-Specific Context
 
 <!-- Layer 2: Project context (loaded based on layer2 config setting) -->
+
 ---
 title: Layer 2 Context - BOOTSTRAP MODE
 generated: 2025-12-26T02:16:08.495Z
@@ -568,128 +568,60 @@ Once ScaffoldX is initialized, you can use these commands:
 *Bootstrap context generated by ScaffoldX initialization*
 
 
-# ======================
-# LAYER 3: CLAUDE BEHAVIORAL TWEAKS
-# ======================
+---
 
-## Claude Desktop Specific Behaviors
+## Layer 3: Claude Behavioral Tweaks
 
-### Session Management
+### Claude Code Specific Behaviors
+
+#### Session Management
+
 - Load most recent session summary at start
 - Save session summaries to .scaffoldx/xmemory/session_summaries/
-- Use Desktop Commander for all file operations
+- Use appropriate file operation tools for environment
 
-### Command Processing
+#### Command Processing
+
 - When user types x-command, read definition from .scaffoldx/xcore/commands/
 - Check for Script Delegation in command definition
 - If present, execute script via execute_command()
 - Otherwise, implement using MCP operations
 
-### File Operations
+#### File Operations
+
 - NEVER modify .env files directly
 - Use edit_block for modifications (99% token savings)
 - Use write_file only for new files
 - Always check governance rules before operations
 
-### Performance Optimizations
+#### Performance Optimizations
+
 - Use scripts for deterministic operations (100x+ speed)
 - Batch file operations when possible
 - Cache frequently accessed data in memory
 - Use targeted reads with offset/length
 
-### Security Rules
+#### Security Rules
+
 - Redact sensitive information when displaying
 - Never expose API keys or credentials
 - Check for .env in .gitignore
 - Suggest environment variables over hardcoded values
 
-## Natural Language Command Resolution (NLP)
+### Critical Reminders
 
-### Overview
-You have a three-tier system for resolving natural language to x-commands:
-- **Tier 1 (80%)**: Patterns in Pareto command set (instant, already loaded)
-- **Tier 2 (15%)**: Domain-specific patterns (load on-demand)
-- **Tier 3 (5%)**: Fuzzy matching for typos (call script)
-
-### How to Use the Three Tiers
-
-#### Tier 1: Check Pareto Patterns First
-Look at the natural language patterns listed with each command in the Pareto set in CLAUDE.md.
-
-**Example**:
-```
-User: "continue from transition TRANS_2025_10_24_001"
-You: Check x-session-continue patterns
-You: Match "continue from transition {id}"
-You: Execute x-session-continue --transition TRANS_2025_10_24_001
-```
-
-#### Tier 2: Load Domain Patterns if Tier 1 Misses
-If no Pareto match, load the command NLP sentinel and then appropriate shard:
-
-**Example**:
-```
-User: "archive all completed tasks"
-You: No Pareto match
-You: read_file(".scaffoldx/xcore/internal/sentinels/domains/command_nlp_sentinel.md")
-You: Detect "archive" keyword → task domain
-You: read_file(".scaffoldx/xcore/nlp/domains/task_nlp.md")
-You: Match pattern and execute
-```
-
-#### Tier 3: Use Fuzzy Matching for Typos
-When Tiers 1 & 2 fail and typos are suspected:
-
-**Example**:
-```
-User: "creat a taks for auth"
-You: No match in Tiers 1 & 2, obvious typos
-You: Bash("node .scaffoldx/xcore/scripts/x-nlp-resolve.js 'creat a taks for auth'")
-Result: {
-  "success": true,
-  "command": "x-task-create",
-  "parameters": { "name": "auth" },
-  "corrections": { "creat": "create", "taks": "task" }
-}
-You: Execute x-task-create auth
-```
-
-### Important NLP Rules
-
-1. **You make ALL semantic decisions** - Scripts only match text
-2. **Try tiers in order** - 1 → 2 → 3
-3. **Preserve parameters** - Extract and pass them correctly
-4. **Log resolution** - Track which tier resolved the command using NLP_TIER_1, NLP_TIER_2, or NLP_TIER_3
-5. **Fall back gracefully** - Suggest explicit format if all tiers fail
-
-### Common Patterns Reference
-
-Most frequent natural language patterns you'll encounter:
-
-- "continue from transition X" → x-session-continue --transition X
-- "create task for Y" → x-task-create Y
-- "switch to task NNNN" → x-task-switch NNNN
-- "list all tasks" → x-task-list
-- "commit changes" → x-git-commit
-- "save session" → x-session-save
-- "help with X" → x-help --command X
-- "archive completed tasks" → x-task-archive --completed
-- "what's the status" → x-task-status
-- "capture insight X" → x-insight-capture X
-
-## Critical Reminders
 - This is a MARKDOWN-FIRST framework
 - Commands are defined in markdown, not code
 - Use MCP for all file operations
 - Never create artifacts in chat
 - Always save important information to files
 
-# ======================
-# USER CUSTOMIZATIONS (PROTECTED)
-# ======================
+---
+
+## User Customizations (Protected)
 
 <!-- BEGIN PROTECTED: user-space -->
-<!-- Add your custom Claude Desktop instructions here -->
+<!-- Add your custom Claude Code instructions here -->
 <!-- This section will be preserved during template regeneration -->
 
 <!-- Example customizations:
@@ -702,6 +634,7 @@ Most frequent natural language patterns you'll encounter:
 <!-- END PROTECTED: user-space -->
 
 ---
-Generated from template: claude-desktop.template.md
-Build timestamp: 2025-12-31T03:34:40.420Z
-ScaffoldX version: 1.0.0
+
+Generated from template: claude-code.template.md
+Build timestamp: 2026-01-22T04:54:27.225Z
+ScaffoldX version: 2.0.0

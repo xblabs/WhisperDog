@@ -83,12 +83,15 @@ public class MicTestPanel extends JPanel {
         playFilteredButton.setEnabled(false);
         playFilteredButton.addActionListener(e -> playAudio(filteredAudio));
 
-        // Threshold slider (0.001 to 0.050, stored as 1-50)
-        int initialThreshold = (int) (configManager.getSilenceThreshold() * 1000);
-        silenceThresholdSlider = new JSlider(1, 50, Math.max(1, Math.min(50, initialThreshold)));
+        // Threshold slider using dB scale (-60dB to -20dB)
+        // dB provides logarithmic control which matches human perception
+        // -60dB = 0.001 RMS, -40dB = 0.01 RMS, -20dB = 0.1 RMS
+        int initialDb = rmsToDb(configManager.getSilenceThreshold());
+        silenceThresholdSlider = new JSlider(-60, -20, Math.max(-60, Math.min(-20, initialDb)));
         silenceThresholdSlider.setMajorTickSpacing(10);
         silenceThresholdSlider.setMinorTickSpacing(5);
         silenceThresholdSlider.setPaintTicks(true);
+        silenceThresholdSlider.setPaintLabels(true);
         silenceThresholdSlider.addChangeListener(e -> {
             updateThresholdLabel();
             if (!silenceThresholdSlider.getValueIsAdjusting()) {
@@ -318,8 +321,9 @@ public class MicTestPanel extends JPanel {
                 final long elapsed = System.currentTimeMillis() - startTime;
 
                 SwingUtilities.invokeLater(() -> {
-                    rmsBar.setValue((int) (rms * 100));
-                    rmsBar.setString(String.format("%.3f", rms));
+                    int rmsPercent = Math.min(100, (int) (rms * 100));
+                    rmsBar.setValue(rmsPercent);
+                    rmsBar.setString(String.format("%.3f (%ddB)", rms, rmsToDb(rms)));
                     durationLabel.setText(String.format("Duration: %d:%02d",
                         elapsed / 60000, (elapsed / 1000) % 60));
                 });
@@ -354,7 +358,8 @@ public class MicTestPanel extends JPanel {
             return;
         }
 
-        double threshold = silenceThresholdSlider.getValue() / 1000.0;
+        // Convert slider dB value to linear RMS
+        double threshold = dbToRms(silenceThresholdSlider.getValue());
 
         // Calculate overall metrics
         double rms = analyzer.calculateRMS(recordedAudio);
@@ -365,11 +370,15 @@ public class MicTestPanel extends JPanel {
             recordedAudio, SAMPLE_RATE, threshold);
         filteredAudio = result.audioData;
 
-        // Update UI
-        rmsBar.setValue((int) (rms * 100));
-        rmsBar.setString(String.format("%.3f", rms));
-        peakBar.setValue((int) (peak * 100));
-        peakBar.setString(String.format("%.3f", peak));
+        // Update UI with both linear and dB values
+        int rmsPercent = Math.min(100, (int) (rms * 100));
+        rmsBar.setValue(rmsPercent);
+        rmsBar.setString(String.format("%.3f (%ddB)", rms, rmsToDb(rms)));
+
+        int peakPercent = Math.min(100, (int) (peak * 100));
+        peakBar.setValue(peakPercent);
+        peakBar.setString(String.format("%.3f (%ddB)", peak, rmsToDb(peak)));
+
         silenceRatioLabel.setText(String.format("Silence: %.0f%%", result.silenceRatio * 100));
         nonSilenceLabel.setText(String.format("Non-silence: %.1fs", result.nonSilenceDuration));
 
@@ -412,7 +421,9 @@ public class MicTestPanel extends JPanel {
     }
 
     private void updateThresholdLabel() {
-        thresholdValueLabel.setText(String.format("%.3f", silenceThresholdSlider.getValue() / 1000.0));
+        int db = silenceThresholdSlider.getValue();
+        double rms = dbToRms(db);
+        thresholdValueLabel.setText(String.format("%ddB (%.3f)", db, rms));
     }
 
     private void updateDurationLabel() {
@@ -420,7 +431,8 @@ public class MicTestPanel extends JPanel {
     }
 
     private void applySettings() {
-        float threshold = silenceThresholdSlider.getValue() / 1000.0f;
+        // Convert dB slider value to linear RMS for storage
+        float threshold = (float) dbToRms(silenceThresholdSlider.getValue());
         int minDuration = minDurationSlider.getValue();
 
         configManager.setSilenceThreshold(threshold);
@@ -428,16 +440,37 @@ public class MicTestPanel extends JPanel {
         configManager.saveConfig();
 
         JOptionPane.showMessageDialog(this,
-            "Settings applied!",
+            String.format("Settings applied!\nSilence threshold: %ddB (%.4f RMS)",
+                silenceThresholdSlider.getValue(), threshold),
             "Success", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void resetDefaults() {
-        silenceThresholdSlider.setValue(5); // 0.005
-        minDurationSlider.setValue(2000);   // 2000ms
+        silenceThresholdSlider.setValue(-46); // ~0.005 RMS (-46dB)
+        minDurationSlider.setValue(2000);     // 2000ms
         updateThresholdLabel();
         updateDurationLabel();
         reprocessAudio();
+    }
+
+    // ========== dB / RMS Conversion Utilities ==========
+
+    /**
+     * Convert linear RMS value to decibels.
+     * dB = 20 * log10(rms)
+     */
+    private static int rmsToDb(double rms) {
+        if (rms <= 0) return -60; // Floor at -60dB
+        int db = (int) Math.round(20 * Math.log10(rms));
+        return Math.max(-60, Math.min(0, db)); // Clamp to -60..0
+    }
+
+    /**
+     * Convert decibels to linear RMS value.
+     * rms = 10^(dB/20)
+     */
+    private static double dbToRms(int db) {
+        return Math.pow(10, db / 20.0);
     }
 
     /**

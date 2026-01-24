@@ -321,6 +321,24 @@ public class ConfigManager {
         saveConfig();
     }
 
+    /**
+     * Controls visibility of the pipeline section in the UI.
+     * Separate from auto-execution - section can be hidden while auto-execute is enabled.
+     * @return true if pipeline section should be visible (default: true)
+     */
+    public boolean isShowPipelineSection() {
+        return Boolean.parseBoolean(properties.getProperty("showPipelineSection", "true"));
+    }
+
+    /**
+     * Sets visibility of the pipeline section in the UI.
+     * @param show true to show the pipeline section
+     */
+    public void setShowPipelineSection(boolean show) {
+        properties.setProperty("showPipelineSection", String.valueOf(show));
+        saveConfig();
+    }
+
     public int getMinRecordingDurationForSilenceRemoval() {
         return Integer.parseInt(properties.getProperty("minRecordingDurationForSilenceRemoval", "10"));
     }
@@ -838,6 +856,25 @@ public class ConfigManager {
      */
     public void setChunkedTranscriptionProgressEnabled(boolean enabled) {
         properties.setProperty("chunkedTranscriptionProgress", String.valueOf(enabled));
+        saveConfig();
+    }
+
+    // System audio capture settings
+    public boolean isSystemAudioEnabled() {
+        return Boolean.parseBoolean(properties.getProperty("systemAudioEnabled", "false"));
+    }
+
+    public void setSystemAudioEnabled(boolean enabled) {
+        properties.setProperty("systemAudioEnabled", String.valueOf(enabled));
+        saveConfig();
+    }
+
+    public String getSystemAudioDevice() {
+        return properties.getProperty("systemAudioDevice", "");
+    }
+
+    public void setSystemAudioDevice(String deviceName) {
+        properties.setProperty("systemAudioDevice", deviceName != null ? deviceName : "");
         saveConfig();
     }
 }

@@ -19,7 +19,7 @@
   },
   "layer2": {
     "enabled": true,
-    "output_path": ".scaffoldx/xcontext/current_project_context.md",
+    "source_path": ".scaffoldx/xcontext/_core_agent_instructions_layer_source.md",
     "token_budget": {
       "summary": 500,
       "expanded": 1250,

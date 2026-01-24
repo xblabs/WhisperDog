@@ -3,7 +3,7 @@ issue_id: ISS_00006
 title: Minimum Non-Silence Duration Threshold
 type: enhancement
 priority: low
-status: open
+status: resolved
 created: 2025-12-30
 tags: [audio, validation, user-experience]
 alias: WD-0006

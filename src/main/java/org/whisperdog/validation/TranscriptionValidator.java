@@ -3,6 +3,7 @@ package org.whisperdog.validation;
 import org.whisperdog.error.TranscriptionException;
 
 import java.io.File;
+import java.util.Set;
 
 /**
  * Pre-submission validation for transcription files.
@@ -12,6 +13,68 @@ public class TranscriptionValidator {
 
     // OpenAI Whisper API limit is 25MB, use 26MB as hard limit
     public static final long MAX_FILE_SIZE_BYTES = 26 * 1024 * 1024; // 26 MB
+
+    // Supported audio formats per OpenAI Whisper API documentation
+    public static final Set<String> SUPPORTED_EXTENSIONS = Set.of(
+        "flac", "m4a", "mp3", "mp4", "mpeg", "mpga", "oga", "ogg", "wav", "webm"
+    );
+
+    /**
+     * Validates that the file has a supported audio format extension.
+     *
+     * @param audioFile The file to validate
+     * @throws TranscriptionException if file type is not supported (category: PERMANENT)
+     */
+    public static void validateFileType(File audioFile) throws TranscriptionException {
+        if (!audioFile.exists()) {
+            throw new TranscriptionException(
+                "File not found: " + audioFile.getName()
+            );
+        }
+
+        String fileName = audioFile.getName().toLowerCase();
+        int dotIndex = fileName.lastIndexOf('.');
+
+        if (dotIndex == -1) {
+            throw new TranscriptionException(
+                "Unsupported file: No file extension. Supported formats: " + getSupportedFormatsDisplay(),
+                400, null
+            );
+        }
+
+        String extension = fileName.substring(dotIndex + 1);
+        if (!SUPPORTED_EXTENSIONS.contains(extension)) {
+            throw new TranscriptionException(
+                String.format("Unsupported file type: .%s. Supported formats: %s",
+                    extension, getSupportedFormatsDisplay()),
+                400, null
+            );
+        }
+    }
+
+    /**
+     * Returns a human-readable list of supported audio formats.
+     *
+     * @return Comma-separated list of supported extensions
+     */
+    public static String getSupportedFormatsDisplay() {
+        return "wav, mp3, m4a, flac, ogg, webm, mp4";
+    }
+
+    /**
+     * Checks if a file has a supported audio format extension.
+     *
+     * @param file The file to check
+     * @return true if file type is supported, false otherwise
+     */
+    public static boolean isSupportedFileType(File file) {
+        if (!file.exists()) return false;
+        String fileName = file.getName().toLowerCase();
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex == -1) return false;
+        String extension = fileName.substring(dotIndex + 1);
+        return SUPPORTED_EXTENSIONS.contains(extension);
+    }
 
     /**
      * Validates that the compressed audio file is within OpenAI's size limits.

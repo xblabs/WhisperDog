@@ -186,6 +186,15 @@ public class OpenAITranscribeClient {
     }
 
     public String transcribe(File audioFile) throws TranscriptionException {
+        // Pre-submission validation: file type (ISS_00008)
+        try {
+            TranscriptionValidator.validateFileType(audioFile);
+        } catch (TranscriptionException e) {
+            logger.error("File type validation failed: {}", audioFile.getName());
+            org.whisperdog.ConsoleLogger.getInstance().logError(e.getMessage());
+            throw e;
+        }
+
         // Check if file size exceeds limit and compress if necessary
         File fileToTranscribe = audioFile;
         if (audioFile.length() > MAX_FILE_SIZE) {

@@ -22,12 +22,17 @@ public class SystemAudioCapture {
 
     private static final int TARGET_SAMPLE_RATE = 16000;
     private static final int TARGET_CHANNELS = 1;
+    private static final float LOOPBACK_GAIN = 8.0f; // Amplify loopback signal
+
+    // Shared platform reference — XtAudio only allows one platform at a time
+    private static volatile XtPlatform activePlatform;
 
     private XtPlatform platform;
     private XtDevice device;
     private XtStream stream;
     private XtSafeBuffer safeBuffer;
     private String loopbackDeviceId;
+    private String loopbackDeviceName;
     private ByteArrayOutputStream capturedAudio;
     private final AtomicBoolean capturing = new AtomicBoolean(false);
 
@@ -41,6 +46,10 @@ public class SystemAudioCapture {
     public static boolean isAvailable() {
         if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
             return false;
+        }
+        // If platform is already active (recording in progress), WASAPI is available
+        if (activePlatform != null) {
+            return true;
         }
         try (XtPlatform platform = XtAudio.init("WhisperDog", Pointer.NULL)) {
             XtService service = platform.getService(Enums.XtSystem.WASAPI);
@@ -56,7 +65,7 @@ public class SystemAudioCapture {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception | AssertionError e) {
             logger.debug("WASAPI loopback check failed: {}", e.getMessage());
         }
         return false;
@@ -70,7 +79,14 @@ public class SystemAudioCapture {
         if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
             return new String[0];
         }
-        try (XtPlatform platform = XtAudio.init("WhisperDog", Pointer.NULL)) {
+        // Reuse active platform if available; otherwise create a temporary one
+        XtPlatform platform = activePlatform;
+        boolean ownedPlatform = false;
+        try {
+            if (platform == null) {
+                platform = XtAudio.init("WhisperDog", Pointer.NULL);
+                ownedPlatform = true;
+            }
             XtService service = platform.getService(Enums.XtSystem.WASAPI);
             if (service == null) return new String[0];
 
@@ -86,19 +102,79 @@ public class SystemAudioCapture {
                 }
             }
             return names.toArray(new String[0]);
-        } catch (Exception e) {
+        } catch (Exception | AssertionError e) {
             logger.debug("Failed to list loopback devices: {}", e.getMessage());
             return new String[0];
+        } finally {
+            if (ownedPlatform && platform != null) {
+                platform.close();
+            }
         }
     }
 
     /**
-     * Initialize the capture system and find a loopback device.
+     * Initialize the capture system using the default audio output's loopback device.
+     * Falls back to first available loopback if default cannot be determined.
      * @return true if initialization successful
      */
     public boolean initialize() {
-        try {
+        // Initialize platform first so getDefaultOutputDeviceName() can query WASAPI
+        // Reuse existing platform if available (kept alive between recordings)
+        if (activePlatform != null) {
+            platform = activePlatform;
+        } else if (platform == null) {
             platform = XtAudio.init("WhisperDog", Pointer.NULL);
+            activePlatform = platform;
+        }
+        String defaultOutput = getDefaultOutputDeviceName();
+        if (defaultOutput != null) {
+            logger.info("Detected default output device: {}", defaultOutput);
+        }
+        return initialize(defaultOutput);
+    }
+
+    /**
+     * Get the name of the default/active audio output device via WASAPI.
+     * Queries the OUTPUT device list for the default device.
+     * @return Device name for matching against loopback devices, or null
+     */
+    private String getDefaultOutputDeviceName() {
+        try {
+            XtService service = platform.getService(Enums.XtSystem.WASAPI);
+            if (service == null) return null;
+
+            // List OUTPUT devices and find the default
+            try (XtDeviceList outputs = service.openDeviceList(
+                    EnumSet.of(Enums.XtEnumFlags.OUTPUT))) {
+                // The default output device is typically first in WASAPI listing
+                if (outputs.getCount() > 0) {
+                    String id = outputs.getId(0);
+                    String name = outputs.getName(id);
+                    logger.info("Default output device: {}", name);
+                    return name;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Could not detect default output device: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Initialize the capture system with a specific loopback device.
+     * @param preferredDevice Device name to match (partial match supported), or null for first available
+     * @return true if initialization successful
+     */
+    public boolean initialize(String preferredDevice) {
+        try {
+            // Reuse existing platform if available (kept alive between recordings)
+            if (activePlatform != null) {
+                platform = activePlatform;
+            } else if (platform == null) {
+                // Create new platform only if none exists
+                platform = XtAudio.init("WhisperDog", Pointer.NULL);
+                activePlatform = platform;
+            }
             XtService service = platform.getService(Enums.XtSystem.WASAPI);
 
             if (service == null) {
@@ -106,23 +182,51 @@ public class SystemAudioCapture {
                 return false;
             }
 
-            // Find first loopback device
+            // Find matching loopback device
+            String fallbackId = null;
+            String fallbackName = null;
+
             try (XtDeviceList devices = service.openDeviceList(
                     EnumSet.of(Enums.XtEnumFlags.INPUT))) {
                 for (int i = 0; i < devices.getCount(); i++) {
                     String id = devices.getId(i);
                     EnumSet<Enums.XtDeviceCaps> caps = devices.getCapabilities(id);
                     if (caps.contains(Enums.XtDeviceCaps.LOOPBACK)) {
-                        loopbackDeviceId = id;
-                        logger.info("Found loopback device: {}", devices.getName(id));
-                        break;
+                        String name = devices.getName(id);
+
+                        // Store first as fallback
+                        if (fallbackId == null) {
+                            fallbackId = id;
+                            fallbackName = name;
+                        }
+
+                        // Match preferred device
+                        if (preferredDevice != null &&
+                                name.toLowerCase().contains(preferredDevice.toLowerCase())) {
+                            loopbackDeviceId = id;
+                            loopbackDeviceName = name;
+                            logger.info("Matched preferred loopback device: {}", name);
+                            break;
+                        }
                     }
                 }
             }
 
+            // Use preferred match, or fall back to first available
             if (loopbackDeviceId == null) {
-                logger.error("No loopback device found");
-                return false;
+                if (fallbackId != null) {
+                    loopbackDeviceId = fallbackId;
+                    loopbackDeviceName = fallbackName;
+                    if (preferredDevice != null) {
+                        logger.warn("Preferred device '{}' not found, using: {}",
+                            preferredDevice, fallbackName);
+                    } else {
+                        logger.info("Using loopback device: {}", fallbackName);
+                    }
+                } else {
+                    logger.error("No loopback device found");
+                    return false;
+                }
             }
 
             return true;
@@ -205,6 +309,11 @@ public class SystemAudioCapture {
         logger.info("Started system audio capture");
     }
 
+    // Diagnostic counters
+    private long totalBufferCalls = 0;
+    private long nonSilentBuffers = 0;
+    private float peakSample = 0;
+
     /**
      * Callback for audio buffer processing.
      */
@@ -222,9 +331,21 @@ public class SystemAudioCapture {
 
             if (input instanceof float[]) {
                 float[] samples = (float[]) input;
+
+                // Diagnostic: check for non-zero samples
+                totalBufferCalls++;
+                float bufferPeak = 0;
+                for (int i = 0; i < Math.min(samples.length, buffer.frames * deviceChannels); i++) {
+                    float abs = Math.abs(samples[i]);
+                    if (abs > bufferPeak) bufferPeak = abs;
+                }
+                if (bufferPeak > 0.0001f) nonSilentBuffers++;
+                if (bufferPeak > peakSample) peakSample = bufferPeak;
+
                 converted = convertFloatToInt16(samples, buffer.frames, deviceChannels);
             } else if (input instanceof short[]) {
                 short[] samples = (short[]) input;
+                totalBufferCalls++;
                 converted = convertInt16(samples, buffer.frames, deviceChannels);
             } else {
                 safe.unlock(buffer);
@@ -244,6 +365,17 @@ public class SystemAudioCapture {
     }
 
     /**
+     * Get diagnostic info about the capture session.
+     */
+    public String getDiagnostics() {
+        return String.format("Device: %s | Buffers: %d total, %d non-silent (%.1f%%), peak: %.6f",
+            loopbackDeviceName != null ? loopbackDeviceName : "unknown",
+            totalBufferCalls, nonSilentBuffers,
+            totalBufferCalls > 0 ? (nonSilentBuffers * 100.0 / totalBufferCalls) : 0,
+            peakSample);
+    }
+
+    /**
      * Convert float samples to 16-bit PCM mono at target sample rate.
      */
     private byte[] convertFloatToInt16(float[] input, int frames, int inputChannels) {
@@ -256,7 +388,7 @@ public class SystemAudioCapture {
             int srcFrame = (int) ((long) i * deviceSampleRate / TARGET_SAMPLE_RATE);
             if (srcFrame >= frames) srcFrame = frames - 1;
 
-            // Mix down to mono
+            // Mix down to mono and apply gain
             float sample = 0;
             for (int ch = 0; ch < inputChannels; ch++) {
                 int idx = srcFrame * inputChannels + ch;
@@ -265,6 +397,7 @@ public class SystemAudioCapture {
                 }
             }
             sample /= inputChannels;
+            sample *= LOOPBACK_GAIN;
 
             // Clamp and convert to 16-bit
             sample = Math.max(-1.0f, Math.min(1.0f, sample));
@@ -316,27 +449,44 @@ public class SystemAudioCapture {
 
         capturing.set(false);
 
-        if (stream != null) {
-            try {
-                stream.stop();
-            } catch (Exception e) {
-                logger.debug("Error stopping stream: {}", e.getMessage());
+        try {
+            if (stream != null) {
+                try {
+                    stream.stop();
+                } catch (Exception e) {
+                    logger.debug("Error stopping stream: {}", e.getMessage());
+                }
             }
-        }
 
-        if (safeBuffer != null) {
-            safeBuffer.close();
-            safeBuffer = null;
-        }
+            if (safeBuffer != null) {
+                try {
+                    safeBuffer.close();
+                } catch (Exception e) {
+                    logger.debug("Error closing safe buffer: {}", e.getMessage());
+                }
+                safeBuffer = null;
+            }
 
-        if (stream != null) {
-            stream.close();
-            stream = null;
-        }
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (Exception e) {
+                    logger.debug("Error closing stream: {}", e.getMessage());
+                }
+                stream = null;
+            }
 
-        if (device != null) {
-            device.close();
-            device = null;
+            if (device != null) {
+                try {
+                    device.close();
+                } catch (Exception e) {
+                    logger.debug("Error closing device: {}", e.getMessage());
+                }
+                device = null;
+            }
+        } catch (Throwable t) {
+            // Catch all throwables (including AssertionError) during cleanup
+            logger.error("Unexpected error during stop(): {}", t.getMessage(), t);
         }
 
         synchronized (capturedAudio) {
@@ -345,14 +495,18 @@ public class SystemAudioCapture {
     }
 
     /**
-     * Release all resources.
+     * Release resources for current recording session.
+     * NOTE: XtAudio platform is kept alive for the app lifetime to avoid threading issues
+     * with C++ platform creation/destruction. Only streams/devices are closed per-recording.
+     * The platform will be cleaned up by the JVM on shutdown.
      */
     public void dispose() {
+        // stop() already closes stream, device, buffer
         stop();
-        if (platform != null) {
-            platform.close();
-            platform = null;
-        }
+
+        // Do NOT close the platform here. XtAudio platform has thread affinity constraints
+        // that make it unsafe to close between recordings. Keep it alive for app lifetime.
+        // stream, device are null'd in stop(), so next initialize() can reuse the platform.
     }
 
     /**
@@ -389,8 +543,14 @@ public class SystemAudioCapture {
         System.out.println("Starting 10-second capture...");
         System.out.println("(Play some audio to capture it)\n");
 
+        // Use device argument if provided (partial name match)
+        String preferredDevice = args.length > 0 ? args[0] : null;
+        if (preferredDevice != null) {
+            System.out.println("Preferred device: " + preferredDevice + "\n");
+        }
+
         SystemAudioCapture capture = new SystemAudioCapture();
-        if (!capture.initialize()) {
+        if (!capture.initialize(preferredDevice)) {
             System.out.println("ERROR: Failed to initialize capture.");
             return;
         }
@@ -404,11 +564,13 @@ public class SystemAudioCapture {
         }
 
         byte[] audioData = capture.stop();
-        capture.dispose();
 
         System.out.println("\nCapture complete!");
         System.out.println("  Captured: " + audioData.length + " bytes");
         System.out.println("  Duration: " + String.format("%.2f", audioData.length / 2.0 / TARGET_SAMPLE_RATE) + " seconds");
+        System.out.println("  Diagnostics: " + capture.getDiagnostics());
+
+        capture.dispose();
 
         // Save to WAV file
         Path tempFile = Files.createTempFile("whisperdog_poc_", ".wav");

@@ -29,6 +29,10 @@ public class TrayIconManager {
     public void createTrayIcon(Runnable openAppCallback, Runnable toggleRecordingCallback) {
         try {
             systemTray = SystemTray.get();
+            if (systemTray == null) {
+                logger.warn("System tray is not supported on this platform");
+                return;
+            }
             setTrayImage(trayIconPath);
 
 
@@ -115,6 +119,9 @@ public class TrayIconManager {
     }
 
     private void setTrayImage(String imagePath) {
+        if (systemTray == null) {
+            return;  // Tray not available, skip silently
+        }
         try {
             URL imageURL = TrayIconManager.class.getResource(imagePath);
             if (imageURL != null) {

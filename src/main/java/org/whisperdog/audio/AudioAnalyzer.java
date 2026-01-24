@@ -77,8 +77,8 @@ public class AudioAnalyzer {
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-        // 20ms analysis windows
-        int samplesPerWindow = (int) (sampleRate * 0.02);
+        // 100ms analysis windows (matches SilenceRemover for consistent calibration)
+        int samplesPerWindow = (int) (sampleRate * 0.1);
         int bytesPerWindow = samplesPerWindow * 2;
         int windowCount = audioData.length / bytesPerWindow;
 

@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 public class KeySequenceTextField extends JTextField {
     private final List<Integer> keySequence = new ArrayList<>();
+    private Runnable onChangeCallback;
 
     public KeySequenceTextField() {
         disableDefaultKeyBindings();
@@ -49,6 +50,13 @@ public class KeySequenceTextField extends JTextField {
                 .collect(Collectors.joining(" -> "));
         System.out.println(sequenceText);
         setText(sequenceText);
+        if (onChangeCallback != null) {
+            onChangeCallback.run();
+        }
+    }
+
+    public void setOnChangeCallback(Runnable callback) {
+        this.onChangeCallback = callback;
     }
 
     public List<Integer> getKeysSequence() {

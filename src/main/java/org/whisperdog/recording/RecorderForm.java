@@ -2016,6 +2016,9 @@ public class RecorderForm extends javax.swing.JPanel {
                 console.logError("Error finishing transcription: " + e.getMessage());
             } finally {
                 isRecording = false;
+                // Clean up temp audio files to prevent accumulation in long-running sessions
+                cleanupTempAudioFile(audioFile);
+                cleanupTempAudioFile(systemTrackFile);
             }
 
             // Run post-processing asynchronously if enabled
@@ -2051,6 +2054,25 @@ public class RecorderForm extends javax.swing.JPanel {
                 updateTrayMenu();
             } else {
                 resetUIAfterTranscription();
+            }
+        }
+
+        /**
+         * Clean up a temp audio file if it's in the system temp directory.
+         * Only deletes files with whisperdog prefix to avoid deleting user files.
+         */
+        private void cleanupTempAudioFile(File file) {
+            if (file == null || !file.exists()) return;
+            String tempDir = System.getProperty("java.io.tmpdir");
+            if (file.getParent() != null && file.getParent().startsWith(tempDir)
+                    && file.getName().startsWith("whisperdog_")) {
+                try {
+                    if (file.delete()) {
+                        logger.debug("Cleaned up temp file: {}", file.getName());
+                    }
+                } catch (Exception e) {
+                    logger.debug("Failed to clean up temp file: {}", file.getName());
+                }
             }
         }
     }

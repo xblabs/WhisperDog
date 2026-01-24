@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Captures system audio (loopback) using WASAPI via XT-Audio library.
@@ -309,10 +310,10 @@ public class SystemAudioCapture {
         logger.info("Started system audio capture");
     }
 
-    // Diagnostic counters
-    private long totalBufferCalls = 0;
-    private long nonSilentBuffers = 0;
-    private float peakSample = 0;
+    // Diagnostic counters (thread-safe: written from callback, read from main thread)
+    private final AtomicLong totalBufferCalls = new AtomicLong(0);
+    private final AtomicLong nonSilentBuffers = new AtomicLong(0);
+    private volatile float peakSample = 0;
 
     /**
      * Callback for audio buffer processing.
@@ -332,21 +333,26 @@ public class SystemAudioCapture {
             if (input instanceof float[]) {
                 float[] samples = (float[]) input;
 
+                // Bounds check: limit frames to available samples
+                int availableFrames = Math.min(buffer.frames, samples.length / deviceChannels);
+
                 // Diagnostic: check for non-zero samples
-                totalBufferCalls++;
+                totalBufferCalls.incrementAndGet();
                 float bufferPeak = 0;
-                for (int i = 0; i < Math.min(samples.length, buffer.frames * deviceChannels); i++) {
+                for (int i = 0; i < availableFrames * deviceChannels; i++) {
                     float abs = Math.abs(samples[i]);
                     if (abs > bufferPeak) bufferPeak = abs;
                 }
-                if (bufferPeak > 0.0001f) nonSilentBuffers++;
+                if (bufferPeak > 0.0001f) nonSilentBuffers.incrementAndGet();
                 if (bufferPeak > peakSample) peakSample = bufferPeak;
 
-                converted = convertFloatToInt16(samples, buffer.frames, deviceChannels);
+                converted = convertFloatToInt16(samples, availableFrames, deviceChannels);
             } else if (input instanceof short[]) {
                 short[] samples = (short[]) input;
-                totalBufferCalls++;
-                converted = convertInt16(samples, buffer.frames, deviceChannels);
+                // Bounds check: limit frames to available samples
+                int availableFrames = Math.min(buffer.frames, samples.length / deviceChannels);
+                totalBufferCalls.incrementAndGet();
+                converted = convertInt16(samples, availableFrames, deviceChannels);
             } else {
                 safe.unlock(buffer);
                 return 0;
@@ -368,10 +374,12 @@ public class SystemAudioCapture {
      * Get diagnostic info about the capture session.
      */
     public String getDiagnostics() {
+        long total = totalBufferCalls.get();
+        long nonSilent = nonSilentBuffers.get();
         return String.format("Device: %s | Buffers: %d total, %d non-silent (%.1f%%), peak: %.6f",
             loopbackDeviceName != null ? loopbackDeviceName : "unknown",
-            totalBufferCalls, nonSilentBuffers,
-            totalBufferCalls > 0 ? (nonSilentBuffers * 100.0 / totalBufferCalls) : 0,
+            total, nonSilent,
+            total > 0 ? (nonSilent * 100.0 / total) : 0,
             peakSample);
     }
 

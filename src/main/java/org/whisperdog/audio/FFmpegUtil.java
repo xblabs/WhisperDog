@@ -336,13 +336,19 @@ public class FFmpegUtil {
 
             Process process = pb.start();
 
-            // Consume output to prevent blocking
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()))) {
-                while (reader.readLine() != null) {
-                    // Consume
+            // Consume output in daemon thread to prevent blocking on waitFor
+            Thread outputDrain = new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(process.getInputStream()))) {
+                    while (reader.readLine() != null) {
+                        // Consume
+                    }
+                } catch (Exception e) {
+                    // Process destroyed or stream closed
                 }
-            }
+            });
+            outputDrain.setDaemon(true);
+            outputDrain.start();
 
             boolean finished = process.waitFor(120, java.util.concurrent.TimeUnit.SECONDS);
 

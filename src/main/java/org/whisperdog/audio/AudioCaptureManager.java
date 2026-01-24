@@ -159,9 +159,9 @@ public class AudioCaptureManager {
                 byte[] systemAudioData = systemCapture.stop();
                 if (systemAudioData.length > 0) {
                     writeWavFile(systemTrackFile, systemAudioData, 16000, 1);
-                    logger.info("System audio saved: {} bytes, {:.1f}s",
+                    logger.info("System audio saved: {} bytes, {}s",
                         systemAudioData.length,
-                        systemAudioData.length / 2.0 / 16000);
+                        String.format("%.1f", systemAudioData.length / 2.0 / 16000));
                 }
             } catch (Exception e) {
                 logger.error("Failed to save system audio: {}", e.getMessage(), e);

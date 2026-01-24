@@ -203,11 +203,14 @@ public class SourceActivityTracker {
     private double calculateRms(byte[] buffer, int bytesRead, int bytesPerSample,
             int channels, boolean bigEndian) {
 
-        int samplesRead = bytesRead / (bytesPerSample * channels);
+        int frameSize = bytesPerSample * channels;
+        int samplesRead = bytesRead / frameSize;
         if (samplesRead == 0) return 0.0;
 
+        // Wrap only the bytes we'll actually read to prevent underflow
+        int bytesToProcess = samplesRead * frameSize;
         double sumSquares = 0.0;
-        ByteBuffer bb = ByteBuffer.wrap(buffer, 0, bytesRead);
+        ByteBuffer bb = ByteBuffer.wrap(buffer, 0, bytesToProcess);
         bb.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
 
         for (int i = 0; i < samplesRead; i++) {
@@ -220,7 +223,7 @@ public class SourceActivityTracker {
                     sample += bb.getShort() / 32768.0;
                 } else if (bytesPerSample == 1) {
                     // 8-bit samples (unsigned)
-                    sample += (bb.get() & 0xFF - 128) / 128.0;
+                    sample += ((bb.get() & 0xFF) - 128) / 128.0;
                 } else if (bytesPerSample == 4) {
                     // 32-bit samples (assume int)
                     sample += bb.getInt() / 2147483648.0;

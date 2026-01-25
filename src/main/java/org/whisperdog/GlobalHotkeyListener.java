@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.whisperdog.settings.KeyCombinationTextField;
 import org.whisperdog.settings.KeySequenceTextField;
 
+import javax.swing.SwingUtilities;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -133,27 +134,24 @@ public class GlobalHotkeyListener implements NativeKeyListener {
                 combinationActive = true;
                 logger.info("Key combination pressed, toggling recording");
 
-                // If on settings screen, save settings before switching
-                if (optionsDialogOpen && ui.settingsForm != null) {
-                    logger.info("Saving settings before switching to recorder");
-                    ui.settingsForm.saveSettings();
-                }
+                // Must run on EDT - XT-Audio requires main thread for platform calls
+                SwingUtilities.invokeLater(() -> {
+                    // If on settings screen, save settings before switching
+                    if (optionsDialogOpen && ui.settingsForm != null) {
+                        logger.info("Saving settings before switching to recorder");
+                        ui.settingsForm.saveSettings();
+                    }
 
-                // Switch to recorder form if not already there
-                ui.setSelectedMenu(0, 0);
-                // Small delay to ensure UI has switched before toggling
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException ex) {
-                    logger.debug("Sleep interrupted", ex);
-                }
-                if (ui.recorderForm != null) {
-                    ui.recorderForm.toggleRecording();
-                } else {
-                    logger.warn("RecorderForm is null, cannot toggle recording");
-                    Notificationmanager.getInstance().showNotification(ToastNotification.Type.WARNING,
-                            "Recording could not be started. Please try again.");
-                }
+                    // Switch to recorder form if not already there
+                    ui.setSelectedMenu(0, 0);
+                    if (ui.recorderForm != null) {
+                        ui.recorderForm.toggleRecording();
+                    } else {
+                        logger.warn("RecorderForm is null, cannot toggle recording");
+                        Notificationmanager.getInstance().showNotification(ToastNotification.Type.WARNING,
+                                "Recording could not be started. Please try again.");
+                    }
+                });
                 pressedKeys.clear();
                 sequenceIndex = 0;
                 sequenceStartTime = 0;
@@ -178,27 +176,24 @@ public class GlobalHotkeyListener implements NativeKeyListener {
                         if (currentTime - sequenceStartTime <= 1000) {
                             logger.info("Key sequence completed, toggling recording");
 
-                            // If on settings screen, save settings before switching
-                            if (optionsDialogOpen && ui.settingsForm != null) {
-                                logger.info("Saving settings before switching to recorder");
-                                ui.settingsForm.saveSettings();
-                            }
+                            // Must run on EDT - XT-Audio requires main thread for platform calls
+                            SwingUtilities.invokeLater(() -> {
+                                // If on settings screen, save settings before switching
+                                if (optionsDialogOpen && ui.settingsForm != null) {
+                                    logger.info("Saving settings before switching to recorder");
+                                    ui.settingsForm.saveSettings();
+                                }
 
-                            // Switch to recorder form if not already there
-                            ui.setSelectedMenu(0, 0);
-                            // Small delay to ensure UI has switched before toggling
-                            try {
-                                Thread.sleep(50);
-                            } catch (InterruptedException ex) {
-                                logger.debug("Sleep interrupted", ex);
-                            }
-                            if (ui.recorderForm != null) {
-                                ui.recorderForm.toggleRecording();
-                            } else {
-                                logger.warn("RecorderForm is null, cannot toggle recording");
-                                Notificationmanager.getInstance().showNotification(ToastNotification.Type.WARNING,
-                                        "Recording could not be started. Please try again.");
-                            }
+                                // Switch to recorder form if not already there
+                                ui.setSelectedMenu(0, 0);
+                                if (ui.recorderForm != null) {
+                                    ui.recorderForm.toggleRecording();
+                                } else {
+                                    logger.warn("RecorderForm is null, cannot toggle recording");
+                                    Notificationmanager.getInstance().showNotification(ToastNotification.Type.WARNING,
+                                            "Recording could not be started. Please try again.");
+                                }
+                            });
                         } else {
                             logger.debug("Key sequence completed, but time limit was reached. Current time limit: 1000ms");
                         }

@@ -141,12 +141,11 @@ public class FfmpegChunker {
                 // Calculate duration for this chunk
                 int duration = chunkDurationSeconds + (i > 0 ? CHUNK_OVERLAP_SECONDS : 0);
 
-                // Create chunk file
+                // Create chunk file (cleanup handled by ChunkedTranscriptionWorker.cleanupChunks())
                 String baseName = audioFile.getName().replaceFirst("\\.[^.]+$", "");
                 File chunkFile = File.createTempFile(
                     String.format("chunk_%02d_%s_", i + 1, baseName), ".wav"
                 );
-                chunkFile.deleteOnExit();
 
                 console.log(String.format("Creating chunk %d/%d (start: %ds, duration: %ds)...",
                     i + 1, numChunks, startTime, duration));

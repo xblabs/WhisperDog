@@ -77,9 +77,8 @@ public class AudioCaptureManager {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String tempDir = System.getProperty("java.io.tmpdir");
 
-        // Prepare mic track file
+        // Prepare mic track file (cleaned up by cleanupTempFiles() or AudioTranscriptionWorker)
         micTrackFile = new File(tempDir, "whisperdog_mic_" + timeStamp + ".wav");
-        micTrackFile.deleteOnExit();
 
         // Initialize mic recorder
         micRecorder = new AudioRecorder(micTrackFile, configManager);
@@ -93,7 +92,6 @@ public class AudioCaptureManager {
                 : systemCapture.initialize();  // Auto-detect default output device
             if (initialized) {
                 systemTrackFile = new File(tempDir, "whisperdog_system_" + timeStamp + ".wav");
-                systemTrackFile.deleteOnExit();
                 systemAudioEnabled.set(true);
                 logger.info("System audio capture initialized");
             } else {
@@ -213,7 +211,6 @@ public class AudioCaptureManager {
                 String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
                 String tempDir = System.getProperty("java.io.tmpdir");
                 systemTrackFile = new File(tempDir, "whisperdog_system_" + timeStamp + ".wav");
-                systemTrackFile.deleteOnExit();
             }
 
             try {

@@ -150,9 +150,8 @@ public class FfmpegCompressor {
                 audioFile.getName(), originalSize / (1024.0 * 1024.0)));
             console.log("Compression preset: " + preset.getDescription());
 
-            // Create temporary file for compressed output
+            // Create temporary file for compressed output (cleanup via cleanupTempAudioFile)
             File compressedFile = File.createTempFile("whisperdog_compressed_", ".mp3");
-            compressedFile.deleteOnExit();
 
             // FFmpeg compression command optimized for speech
             ProcessBuilder pb = new ProcessBuilder(

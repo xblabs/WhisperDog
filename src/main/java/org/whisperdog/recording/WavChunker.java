@@ -134,12 +134,11 @@ public class WavChunker {
                 byte[] chunkData = new byte[byteLength];
                 System.arraycopy(allAudioData, startByte, chunkData, 0, byteLength);
 
-                // Create chunk file
+                // Create chunk file (cleanup handled by ChunkedTranscriptionWorker.cleanupChunks())
                 String baseName = wavFile.getName().replaceFirst("\\.[^.]+$", "");
                 File chunkFile = File.createTempFile(
                     String.format("chunk_%02d_%s_", chunkIndex + 1, baseName), ".wav"
                 );
-                chunkFile.deleteOnExit();
 
                 // Write chunk as WAV file
                 ByteArrayInputStream bais = new ByteArrayInputStream(chunkData);

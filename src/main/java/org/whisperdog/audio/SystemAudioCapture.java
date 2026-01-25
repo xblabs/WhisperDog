@@ -28,6 +28,9 @@ public class SystemAudioCapture {
     // Shared platform reference — XtAudio only allows one platform at a time
     private static volatile XtPlatform activePlatform;
 
+    // Cached availability result to avoid expensive device enumeration on EDT
+    private static volatile Boolean cachedAvailability = null;
+
     private XtPlatform platform;
     private XtDevice device;
     private XtStream stream;
@@ -43,6 +46,7 @@ public class SystemAudioCapture {
 
     /**
      * Check if WASAPI loopback is available on this system.
+     * Result is cached after first check to avoid EDT stalls from device enumeration.
      */
     public static boolean isAvailable() {
         if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
@@ -52,6 +56,20 @@ public class SystemAudioCapture {
         if (activePlatform != null) {
             return true;
         }
+        // Return cached result if available (avoids EDT stalls on repeated checks)
+        if (cachedAvailability != null) {
+            return cachedAvailability;
+        }
+        // Perform device enumeration and cache result
+        boolean available = checkWasapiAvailability();
+        cachedAvailability = available;
+        return available;
+    }
+
+    /**
+     * Performs actual WASAPI device enumeration. Called once and cached.
+     */
+    private static boolean checkWasapiAvailability() {
         try (XtPlatform platform = XtAudio.init("WhisperDog", Pointer.NULL)) {
             XtService service = platform.getService(Enums.XtSystem.WASAPI);
             if (service == null) return false;

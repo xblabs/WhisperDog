@@ -52,9 +52,8 @@ public class OpenAITranscribeClient {
                 "Compressing audio file to MP3: %s (size: %.2f MB)",
                 originalFile.getName(), originalFile.length() / (1024.0 * 1024.0)));
 
-            // Create temporary MP3 file
+            // Create temporary MP3 file (cleanup in transcribe() finally block)
             File mp3File = File.createTempFile("whisperdog_compressed_", ".mp3");
-            mp3File.deleteOnExit();
 
             // Use ffmpeg to convert to MP3 with good compression
             // -y = overwrite output file
@@ -139,9 +138,8 @@ public class OpenAITranscribeClient {
             // Convert to the new format
             AudioInputStream convertedStream = AudioSystem.getAudioInputStream(targetFormat, originalStream);
 
-            // Create a temporary file for the compressed audio
+            // Create a temporary file for the compressed audio (cleanup in transcribe() finally block)
             File compressedFile = File.createTempFile("whisperdog_compressed_", ".wav");
-            compressedFile.deleteOnExit();
 
             // Write the converted audio to the temporary file
             AudioSystem.write(convertedStream, AudioFileFormat.Type.WAVE, compressedFile);
@@ -197,10 +195,12 @@ public class OpenAITranscribeClient {
 
         // Check if file size exceeds limit and compress if necessary
         File fileToTranscribe = audioFile;
+        File compressedFile = null;  // Track for cleanup
         if (audioFile.length() > MAX_FILE_SIZE) {
             logger.warn("Audio file size ({} MB) exceeds OpenAI limit (25 MB). Compressing...",
                 audioFile.length() / (1024.0 * 1024.0));
-            fileToTranscribe = compressAudioFile(audioFile);
+            compressedFile = compressAudioFile(audioFile);
+            fileToTranscribe = compressedFile;
         }
 
         // Pre-submission validation (ISS_00001, Task 0002)
@@ -220,9 +220,10 @@ public class OpenAITranscribeClient {
             .setConnectionRequestTimeout(CONNECTION_TIMEOUT)
             .build();
 
-        try (CloseableHttpClient httpClient = HttpClients.custom()
-                .setDefaultRequestConfig(requestConfig)
-                .build()) {
+        try {
+            try (CloseableHttpClient httpClient = HttpClients.custom()
+                    .setDefaultRequestConfig(requestConfig)
+                    .build()) {
             HttpPost httpPost = new HttpPost(API_URL);
             httpPost.setHeader("Authorization", "Bearer " + configManager.getApiKey());
 
@@ -304,20 +305,28 @@ public class OpenAITranscribeClient {
                     );
                 }
             }
-        } catch (TranscriptionException te) {
-            throw te; // Re-throw our own exceptions
-        } catch (java.net.SocketTimeoutException e) {
-            logger.error("Socket timeout during transcription", e);
-            throw new TranscriptionException("Connection timed out", e, false, true);
-        } catch (java.net.UnknownHostException e) {
-            logger.error("Cannot reach OpenAI server", e);
-            throw new TranscriptionException("Cannot reach server: " + e.getMessage(), e, false, true);
-        } catch (java.net.ConnectException e) {
-            logger.error("Connection to OpenAI failed", e);
-            throw new TranscriptionException("Connection failed: " + e.getMessage(), e, false, true);
-        } catch (IOException e) {
-            logger.error("IO error during transcription", e);
-            throw new TranscriptionException("Network error: " + e.getMessage(), e, false, true);
+            } catch (TranscriptionException te) {
+                throw te; // Re-throw our own exceptions
+            } catch (java.net.SocketTimeoutException e) {
+                logger.error("Socket timeout during transcription", e);
+                throw new TranscriptionException("Connection timed out", e, false, true);
+            } catch (java.net.UnknownHostException e) {
+                logger.error("Cannot reach OpenAI server", e);
+                throw new TranscriptionException("Cannot reach server: " + e.getMessage(), e, false, true);
+            } catch (java.net.ConnectException e) {
+                logger.error("Connection to OpenAI failed", e);
+                throw new TranscriptionException("Connection failed: " + e.getMessage(), e, false, true);
+            } catch (IOException e) {
+                logger.error("IO error during transcription", e);
+                throw new TranscriptionException("Network error: " + e.getMessage(), e, false, true);
+            }
+        } finally {
+            // Clean up internally-created compressed file to prevent temp file accumulation
+            if (compressedFile != null && compressedFile.exists()) {
+                if (!compressedFile.delete()) {
+                    logger.debug("Could not delete temp compressed file: {}", compressedFile.getName());
+                }
+            }
         }
     }
 }

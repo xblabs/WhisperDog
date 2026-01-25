@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="Latest Version" src="https://img.shields.io/badge/Latest%20Version-v2.0.0-brightgreen?style=flat-square&logo=github&logoColor=white" />
+  <img alt="Latest Version" src="https://img.shields.io/badge/Latest%20Version-v2.2.0-brightgreen?style=flat-square&logo=github&logoColor=white" />
   <a href="LICENSE" target="https://opensource.org/license/mit">
     <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue?style=flat-square&logo=github&logoColor=white" />
   </a>
@@ -27,6 +27,7 @@ WhisperDog is your personal companion for capturing audio, transcribing it, and 
 
 ### Core Capabilities
 - **Record Audio**: Capture sound using your chosen microphone
+- **System Audio Capture**: Record computer audio (WASAPI loopback) alongside mic input (Windows)
 - **Automated Transcription**: Process and transcribe your recordings with OpenAI Whisper API
 - **Post-Processing Pipelines**: Enhance transcriptions with customizable processing pipelines
 - **Global Hotkey Support**: Start/stop recording using global hotkeys (e.g., `CTRL + R`) or sequences (e.g., triple `ALT`)
@@ -112,7 +113,7 @@ cd whisperdog
 mvn clean package -DskipTests
 
 # Run the application
-java -jar target/whisperdog-2.0.0-jar-with-dependencies.jar
+java -jar target/whisperdog-2.2.0-jar-with-dependencies.jar
 
 # Or run with Maven
 mvn exec:java -Dexec.mainClass="org.whisperdog.AudioRecorderUI"
@@ -154,6 +155,18 @@ whisperdog/
 ## Version History
 
 ### WhisperDog Releases
+
+#### v2.2.0 - System Audio Capture
+
+- **System Audio Capture (WASAPI Loopback)** - Record what you hear from your computer
+  - Capture system audio alongside microphone input
+  - Configurable loopback device selection
+  - Real-time mixing for combined transcription
+  - Windows-only (requires XT-Audio library)
+- Improved temp file cleanup for long-running sessions
+- Dependency updates and code quality fixes
+
+---
 
 #### v2.1.0
 

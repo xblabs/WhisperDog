@@ -7,6 +7,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2.2.0] - 2026-01-25 - System Audio Capture
+
+### Added
+- **System Audio Capture (WASAPI Loopback)** - Record computer audio alongside microphone
+  - Windows-only via XT-Audio library
+  - Configurable loopback device selection
+  - Real-time mixing of mic + system audio
+  - Source activity tracking for speaker attribution
+- Device selection dropdown for loopback audio source
+
+### Fixed
+- Temp file cleanup: replaced 12 `deleteOnExit()` calls with explicit cleanup
+- Mic-only recording temp file leak (prefix now matches cleanup pattern)
+- WASAPI availability check cached to avoid blocking EDT on startup
+- OpenAI transcription client now properly cleans up temp files
+
+### Changed
+- Dependency cleanup: aligned httpclient versions (4.5.14), removed redundant exclusions
+- Moved test harness to proper `src/test/java` location
+
+---
+
 ## [2.0.0] - 2025-12-26 - WhisperDog Release
 
 ### Changed

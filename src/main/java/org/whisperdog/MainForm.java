@@ -115,8 +115,9 @@ public class MainForm extends JLayeredPane {
                     recorderForm = new RecorderForm(configManager);
                 }
                 showForm(recorderForm);
-                // Refresh pipelines in case new ones were created
+                // Refresh pipelines and device labels in case settings changed
                 recorderForm.refreshPipelines();
+                recorderForm.refreshDeviceLabels();
             } else if (index == 1) {
                 if (subIndex == 1) {
                     // Reuse SettingsForm instance to preserve slider values

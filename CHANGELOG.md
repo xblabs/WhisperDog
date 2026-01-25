@@ -7,6 +7,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Word-Level Timestamp Attribution** - Enhanced [User]/[System] labels for dual-source recordings
+  - Uses OpenAI's `verbose_json` response with `timestamp_granularities: ["word"]`
+  - Each word mapped to correct source based on actual timing (not proportional distribution)
+- **Audio Device Labels** - Recording screen shows current mic and system audio device
+  - Cross-platform default output detection (Windows Core Audio API, Linux pactl, macOS system_profiler)
+  - Auto-refresh when app window gains focus (detects Windows audio device changes)
+  - Click label to navigate to Settings
+
+### Fixed
+- Dual-source speech detection now checks both tracks and uses maximum content
+- System audio threshold lowered (50%) to better detect pre-processed audio
+
+---
+
 ## [2.2.0] - 2026-01-25 - System Audio Capture
 
 ### Added

@@ -28,6 +28,8 @@ WhisperDog is your personal companion for capturing audio, transcribing it, and 
 ### Core Capabilities
 - **Record Audio**: Capture sound using your chosen microphone
 - **System Audio Capture**: Record computer audio (WASAPI loopback) alongside mic input (Windows)
+  - Accurate source attribution using word-level timestamps
+  - Transcripts labeled with [User]/[System] based on actual speech timing
 - **Automated Transcription**: Process and transcribe your recordings with OpenAI Whisper API
 - **Post-Processing Pipelines**: Enhance transcriptions with customizable processing pipelines
 - **Global Hotkey Support**: Start/stop recording using global hotkeys (e.g., `CTRL + R`) or sequences (e.g., triple `ALT`)

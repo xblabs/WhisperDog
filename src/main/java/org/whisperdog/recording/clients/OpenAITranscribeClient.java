@@ -13,9 +13,14 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.whisperdog.ConfigManager;
+import org.whisperdog.audio.SourceActivityTracker.TimestampedWord;
 import org.whisperdog.error.ErrorClassifier;
 import org.whisperdog.error.TranscriptionException;
+import org.whisperdog.recording.TranscriptionResult;
 import org.whisperdog.validation.TranscriptionValidator;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sound.sampled.*;
 import java.io.File;
@@ -322,6 +327,176 @@ public class OpenAITranscribeClient {
             }
         } finally {
             // Clean up internally-created compressed file to prevent temp file accumulation
+            if (compressedFile != null && compressedFile.exists()) {
+                if (!compressedFile.delete()) {
+                    logger.debug("Could not delete temp compressed file: {}", compressedFile.getName());
+                }
+            }
+        }
+    }
+
+    /**
+     * Transcribe audio file with word-level timestamps for accurate source attribution.
+     * Uses OpenAI's verbose_json response format with timestamp_granularities=["word"].
+     *
+     * @param audioFile The audio file to transcribe
+     * @return TranscriptionResult containing text and timestamped words
+     * @throws TranscriptionException if transcription fails
+     */
+    public TranscriptionResult transcribeWithTimestamps(File audioFile) throws TranscriptionException {
+        // Pre-submission validation: file type (ISS_00008)
+        try {
+            TranscriptionValidator.validateFileType(audioFile);
+        } catch (TranscriptionException e) {
+            logger.error("File type validation failed: {}", audioFile.getName());
+            org.whisperdog.ConsoleLogger.getInstance().logError(e.getMessage());
+            throw e;
+        }
+
+        // Check if file size exceeds limit and compress if necessary
+        File fileToTranscribe = audioFile;
+        File compressedFile = null;
+        if (audioFile.length() > MAX_FILE_SIZE) {
+            logger.warn("Audio file size ({} MB) exceeds OpenAI limit (25 MB). Compressing...",
+                audioFile.length() / (1024.0 * 1024.0));
+            compressedFile = compressAudioFile(audioFile);
+            fileToTranscribe = compressedFile;
+        }
+
+        // Pre-submission validation
+        try {
+            TranscriptionValidator.validateFileSize(fileToTranscribe);
+        } catch (TranscriptionException e) {
+            logger.error("File size validation failed: {} (size: {})",
+                fileToTranscribe.getName(), TranscriptionValidator.getFileSizeDisplay(fileToTranscribe));
+            org.whisperdog.ConsoleLogger.getInstance().logError(e.getMessage());
+            throw e;
+        }
+
+        RequestConfig requestConfig = RequestConfig.custom()
+            .setConnectTimeout(CONNECTION_TIMEOUT)
+            .setSocketTimeout(SOCKET_TIMEOUT)
+            .setConnectionRequestTimeout(CONNECTION_TIMEOUT)
+            .build();
+
+        try {
+            try (CloseableHttpClient httpClient = HttpClients.custom()
+                    .setDefaultRequestConfig(requestConfig)
+                    .build()) {
+                HttpPost httpPost = new HttpPost(API_URL);
+                httpPost.setHeader("Authorization", "Bearer " + configManager.getApiKey());
+
+                // Determine content type based on file extension
+                String fileName = fileToTranscribe.getName().toLowerCase();
+                String contentType = "audio/wav";
+                if (fileName.endsWith(".mp3")) {
+                    contentType = "audio/mpeg";
+                } else if (fileName.endsWith(".m4a")) {
+                    contentType = "audio/mp4";
+                } else if (fileName.endsWith(".ogg")) {
+                    contentType = "audio/ogg";
+                } else if (fileName.endsWith(".flac")) {
+                    contentType = "audio/flac";
+                }
+
+                MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                builder.addBinaryBody("file", fileToTranscribe, ContentType.create(contentType), fileToTranscribe.getName());
+                builder.addTextBody("model", "whisper-1");
+                // Request verbose JSON with word-level timestamps
+                builder.addTextBody("response_format", "verbose_json");
+                builder.addTextBody("timestamp_granularities[]", "word");
+
+                HttpEntity multipart = builder.build();
+                httpPost.setEntity(multipart);
+
+                try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    HttpEntity responseEntity = response.getEntity();
+                    String responseString = new String(responseEntity.getContent().readAllBytes(), StandardCharsets.UTF_8);
+
+                    if (statusCode != 200) {
+                        logger.error("OpenAI API returned status code: {}. Response: {}", statusCode, responseString);
+                        String errorMessage;
+                        try {
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            JsonNode jsonNode = objectMapper.readTree(responseString);
+                            errorMessage = jsonNode.path("error").path("message").asText("Unknown error");
+                        } catch (Exception jsonException) {
+                            logger.error("Failed to parse error response as JSON", jsonException);
+                            errorMessage = responseString.length() > 500
+                                ? responseString.substring(0, 500) + "..."
+                                : responseString;
+                        }
+                        throw new TranscriptionException(
+                            "Error from OpenAI API (HTTP " + statusCode + "): " + errorMessage,
+                            statusCode,
+                            responseString
+                        );
+                    }
+
+                    // Parse verbose_json response with word timestamps
+                    try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        JsonNode jsonNode = objectMapper.readTree(responseString);
+                        String text = jsonNode.path("text").asText();
+
+                        if (text == null || text.isEmpty()) {
+                            logger.warn("OpenAI returned empty transcription");
+                            throw new TranscriptionException(
+                                "No speech detected in recording",
+                                200,
+                                responseString
+                            );
+                        }
+
+                        // Parse word-level timestamps
+                        List<TimestampedWord> words = new ArrayList<>();
+                        JsonNode wordsNode = jsonNode.path("words");
+                        if (wordsNode.isArray()) {
+                            for (JsonNode wordNode : wordsNode) {
+                                String wordText = wordNode.path("word").asText();
+                                // OpenAI returns timestamps in seconds, convert to milliseconds
+                                double startSec = wordNode.path("start").asDouble(0);
+                                double endSec = wordNode.path("end").asDouble(0);
+                                long startMs = (long) (startSec * 1000);
+                                long endMs = (long) (endSec * 1000);
+                                words.add(new TimestampedWord(wordText, startMs, endMs));
+                            }
+                            logger.info("Parsed {} word timestamps from transcription", words.size());
+                        } else {
+                            logger.warn("No word timestamps in response, falling back to text-only");
+                        }
+
+                        return new TranscriptionResult(text, words);
+
+                    } catch (TranscriptionException te) {
+                        throw te;
+                    } catch (Exception jsonException) {
+                        logger.error("Failed to parse response as JSON. Response: {}", responseString, jsonException);
+                        throw new TranscriptionException(
+                            "Failed to parse OpenAI response: " + jsonException.getMessage(),
+                            jsonException,
+                            true,
+                            false
+                        );
+                    }
+                }
+            } catch (TranscriptionException te) {
+                throw te;
+            } catch (java.net.SocketTimeoutException e) {
+                logger.error("Socket timeout during transcription", e);
+                throw new TranscriptionException("Connection timed out", e, false, true);
+            } catch (java.net.UnknownHostException e) {
+                logger.error("Cannot reach OpenAI server", e);
+                throw new TranscriptionException("Cannot reach server: " + e.getMessage(), e, false, true);
+            } catch (java.net.ConnectException e) {
+                logger.error("Connection to OpenAI failed", e);
+                throw new TranscriptionException("Connection failed: " + e.getMessage(), e, false, true);
+            } catch (IOException e) {
+                logger.error("IO error during transcription", e);
+                throw new TranscriptionException("Network error: " + e.getMessage(), e, false, true);
+            }
+        } finally {
             if (compressedFile != null && compressedFile.exists()) {
                 if (!compressedFile.delete()) {
                     logger.debug("Could not delete temp compressed file: {}", compressedFile.getName());

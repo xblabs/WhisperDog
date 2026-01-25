@@ -21,6 +21,7 @@ import org.whisperdog.recording.AudioFileAnalyzer.LargeFileOption;
 import org.whisperdog.audio.FFmpegUtil;
 import org.whisperdog.audio.SystemAudioCapture;
 import org.whisperdog.audio.AudioCaptureManager;
+import org.whisperdog.audio.AudioDeviceInfo;
 import org.whisperdog.audio.SourceActivityTracker;
 import org.whisperdog.recording.WavChunker;
 import org.whisperdog.recording.FfmpegChunker;
@@ -137,6 +138,11 @@ public class RecorderForm extends javax.swing.JPanel {
     private JCheckBox systemAudioToggle;
     private JPanel systemAudioIndicator;
     private AudioCaptureManager audioCaptureManager;
+
+    // Device labels (showing current mic and system audio device)
+    private JPanel deviceLabelsPanel;
+    private JLabel microphoneLabel;
+    private JLabel systemAudioLabel;
 
     // Recording warning timer (ISS_00007)
     private javax.swing.Timer recordingWarningTimer;
@@ -267,11 +273,36 @@ public class RecorderForm extends javax.swing.JPanel {
 
             statusIndicatorPanel.revalidate();
             statusIndicatorPanel.repaint();
+            refreshDeviceLabels();  // Update device labels visibility
         });
         if (SystemAudioCapture.isAvailable()) {
             statusIndicatorPanel.add(systemAudioIndicator);
             statusIndicatorPanel.add(systemAudioToggle);
         }
+
+        // Device labels panel (shows current mic and system audio device)
+        deviceLabelsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 2));
+        deviceLabelsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        microphoneLabel = new JLabel();
+        microphoneLabel.setForeground(Color.GRAY);
+        microphoneLabel.setFont(microphoneLabel.getFont().deriveFont(Font.PLAIN, 11f));
+        microphoneLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        microphoneLabel.setToolTipText("Click to open audio settings");
+        microphoneLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                navigateToSettings();
+            }
+        });
+
+        systemAudioLabel = new JLabel();
+        systemAudioLabel.setForeground(Color.GRAY);
+        systemAudioLabel.setFont(systemAudioLabel.getFont().deriveFont(Font.PLAIN, 11f));
+        systemAudioLabel.setVisible(false); // Only shown when system audio enabled
+
+        deviceLabelsPanel.add(microphoneLabel);
+        deviceLabelsPanel.add(systemAudioLabel);
 
         JPanel transcriptionPanel = new JPanel();
         transcriptionPanel.setLayout(new BoxLayout(transcriptionPanel, BoxLayout.Y_AXIS));
@@ -305,7 +336,9 @@ public class RecorderForm extends javax.swing.JPanel {
         // Add components to center panel with proper spacing
         centerPanel.add(Box.createVerticalStrut(10));
         centerPanel.add(statusIndicatorPanel);  // Status indicator + record button
-        centerPanel.add(Box.createVerticalStrut(20));  // Section spacing
+        centerPanel.add(Box.createVerticalStrut(5));   // Small gap before device labels
+        centerPanel.add(deviceLabelsPanel);            // Device labels (mic + system audio)
+        centerPanel.add(Box.createVerticalStrut(15));  // Section spacing
         centerPanel.add(transcriptionPanel);
         centerPanel.add(Box.createVerticalStrut(10));
         centerPanel.add(copyButton);
@@ -598,6 +631,30 @@ public class RecorderForm extends javax.swing.JPanel {
 
         // Enable drag & drop for audio files
         setupDragAndDrop(centerPanel);
+
+        // Initialize device labels with current settings
+        refreshDeviceLabels();
+
+        // Refresh device labels when app window gains focus (e.g., after changing Windows audio settings)
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.PARENT_CHANGED) != 0) {
+                // When added to window hierarchy, attach window focus listener
+                Window window = SwingUtilities.getWindowAncestor(this);
+                if (window != null) {
+                    window.addWindowFocusListener(new java.awt.event.WindowFocusListener() {
+                        @Override
+                        public void windowGainedFocus(java.awt.event.WindowEvent e) {
+                            if (isShowing()) {
+                                AudioDeviceInfo.clearCache();
+                                refreshDeviceLabels();
+                            }
+                        }
+                        @Override
+                        public void windowLostFocus(java.awt.event.WindowEvent e) {}
+                    });
+                }
+            }
+        });
     }
 
     /**
@@ -1312,6 +1369,72 @@ public class RecorderForm extends javax.swing.JPanel {
         populatePostProcessingComboBox();
     }
 
+    /**
+     * Refresh the device labels with current configuration.
+     * Shows current microphone and system audio device names.
+     */
+    public void refreshDeviceLabels() {
+        SwingUtilities.invokeLater(() -> {
+            // Microphone label
+            CharSequence micNameSeq = configManager.getMicrophone();
+            String micName = micNameSeq != null ? micNameSeq.toString() : null;
+            if (micName == null || micName.isEmpty()) {
+                microphoneLabel.setText("Mic: No microphone selected");
+                microphoneLabel.setFont(microphoneLabel.getFont().deriveFont(Font.ITALIC, 11f));
+                microphoneLabel.setForeground(Color.GRAY);
+            } else {
+                String displayName = AudioDeviceInfo.formatDeviceNameForDisplay(
+                    AudioDeviceInfo.extractDeviceName(micName), 35);
+                microphoneLabel.setText("Mic: " + displayName);
+                microphoneLabel.setFont(microphoneLabel.getFont().deriveFont(Font.PLAIN, 11f));
+
+                // Check availability
+                if (!AudioDeviceInfo.isMicrophoneAvailable(micName)) {
+                    microphoneLabel.setText("Mic: " + displayName + " (unavailable)");
+                    microphoneLabel.setForeground(new Color(180, 100, 100)); // Muted red
+                } else {
+                    microphoneLabel.setForeground(Color.GRAY);
+                }
+            }
+
+            // System audio label - only visible when enabled and available
+            boolean systemAudioEnabled = configManager.isSystemAudioEnabled();
+            boolean systemAudioAvailable = SystemAudioCapture.isAvailable();
+            systemAudioLabel.setVisible(systemAudioEnabled && systemAudioAvailable);
+
+            if (systemAudioEnabled && systemAudioAvailable) {
+                String sysDevice = configManager.getSystemAudioDevice();
+                if (sysDevice == null || sysDevice.isEmpty()) {
+                    // Using default - detect actual device name
+                    String defaultOutput = AudioDeviceInfo.getDefaultOutputDeviceName();
+                    String display = defaultOutput != null
+                        ? AudioDeviceInfo.formatDeviceNameForDisplay(defaultOutput, 35)
+                        : "Default";
+                    systemAudioLabel.setText("System: " + display);
+                } else {
+                    systemAudioLabel.setText("System: " +
+                        AudioDeviceInfo.formatDeviceNameForDisplay(sysDevice, 35));
+                }
+            }
+
+            deviceLabelsPanel.revalidate();
+            deviceLabelsPanel.repaint();
+        });
+    }
+
+    /**
+     * Navigate to the Settings form via MainForm.
+     */
+    private void navigateToSettings() {
+        Container parent = getParent();
+        while (parent != null && !(parent instanceof MainForm)) {
+            parent = parent.getParent();
+        }
+        if (parent instanceof MainForm) {
+            ((MainForm) parent).setSelectedMenu(1, 1);
+        }
+    }
+
     private boolean isToggleInProgress = false;
     private volatile AudioTranscriptionWorker activeTranscriptionWorker;
 
@@ -1746,6 +1869,107 @@ public class RecorderForm extends javax.swing.JPanel {
         throw new Exception("Transcription failed after max retries");
     }
 
+    /**
+     * Transcribes audio using OpenAI with word-level timestamps and automatic retry.
+     * Used for dual-source recordings where accurate source attribution is needed.
+     *
+     * @param audioFile The audio file to transcribe
+     * @param console Console logger for progress updates
+     * @return TranscriptionResult with text and word timestamps
+     * @throws Exception If transcription fails after all retries
+     */
+    private TranscriptionResult transcribeWithTimestampsAndRetry(File audioFile, ConsoleLogger console) throws Exception {
+        final int MAX_RETRIES = 3;
+        int attempt = 0;
+        TranscriptionException lastException = null;
+
+        while (attempt < MAX_RETRIES) {
+            attempt++;
+            try {
+                if (attempt > 1) {
+                    console.log(String.format("Retry attempt %d/%d...", attempt, MAX_RETRIES));
+                }
+                return whisperClient.transcribeWithTimestamps(audioFile);
+            } catch (TranscriptionException e) {
+                lastException = e;
+                console.log("Error: " + ErrorClassifier.getUserFriendlyMessage(e));
+
+                // Handle based on error category
+                if (e.getCategory() == ErrorCategory.PERMANENT) {
+                    console.logError("Permanent error - cannot retry");
+                    throw e;
+                }
+
+                if (e.getCategory() == ErrorCategory.USER_ACTION) {
+                    console.log("No speech detected - asking user...");
+                    java.util.concurrent.atomic.AtomicBoolean userRetry =
+                        new java.util.concurrent.atomic.AtomicBoolean(false);
+
+                    try {
+                        SwingUtilities.invokeAndWait(() -> {
+                            org.whisperdog.retry.RetryState state =
+                                new org.whisperdog.retry.RetryState(null, audioFile);
+                            state.recordAttempt(e.getMessage(), e.getHttpStatus());
+                            userRetry.set(TranscriptionErrorDialog.showEmptyResponseDialog(
+                                RecorderForm.this, state));
+                        });
+                    } catch (Exception dialogEx) {
+                        logger.error("Error showing empty response dialog", dialogEx);
+                    }
+
+                    if (userRetry.get()) {
+                        attempt = 0;
+                        console.log("User chose to retry transcription");
+                        continue;
+                    } else {
+                        console.log("User cancelled transcription");
+                        return null;
+                    }
+                }
+
+                // Transient error - check if we can retry
+                if (attempt >= MAX_RETRIES) {
+                    console.logError("Max retries exhausted");
+
+                    java.util.concurrent.atomic.AtomicBoolean userRetry =
+                        new java.util.concurrent.atomic.AtomicBoolean(false);
+
+                    try {
+                        SwingUtilities.invokeAndWait(() -> {
+                            org.whisperdog.retry.RetryState state =
+                                new org.whisperdog.retry.RetryState(null, audioFile);
+                            for (int i = 0; i < MAX_RETRIES; i++) {
+                                state.recordAttempt(e.getMessage(), e.getHttpStatus());
+                            }
+                            userRetry.set(TranscriptionErrorDialog.showRetriesExhaustedDialog(
+                                RecorderForm.this, state));
+                        });
+                    } catch (Exception dialogEx) {
+                        logger.error("Error showing retries exhausted dialog", dialogEx);
+                    }
+
+                    if (userRetry.get()) {
+                        attempt = 0;
+                        console.log("User chose to try again");
+                        continue;
+                    } else {
+                        throw e;
+                    }
+                }
+
+                // Wait before retry with exponential backoff
+                long delaySeconds = (long) Math.pow(2, attempt - 1);
+                console.log(String.format("Retrying in %d seconds...", delaySeconds));
+                Thread.sleep(delaySeconds * 1000);
+            }
+        }
+
+        if (lastException != null) {
+            throw lastException;
+        }
+        throw new Exception("Transcription failed after max retries");
+    }
+
     private class AudioTranscriptionWorker extends SwingWorker<String, Void> {
         private final File audioFile;
         private final File systemTrackFile;  // null for mic-only recordings
@@ -1834,20 +2058,29 @@ public class RecorderForm extends javax.swing.JPanel {
                 // Check minimum speech duration threshold (ISS_00011: works regardless of silence removal setting)
                 float minSpeechDuration = configManager.getMinSpeechDuration();
                 if (minSpeechDuration > 0 && analysis != null) {
-                    float estimatedSpeech = analysis.estimatedUsefulSeconds;
+                    float micUsefulSeconds = analysis.estimatedUsefulSeconds;
+                    float systemUsefulSeconds = 0;
 
-                    // For dual-source: if mic is silent, check system track for content
-                    if (estimatedSpeech < minSpeechDuration && validatedSystemTrack != null && validatedSystemTrack.exists()) {
+                    // For dual-source: always check system track and use max of both
+                    // This handles system-audio-only scenarios where mic just has background noise
+                    if (validatedSystemTrack != null && validatedSystemTrack.exists()) {
+                        // Use a lower threshold for system audio (pre-processed, normalized audio)
+                        // System audio doesn't have the same noise floor as mic input
+                        float systemThreshold = (float) Math.max(0.001, configManager.getSilenceThreshold() * 0.5);
                         SilenceRemover.SilenceAnalysisResult systemAnalysis = SilenceRemover.analyzeForSilence(
                             validatedSystemTrack,
-                            configManager.getSilenceThreshold(),
+                            systemThreshold,
                             configManager.getMinSilenceDuration()
                         );
-                        if (systemAnalysis != null && systemAnalysis.estimatedUsefulSeconds >= minSpeechDuration) {
-                            estimatedSpeech = systemAnalysis.estimatedUsefulSeconds;
-                            console.log(String.format("Mic silent but system audio has %.1fs of content", estimatedSpeech));
+                        if (systemAnalysis != null) {
+                            systemUsefulSeconds = systemAnalysis.estimatedUsefulSeconds;
+                            console.log(String.format("Audio content: mic=%.1fs, system=%.1fs",
+                                micUsefulSeconds, systemUsefulSeconds));
                         }
                     }
+
+                    // Use the maximum of both sources - if either has content, proceed
+                    float estimatedSpeech = Math.max(micUsefulSeconds, systemUsefulSeconds);
 
                     if (estimatedSpeech < minSpeechDuration) {
                         final float speechForDialog = estimatedSpeech;
@@ -1913,10 +2146,25 @@ public class RecorderForm extends javax.swing.JPanel {
 
                 long transcriptionStartTime = System.currentTimeMillis();
                 String result = null;
+                // Word timestamps for accurate source attribution (OpenAI only, dual-source recordings)
+                List<SourceActivityTracker.TimestampedWord> wordTimestamps = null;
 
                 if (server.equals("OpenAI")) {
                     logger.info("Transcribing audio using OpenAI");
-                    result = transcribeWithRetry(fileToTranscribe, console);
+                    // Use word timestamps for dual-source recordings for accurate attribution
+                    if (systemTrackFile != null && systemTrackFile.exists()) {
+                        console.log("Requesting word-level timestamps for source attribution...");
+                        TranscriptionResult tsResult = transcribeWithTimestampsAndRetry(fileToTranscribe, console);
+                        if (tsResult != null) {
+                            result = tsResult.getText();
+                            if (tsResult.hasWordTimestamps()) {
+                                wordTimestamps = tsResult.getWords();
+                                console.log(String.format("Received %d word timestamps", wordTimestamps.size()));
+                            }
+                        }
+                    } else {
+                        result = transcribeWithRetry(fileToTranscribe, console);
+                    }
                 } else if (server.equals("Faster-Whisper")) {
                     logger.info("Transcribing audio using Faster-Whisper");
                     result = fasterWhisperTranscribeClient.transcribe(fileToTranscribe);
@@ -1949,8 +2197,15 @@ public class RecorderForm extends javax.swing.JPanel {
                             .anyMatch(s -> s.source == SourceActivityTracker.Source.SYSTEM || s.source == SourceActivityTracker.Source.BOTH);
 
                         if (hasUserActivity && hasSystemActivity) {
-                            result = tracker.labelTranscript(result, timeline);
-                            console.log(String.format("Source attribution complete (%d segments)", timeline.size()));
+                            // Use accurate word-level attribution if timestamps available
+                            if (wordTimestamps != null && !wordTimestamps.isEmpty()) {
+                                result = tracker.labelTranscriptWithTimestamps(wordTimestamps, timeline);
+                                console.log(String.format("Source attribution complete with word timestamps (%d segments)", timeline.size()));
+                            } else {
+                                // Fall back to proportional distribution
+                                result = tracker.labelTranscript(result, timeline);
+                                console.log(String.format("Source attribution complete (proportional, %d segments)", timeline.size()));
+                            }
                         } else {
                             console.log("Single source detected, skipping attribution labels");
                         }

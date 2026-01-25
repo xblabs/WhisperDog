@@ -67,3 +67,8 @@ WHISPERDOG_REBRAND_SPEC.md
 /scaffoldx.mdc
 /system_instructions.md
 /.scaffoldx/xtasks/0006_system_audio_capture/checkpoints/checkpoint_index.json
+/MANUAL_PIPELINE_RUNNER_SPEC.md
+/GEMINI.md
+/CLAUDE.md
+/.scaffoldx/.triaged
+/.cursor/rules/scaffoldx.mdc

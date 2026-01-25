@@ -132,7 +132,7 @@ whisperdog/
 │       │       ├── postprocessing/
 │       │       ├── recording/
 │       │       └── settings/
-│       └── resources/
+│      the  └── resources/
 │           ├── whisperdog.svg
 │           └── icon/
 ├── pom.xml

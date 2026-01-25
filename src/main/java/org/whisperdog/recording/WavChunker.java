@@ -2,6 +2,7 @@ package org.whisperdog.recording;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.whisperdog.ConfigManager;
 import org.whisperdog.ConsoleLogger;
 
 import javax.sound.sampled.*;
@@ -136,7 +137,7 @@ public class WavChunker {
 
                 // Create chunk file (cleanup handled by ChunkedTranscriptionWorker.cleanupChunks())
                 String baseName = wavFile.getName().replaceFirst("\\.[^.]+$", "");
-                File chunkFile = File.createTempFile(
+                File chunkFile = ConfigManager.createTempFile(
                     String.format("chunk_%02d_%s_", chunkIndex + 1, baseName), ".wav"
                 );
 

@@ -2,6 +2,7 @@ package org.whisperdog.recording;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.whisperdog.ConfigManager;
 import org.whisperdog.ConsoleLogger;
 
 import java.io.BufferedReader;
@@ -151,7 +152,7 @@ public class FfmpegCompressor {
             console.log("Compression preset: " + preset.getDescription());
 
             // Create temporary file for compressed output (cleanup via cleanupTempAudioFile)
-            File compressedFile = File.createTempFile("whisperdog_compressed_", ".mp3");
+            File compressedFile = ConfigManager.createTempFile("whisperdog_compressed_", ".mp3");
 
             // FFmpeg compression command optimized for speech
             ProcessBuilder pb = new ProcessBuilder(

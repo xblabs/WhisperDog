@@ -99,6 +99,30 @@ public class ConfigManager {
         return configDir;
     }
 
+    /**
+     * Get the WhisperDog temp directory. Creates it if it doesn't exist.
+     * Uses %TEMP%\WhisperDog on Windows, /tmp/WhisperDog on Unix.
+     * @return Path to the temp directory
+     */
+    public static File getTempDirectory() {
+        String systemTemp = System.getProperty("java.io.tmpdir");
+        File tempDir = new File(systemTemp, "WhisperDog");
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        return tempDir;
+    }
+
+    /**
+     * Create a temp file in the WhisperDog temp directory.
+     * @param prefix Filename prefix
+     * @param suffix Filename suffix (e.g., ".wav")
+     * @return The created temp file
+     */
+    public static File createTempFile(String prefix, String suffix) throws java.io.IOException {
+        return File.createTempFile(prefix, suffix, getTempDirectory());
+    }
+
     public AudioFormat getAudioFormat() {
         float sampleRate = this.getAudioBitrate();
         int sampleSizeInBits = 16;

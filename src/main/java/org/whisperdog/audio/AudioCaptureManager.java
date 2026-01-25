@@ -75,7 +75,7 @@ public class AudioCaptureManager {
 
         // Generate timestamp for file naming
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String tempDir = System.getProperty("java.io.tmpdir");
+        String tempDir = ConfigManager.getTempDirectory().getPath();
 
         // Prepare mic track file (cleaned up by cleanupTempFiles() or AudioTranscriptionWorker)
         micTrackFile = new File(tempDir, "whisperdog_mic_" + timeStamp + ".wav");
@@ -209,7 +209,7 @@ public class AudioCaptureManager {
             // Create new file if needed
             if (systemTrackFile == null) {
                 String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                String tempDir = System.getProperty("java.io.tmpdir");
+                String tempDir = ConfigManager.getTempDirectory().getPath();
                 systemTrackFile = new File(tempDir, "whisperdog_system_" + timeStamp + ".wav");
             }
 

@@ -58,7 +58,7 @@ public class OpenAITranscribeClient {
                 originalFile.getName(), originalFile.length() / (1024.0 * 1024.0)));
 
             // Create temporary MP3 file (cleanup in transcribe() finally block)
-            File mp3File = File.createTempFile("whisperdog_compressed_", ".mp3");
+            File mp3File = ConfigManager.createTempFile("whisperdog_compressed_", ".mp3");
 
             // Use ffmpeg to convert to MP3 with good compression
             // -y = overwrite output file
@@ -144,7 +144,7 @@ public class OpenAITranscribeClient {
             AudioInputStream convertedStream = AudioSystem.getAudioInputStream(targetFormat, originalStream);
 
             // Create a temporary file for the compressed audio (cleanup in transcribe() finally block)
-            File compressedFile = File.createTempFile("whisperdog_compressed_", ".wav");
+            File compressedFile = ConfigManager.createTempFile("whisperdog_compressed_", ".wav");
 
             // Write the converted audio to the temporary file
             AudioSystem.write(convertedStream, AudioFileFormat.Type.WAVE, compressedFile);

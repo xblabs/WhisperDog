@@ -90,7 +90,7 @@ public class AudioDeviceInfo {
         java.io.File tempScript = null;
         try {
             // Create temp PowerShell script file (avoids command-line escaping issues)
-            tempScript = java.io.File.createTempFile("whisperdog_audio_", ".ps1");
+            tempScript = org.whisperdog.ConfigManager.createTempFile("whisperdog_audio_", ".ps1");
 
             // PowerShell script using Core Audio API - written to temp file to avoid escaping issues
             String psScript = "Add-Type -TypeDefinition @\"\r\n" +

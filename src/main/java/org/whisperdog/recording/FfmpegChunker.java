@@ -2,6 +2,7 @@ package org.whisperdog.recording;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.whisperdog.ConfigManager;
 import org.whisperdog.ConsoleLogger;
 
 import java.io.BufferedReader;
@@ -143,7 +144,7 @@ public class FfmpegChunker {
 
                 // Create chunk file (cleanup handled by ChunkedTranscriptionWorker.cleanupChunks())
                 String baseName = audioFile.getName().replaceFirst("\\.[^.]+$", "");
-                File chunkFile = File.createTempFile(
+                File chunkFile = ConfigManager.createTempFile(
                     String.format("chunk_%02d_%s_", i + 1, baseName), ".wav"
                 );
 

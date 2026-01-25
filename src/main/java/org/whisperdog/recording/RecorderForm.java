@@ -1245,7 +1245,7 @@ public class RecorderForm extends javax.swing.JPanel {
             logger.info("Converting OGG file to WAV using ffmpeg in background...");
 
             // Create temporary WAV file (cleanup via cleanupTempAudioFile after transcription)
-            File wavFile = File.createTempFile("whisperdog_converted_", ".wav");
+            File wavFile = ConfigManager.createTempFile("whisperdog_converted_", ".wav");
 
             // Use ffmpeg to convert OGG to WAV
             ProcessBuilder pb = new ProcessBuilder(
@@ -1292,7 +1292,7 @@ public class RecorderForm extends javax.swing.JPanel {
     private File convertOggToWavUsingAudioSystem(File oggFile) {
         try {
             // Create temporary WAV file (cleanup via cleanupTempAudioFile after transcription)
-            File wavFile = File.createTempFile("whisperdog_converted_", ".wav");
+            File wavFile = ConfigManager.createTempFile("whisperdog_converted_", ".wav");
 
             // Note: javax.sound.sampled doesn't natively support OGG
             // This will attempt to read using AudioSystem but may fail
@@ -1491,7 +1491,7 @@ public class RecorderForm extends javax.swing.JPanel {
                 // Standard mic-only recording
                 audioCaptureManager = null;
                 String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                File audioFile = new File(System.getProperty("java.io.tmpdir"), "whisperdog_mic_" + timeStamp + ".wav");
+                File audioFile = new File(ConfigManager.getTempDirectory(), "whisperdog_mic_" + timeStamp + ".wav");
                 recorder = new AudioRecorder(audioFile, configManager);
                 new Thread(recorder::start).start();
                 logger.info("Recording started: " + audioFile.getPath());
@@ -2316,7 +2316,7 @@ public class RecorderForm extends javax.swing.JPanel {
          */
         private void cleanupTempAudioFile(File file) {
             if (file == null || !file.exists()) return;
-            String tempDir = System.getProperty("java.io.tmpdir");
+            String tempDir = ConfigManager.getTempDirectory().getPath();
             if (file.getParent() != null && file.getParent().startsWith(tempDir)
                     && file.getName().startsWith("whisperdog_")) {
                 try {

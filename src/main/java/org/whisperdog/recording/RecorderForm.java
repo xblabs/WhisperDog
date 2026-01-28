@@ -2055,30 +2055,32 @@ public class RecorderForm extends javax.swing.JPanel {
                     console.log("User chose to proceed with transcription");
                 }
 
+                // Analyze system track content (needed for merge decision and min speech check)
+                float micUsefulSeconds = analysis != null ? analysis.estimatedUsefulSeconds : 0;
+                float systemUsefulSeconds = 0;
+                boolean systemTrackHasContent = false;
+
+                if (validatedSystemTrack != null && validatedSystemTrack.exists()) {
+                    // Use a lower threshold for system audio (pre-processed, normalized audio)
+                    // System audio doesn't have the same noise floor as mic input
+                    float systemThreshold = (float) Math.max(0.001, configManager.getSilenceThreshold() * 0.5);
+                    SilenceRemover.SilenceAnalysisResult systemAnalysis = SilenceRemover.analyzeForSilence(
+                        validatedSystemTrack,
+                        systemThreshold,
+                        configManager.getMinSilenceDuration()
+                    );
+                    if (systemAnalysis != null) {
+                        systemUsefulSeconds = systemAnalysis.estimatedUsefulSeconds;
+                        // Only consider system track as having content if > 0.5s of audio
+                        systemTrackHasContent = systemUsefulSeconds > 0.5f;
+                        console.log(String.format("Audio content: mic=%.1fs, system=%.1fs",
+                            micUsefulSeconds, systemUsefulSeconds));
+                    }
+                }
+
                 // Check minimum speech duration threshold (ISS_00011: works regardless of silence removal setting)
                 float minSpeechDuration = configManager.getMinSpeechDuration();
                 if (minSpeechDuration > 0 && analysis != null) {
-                    float micUsefulSeconds = analysis.estimatedUsefulSeconds;
-                    float systemUsefulSeconds = 0;
-
-                    // For dual-source: always check system track and use max of both
-                    // This handles system-audio-only scenarios where mic just has background noise
-                    if (validatedSystemTrack != null && validatedSystemTrack.exists()) {
-                        // Use a lower threshold for system audio (pre-processed, normalized audio)
-                        // System audio doesn't have the same noise floor as mic input
-                        float systemThreshold = (float) Math.max(0.001, configManager.getSilenceThreshold() * 0.5);
-                        SilenceRemover.SilenceAnalysisResult systemAnalysis = SilenceRemover.analyzeForSilence(
-                            validatedSystemTrack,
-                            systemThreshold,
-                            configManager.getMinSilenceDuration()
-                        );
-                        if (systemAnalysis != null) {
-                            systemUsefulSeconds = systemAnalysis.estimatedUsefulSeconds;
-                            console.log(String.format("Audio content: mic=%.1fs, system=%.1fs",
-                                micUsefulSeconds, systemUsefulSeconds));
-                        }
-                    }
-
                     // Use the maximum of both sources - if either has content, proceed
                     float estimatedSpeech = Math.max(micUsefulSeconds, systemUsefulSeconds);
 
@@ -2117,8 +2119,9 @@ public class RecorderForm extends javax.swing.JPanel {
                 // Prepare file for transcription
                 File fileToTranscribe = audioFile;
 
-                if (validatedSystemTrack != null && validatedSystemTrack.exists()) {
+                if (systemTrackHasContent) {
                     // Dual-source recording: merge mic + system tracks
+                    // Only merge if system track has actual content (> 0.5s)
                     console.log("Merging mic + system audio tracks...");
                     File mergedFile = FFmpegUtil.mergeAudioTracks(audioFile, validatedSystemTrack);
                     if (mergedFile != null) {
@@ -2152,7 +2155,7 @@ public class RecorderForm extends javax.swing.JPanel {
                 if (server.equals("OpenAI")) {
                     logger.info("Transcribing audio using OpenAI");
                     // Use word timestamps for dual-source recordings for accurate attribution
-                    if (systemTrackFile != null && systemTrackFile.exists()) {
+                    if (systemTrackHasContent) {
                         console.log("Requesting word-level timestamps for source attribution...");
                         TranscriptionResult tsResult = transcribeWithTimestampsAndRetry(fileToTranscribe, console);
                         if (tsResult != null) {
@@ -2183,7 +2186,7 @@ public class RecorderForm extends javax.swing.JPanel {
                 console.log(String.format("Transcription took %dms", transcriptionTime));
 
                 // Apply source attribution labels for dual-source recordings
-                if (result != null && systemTrackFile != null && systemTrackFile.exists()) {
+                if (result != null && systemTrackHasContent) {
                     try {
                         console.log("Applying source attribution...");
                         SourceActivityTracker tracker = new SourceActivityTracker();

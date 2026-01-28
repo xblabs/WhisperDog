@@ -9,6 +9,8 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
+
+import org.whisperdog.ConfigManager;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -599,9 +601,9 @@ public class SystemAudioCapture {
         capture.dispose();
 
         // Save to WAV file
-        Path tempFile = Files.createTempFile("whisperdog_poc_", ".wav");
-        writeWav(tempFile.toFile(), audioData, TARGET_SAMPLE_RATE, TARGET_CHANNELS);
-        System.out.println("  Saved to: " + tempFile.toAbsolutePath());
+        File tempFile = ConfigManager.createTempFile("whisperdog_poc_", ".wav");
+        writeWav(tempFile, audioData, TARGET_SAMPLE_RATE, TARGET_CHANNELS);
+        System.out.println("  Saved to: " + tempFile.getAbsolutePath());
     }
 
     /**

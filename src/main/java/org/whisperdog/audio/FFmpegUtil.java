@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import org.whisperdog.ConfigManager;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -153,8 +155,7 @@ public class FFmpegUtil {
             }
 
             // Create temp file for extracted audio (caller responsible for cleanup via cleanupTempAudioFile)
-            Path tempPath = Files.createTempFile("whisperdog_extract_", ".wav");
-            File outputFile = tempPath.toFile();
+            File outputFile = ConfigManager.createTempFile("whisperdog_extract_", ".wav");
 
             logger.info("Extracting audio from {} to {}", videoFile.getName(), outputFile.getName());
 
@@ -314,8 +315,7 @@ public class FFmpegUtil {
     public static File mergeAudioTracks(File micTrack, File systemTrack) {
         try {
             // Caller responsible for cleanup (files match whisperdog_* pattern)
-            Path tempPath = Files.createTempFile("whisperdog_merged_", ".wav");
-            File outputFile = tempPath.toFile();
+            File outputFile = ConfigManager.createTempFile("whisperdog_merged_", ".wav");
 
             logger.info("Merging audio tracks: {} + {} -> {}",
                 micTrack.getName(), systemTrack.getName(), outputFile.getName());

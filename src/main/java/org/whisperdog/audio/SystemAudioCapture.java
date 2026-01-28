@@ -30,6 +30,9 @@ public class SystemAudioCapture {
     // Shared platform reference — XtAudio only allows one platform at a time
     private static volatile XtPlatform activePlatform;
 
+    // Lock for platform creation/access to prevent races between threads
+    private static final Object platformLock = new Object();
+
     // Cached availability result to avoid expensive device enumeration on EDT
     private static volatile Boolean cachedAvailability = null;
 
@@ -100,35 +103,37 @@ public class SystemAudioCapture {
         if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
             return new String[0];
         }
-        // Reuse active platform if available; otherwise create a temporary one
-        XtPlatform platform = activePlatform;
-        boolean ownedPlatform = false;
-        try {
-            if (platform == null) {
-                platform = XtAudio.init("WhisperDog", Pointer.NULL);
-                ownedPlatform = true;
-            }
-            XtService service = platform.getService(Enums.XtSystem.WASAPI);
-            if (service == null) return new String[0];
+        // Synchronize platform access to prevent races during creation/use
+        synchronized (platformLock) {
+            XtPlatform platform = activePlatform;
+            boolean ownedPlatform = false;
+            try {
+                if (platform == null) {
+                    platform = XtAudio.init("WhisperDog", Pointer.NULL);
+                    ownedPlatform = true;
+                }
+                XtService service = platform.getService(Enums.XtSystem.WASAPI);
+                if (service == null) return new String[0];
 
-            java.util.List<String> names = new java.util.ArrayList<>();
-            try (XtDeviceList devices = service.openDeviceList(
-                    EnumSet.of(Enums.XtEnumFlags.INPUT))) {
-                for (int i = 0; i < devices.getCount(); i++) {
-                    String id = devices.getId(i);
-                    EnumSet<Enums.XtDeviceCaps> caps = devices.getCapabilities(id);
-                    if (caps.contains(Enums.XtDeviceCaps.LOOPBACK)) {
-                        names.add(devices.getName(id));
+                java.util.List<String> names = new java.util.ArrayList<>();
+                try (XtDeviceList devices = service.openDeviceList(
+                        EnumSet.of(Enums.XtEnumFlags.INPUT))) {
+                    for (int i = 0; i < devices.getCount(); i++) {
+                        String id = devices.getId(i);
+                        EnumSet<Enums.XtDeviceCaps> caps = devices.getCapabilities(id);
+                        if (caps.contains(Enums.XtDeviceCaps.LOOPBACK)) {
+                            names.add(devices.getName(id));
+                        }
                     }
                 }
-            }
-            return names.toArray(new String[0]);
-        } catch (Exception | AssertionError e) {
-            logger.debug("Failed to list loopback devices: {}", e.getMessage());
-            return new String[0];
-        } finally {
-            if (ownedPlatform && platform != null) {
-                platform.close();
+                return names.toArray(new String[0]);
+            } catch (Exception | AssertionError e) {
+                logger.debug("Failed to list loopback devices: {}", e.getMessage());
+                return new String[0];
+            } finally {
+                if (ownedPlatform && platform != null) {
+                    platform.close();
+                }
             }
         }
     }
@@ -405,6 +410,7 @@ public class SystemAudioCapture {
 
     /**
      * Convert float samples to 16-bit PCM mono at target sample rate.
+     * Uses linear interpolation for smoother resampling (reduces aliasing vs nearest-neighbor).
      */
     private byte[] convertFloatToInt16(float[] input, int frames, int inputChannels) {
         // Calculate output size with resampling
@@ -412,19 +418,29 @@ public class SystemAudioCapture {
         ByteBuffer outBuf = ByteBuffer.allocate(outputSamples * 2).order(ByteOrder.LITTLE_ENDIAN);
 
         for (int i = 0; i < outputSamples; i++) {
-            // Simple nearest-neighbor resampling
-            int srcFrame = (int) ((long) i * deviceSampleRate / TARGET_SAMPLE_RATE);
-            if (srcFrame >= frames) srcFrame = frames - 1;
+            // Linear interpolation resampling
+            double srcPos = (double) i * deviceSampleRate / TARGET_SAMPLE_RATE;
+            int srcFrame0 = (int) srcPos;
+            int srcFrame1 = srcFrame0 + 1;
+            double frac = srcPos - srcFrame0;
 
-            // Mix down to mono and apply gain
-            float sample = 0;
+            // Clamp to valid range
+            if (srcFrame0 >= frames) srcFrame0 = frames - 1;
+            if (srcFrame1 >= frames) srcFrame1 = frames - 1;
+
+            // Mix down to mono with linear interpolation between frames
+            float sample0 = 0, sample1 = 0;
             for (int ch = 0; ch < inputChannels; ch++) {
-                int idx = srcFrame * inputChannels + ch;
-                if (idx < input.length) {
-                    sample += input[idx];
-                }
+                int idx0 = srcFrame0 * inputChannels + ch;
+                int idx1 = srcFrame1 * inputChannels + ch;
+                if (idx0 < input.length) sample0 += input[idx0];
+                if (idx1 < input.length) sample1 += input[idx1];
             }
-            sample /= inputChannels;
+            sample0 /= inputChannels;
+            sample1 /= inputChannels;
+
+            // Interpolate and apply gain
+            float sample = (float) (sample0 + (sample1 - sample0) * frac);
             sample *= LOOPBACK_GAIN;
 
             // Clamp and convert to 16-bit
@@ -437,6 +453,7 @@ public class SystemAudioCapture {
 
     /**
      * Convert int16 samples to mono at target sample rate.
+     * Uses linear interpolation for smoother resampling.
      */
     private byte[] convertInt16(short[] input, int frames, int inputChannels) {
         // Calculate output size with resampling
@@ -444,19 +461,29 @@ public class SystemAudioCapture {
         ByteBuffer outBuf = ByteBuffer.allocate(outputSamples * 2).order(ByteOrder.LITTLE_ENDIAN);
 
         for (int i = 0; i < outputSamples; i++) {
-            // Simple nearest-neighbor resampling
-            int srcFrame = (int) ((long) i * deviceSampleRate / TARGET_SAMPLE_RATE);
-            if (srcFrame >= frames) srcFrame = frames - 1;
+            // Linear interpolation resampling
+            double srcPos = (double) i * deviceSampleRate / TARGET_SAMPLE_RATE;
+            int srcFrame0 = (int) srcPos;
+            int srcFrame1 = srcFrame0 + 1;
+            double frac = srcPos - srcFrame0;
 
-            // Mix down to mono
-            int sample = 0;
+            // Clamp to valid range
+            if (srcFrame0 >= frames) srcFrame0 = frames - 1;
+            if (srcFrame1 >= frames) srcFrame1 = frames - 1;
+
+            // Mix down to mono with linear interpolation between frames
+            int sample0 = 0, sample1 = 0;
             for (int ch = 0; ch < inputChannels; ch++) {
-                int idx = srcFrame * inputChannels + ch;
-                if (idx < input.length) {
-                    sample += input[idx];
-                }
+                int idx0 = srcFrame0 * inputChannels + ch;
+                int idx1 = srcFrame1 * inputChannels + ch;
+                if (idx0 < input.length) sample0 += input[idx0];
+                if (idx1 < input.length) sample1 += input[idx1];
             }
-            sample /= inputChannels;
+            sample0 /= inputChannels;
+            sample1 /= inputChannels;
+
+            // Interpolate
+            int sample = (int) Math.round(sample0 + (sample1 - sample0) * frac);
 
             // Clamp
             sample = Math.max(-32768, Math.min(32767, sample));
@@ -476,6 +503,14 @@ public class SystemAudioCapture {
         }
 
         capturing.set(false);
+
+        // Brief delay to allow any in-flight callbacks to complete writing to capturedAudio.
+        // The callback checks capturing.get() first, so after this delay no new writes will occur.
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
         try {
             if (stream != null) {

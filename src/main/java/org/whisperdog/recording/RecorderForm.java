@@ -664,11 +664,10 @@ public class RecorderForm extends javax.swing.JPanel {
         panel.setTransferHandler(new TransferHandler() {
             @Override
             public boolean canImport(TransferSupport support) {
-                if (!support.isDrop()) {
-                    return false;
-                }
-                // Only check if the data flavor is supported, don't access transfer data yet
-                // Accessing transfer data in canImport() causes InvalidDnDOperationException
+                // Check if the data flavor is supported - this is safe to call during drag-over
+                // Note: Do NOT access getTransferData() here as it causes InvalidDnDOperationException
+                // during the drag-over phase. Only checking the flavor type is safe and enables
+                // proper cursor feedback when dragging files over the drop zone.
                 return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
             }
 

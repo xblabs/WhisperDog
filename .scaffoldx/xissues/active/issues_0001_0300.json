@@ -78,5 +78,9 @@
       "tags": "validation, openai-api, file-type, drag-drop",
       "file_path": "active/0001-0300/ISS_00008_file_type_validation.md"
     }
-  ]
+  ],
+  "meta": {
+    "lastUpdated": "2026-01-30T16:31:20.794Z",
+    "count": 8
+  }
 }

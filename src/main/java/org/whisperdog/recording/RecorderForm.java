@@ -150,11 +150,15 @@ public class RecorderForm extends javax.swing.JPanel {
     private boolean isRecordingWarningActive = false;
     private int warningPulseState = 0;  // For pulsing animation
 
+    // Recording retention
+    private RecordingRetentionManager recordingRetentionManager;
+
     public RecorderForm(ConfigManager configManager) {
         this.configManager = configManager;
         this.whisperClient = new OpenAITranscribeClient(configManager);
         this.fasterWhisperTranscribeClient = new FasterWhisperTranscribeClient(configManager);
         this.openWebUITranscribeClient = new OpenWebUITranscribeClient(configManager);
+        this.recordingRetentionManager = new RecordingRetentionManager(configManager);
 
 
         JPanel centerPanel = new JPanel();
@@ -1973,6 +1977,9 @@ public class RecorderForm extends javax.swing.JPanel {
         private final File audioFile;
         private final File systemTrackFile;  // null for mic-only recordings
         private volatile boolean cancelledByUser = false;  // Track if user cancelled via warning dialog
+        private volatile File transcribedFile = null;  // The actual file that was transcribed (may be merged)
+        private volatile long recordingDurationMs = 0;  // Duration of the recording
+        private volatile boolean isDualSource = false;  // Whether this was a dual-source recording
 
         public AudioTranscriptionWorker(File audioFile) {
             this(audioFile, null);
@@ -2141,6 +2148,14 @@ public class RecorderForm extends javax.swing.JPanel {
                     );
                 }
 
+                // Capture file for retention (before transcription, in case of failure)
+                this.transcribedFile = fileToTranscribe;
+                this.isDualSource = systemTrackHasContent;
+                // Calculate recording duration from recording start time
+                if (recordingStartTime > 0) {
+                    this.recordingDurationMs = System.currentTimeMillis() - recordingStartTime;
+                }
+
                 String server = configManager.getWhisperServer();
                 console.separator();
                 console.log("Starting transcription using " + server);
@@ -2271,9 +2286,26 @@ public class RecorderForm extends javax.swing.JPanel {
                 console.logError("Error finishing transcription: " + e.getMessage());
             } finally {
                 isRecording = false;
+
+                // Retain recording before cleanup (if enabled)
+                if (transcribedFile != null && transcript != null) {
+                    recordingRetentionManager.retainRecording(
+                        transcribedFile,
+                        audioFile,  // mic channel
+                        systemTrackFile,  // system channel (may be null)
+                        recordingDurationMs,
+                        transcript,
+                        isDualSource
+                    );
+                }
+
                 // Clean up temp audio files to prevent accumulation in long-running sessions
                 cleanupTempAudioFile(audioFile);
                 cleanupTempAudioFile(systemTrackFile);
+                // Also clean up merged file if it's different from the original
+                if (transcribedFile != null && !transcribedFile.equals(audioFile)) {
+                    cleanupTempAudioFile(transcribedFile);
+                }
             }
 
             // Run post-processing asynchronously if enabled
@@ -2735,6 +2767,15 @@ public class RecorderForm extends javax.swing.JPanel {
         processProgressPanel.hidePanel();
         currentProcessingFile = null;
         currentWorker = null;
+    }
+
+    /**
+     * Gets the recording retention manager for UI access.
+     *
+     * @return The recording retention manager
+     */
+    public RecordingRetentionManager getRecordingRetentionManager() {
+        return recordingRetentionManager;
     }
 
 }

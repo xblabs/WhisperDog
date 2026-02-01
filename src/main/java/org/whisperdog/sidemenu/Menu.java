@@ -17,6 +17,7 @@ public class Menu extends JPanel {
     private final String menuItems[][] = {
             {"~~"},
             {"Record"},
+            {"Recordings"},
             {"Settings", "Options", "Logs"},
             {"PostPro Pipelines", "PostPro Pipelines", "Create/Edit Pipeline"},
             {"PostPro Unit Library", "PostPro Unit Library", "Create/Edit Unit"},

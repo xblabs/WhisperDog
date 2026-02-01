@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.util.UIScale;
 import org.whisperdog.recording.RecorderForm;
+import org.whisperdog.recording.RecordingsPanel;
 import org.whisperdog.settings.SettingsForm;
 import org.whisperdog.sidemenu.Menu;
 import org.whisperdog.sidemenu.MenuAction;
@@ -97,8 +98,8 @@ public class MainForm extends JLayeredPane {
             // Recording continues in background, only stopped by explicit user action
 
             // Stop audio test and auto-save settings ONLY when leaving settings screen
-            boolean leavingSettingsScreen = (currentMenuIndex == 1 && currentSubIndex == 1) &&
-                                           !(index == 1 && subIndex == 1);
+            boolean leavingSettingsScreen = (currentMenuIndex == 2 && currentSubIndex == 1) &&
+                                           !(index == 2 && subIndex == 1);
             if(leavingSettingsScreen && settingsForm != null) {
                 settingsForm.stopAudioTest();
                 settingsForm.saveSettings();  // Auto-save to prevent confusion
@@ -119,6 +120,14 @@ public class MainForm extends JLayeredPane {
                 recorderForm.refreshPipelines();
                 recorderForm.refreshDeviceLabels();
             } else if (index == 1) {
+                // Recordings browser
+                if (recorderForm == null) {
+                    recorderForm = new RecorderForm(configManager);
+                }
+                RecordingsPanel recordingsPanel = new RecordingsPanel(recorderForm.getRecordingRetentionManager());
+                showForm(recordingsPanel);
+            } else if (index == 2) {
+                // Settings menu
                 if (subIndex == 1) {
                     // Reuse SettingsForm instance to preserve slider values
                     if (settingsForm == null) {
@@ -131,7 +140,7 @@ public class MainForm extends JLayeredPane {
                 } else {
                     action.cancel();
                 }
-            } else if (index == 2) {
+            } else if (index == 3) {
                 // Pipelines menu
                 if (subIndex == 1) {
                     showForm(new PipelineListForm(configManager, this));
@@ -139,7 +148,7 @@ public class MainForm extends JLayeredPane {
                 if (subIndex == 2) {
                     showForm(new PipelineEditorForm(configManager, this, null));
                 }
-            } else if (index == 3) {
+            } else if (index == 4) {
                 // Unit Library menu
                 if (subIndex == 1) {
                     showForm(new UnitLibraryListForm(configManager, this));

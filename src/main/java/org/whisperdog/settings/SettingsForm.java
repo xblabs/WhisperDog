@@ -665,6 +665,149 @@ public class SettingsForm extends JPanel {
             row++;
         }
 
+        // ===== Recording Retention Section =====
+        JPanel retentionPanel = new JPanel(new GridBagLayout());
+        retentionPanel.setBorder(BorderFactory.createTitledBorder("Recording Retention"));
+        GridBagConstraints retGbc = new GridBagConstraints();
+        retGbc.insets = new Insets(5, 5, 5, 5);
+        retGbc.fill = GridBagConstraints.HORIZONTAL;
+        int retRow = 0;
+
+        // Enable retention checkbox
+        retGbc.gridx = 0;
+        retGbc.gridy = retRow;
+        retGbc.gridwidth = 1;
+        retGbc.weightx = 0;
+        retGbc.anchor = GridBagConstraints.EAST;
+        retentionPanel.add(new JLabel("Enable retention:"), retGbc);
+
+        JCheckBox retentionEnabledSwitch = new JCheckBox("Save recordings for later access");
+        retentionEnabledSwitch.setSelected(configManager.isRecordingRetentionEnabled());
+        retentionEnabledSwitch.setToolTipText("When enabled, recordings are saved to a persistent location");
+        retentionEnabledSwitch.addActionListener(e -> {
+            configManager.setRecordingRetentionEnabled(retentionEnabledSwitch.isSelected());
+            settingsDirty = true;
+        });
+        retGbc.gridx = 1;
+        retGbc.gridwidth = 2;
+        retGbc.weightx = 1.0;
+        retGbc.anchor = GridBagConstraints.WEST;
+        retentionPanel.add(retentionEnabledSwitch, retGbc);
+
+        retRow++;
+
+        // Retention count spinner
+        retGbc.gridx = 0;
+        retGbc.gridy = retRow;
+        retGbc.gridwidth = 1;
+        retGbc.weightx = 0;
+        retGbc.anchor = GridBagConstraints.EAST;
+        retentionPanel.add(new JLabel("Max recordings:"), retGbc);
+
+        SpinnerNumberModel retentionCountModel = new SpinnerNumberModel(
+            configManager.getRecordingRetentionCount(), 1, 100, 1);
+        JSpinner retentionCountSpinner = new JSpinner(retentionCountModel);
+        retentionCountSpinner.setToolTipText("Maximum number of recordings to keep (1-100)");
+        retentionCountSpinner.addChangeListener(e -> {
+            configManager.setRecordingRetentionCount((Integer) retentionCountSpinner.getValue());
+            settingsDirty = true;
+        });
+        JPanel retentionCountPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        retentionCountPanel.add(retentionCountSpinner);
+        retentionCountPanel.add(Box.createHorizontalStrut(10));
+        retentionCountPanel.add(new JLabel("recordings"));
+        retGbc.gridx = 1;
+        retGbc.gridwidth = 2;
+        retGbc.weightx = 1.0;
+        retGbc.anchor = GridBagConstraints.WEST;
+        retentionPanel.add(retentionCountPanel, retGbc);
+
+        retRow++;
+
+        // Storage path
+        retGbc.gridx = 0;
+        retGbc.gridy = retRow;
+        retGbc.gridwidth = 1;
+        retGbc.weightx = 0;
+        retGbc.anchor = GridBagConstraints.EAST;
+        retentionPanel.add(new JLabel("Storage path:"), retGbc);
+
+        JTextField storagePathField = new JTextField(20);
+        String savedPath = configManager.getRecordingStoragePath();
+        storagePathField.setText(savedPath.isEmpty() ? "(Default: " + configManager.getRecordingsDirectory().getPath() + ")" : savedPath);
+        storagePathField.setToolTipText("Custom path for storing recordings. Leave empty to use default.");
+
+        JButton browseButton = new JButton("Browse...");
+        browseButton.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            String currentPath = configManager.getRecordingStoragePath();
+            if (!currentPath.isEmpty()) {
+                chooser.setCurrentDirectory(new java.io.File(currentPath));
+            }
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                String newPath = chooser.getSelectedFile().getAbsolutePath();
+                storagePathField.setText(newPath);
+                configManager.setRecordingStoragePath(newPath);
+                settingsDirty = true;
+            }
+        });
+
+        JButton openFolderButton = new JButton("Open Folder");
+        openFolderButton.addActionListener(e -> {
+            try {
+                java.awt.Desktop.getDesktop().open(configManager.getRecordingsDirectory());
+            } catch (IOException ex) {
+                logger.error("Failed to open recordings folder", ex);
+                Notificationmanager.getInstance().showNotification(ToastNotification.Type.ERROR,
+                    "Failed to open recordings folder");
+            }
+        });
+
+        JPanel storagePathPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        storagePathPanel.add(storagePathField);
+        storagePathPanel.add(browseButton);
+        storagePathPanel.add(openFolderButton);
+        retGbc.gridx = 1;
+        retGbc.gridwidth = 2;
+        retGbc.weightx = 1.0;
+        retGbc.anchor = GridBagConstraints.WEST;
+        retentionPanel.add(storagePathPanel, retGbc);
+
+        retRow++;
+
+        // Retain channel files checkbox
+        retGbc.gridx = 0;
+        retGbc.gridy = retRow;
+        retGbc.gridwidth = 1;
+        retGbc.weightx = 0;
+        retGbc.anchor = GridBagConstraints.EAST;
+        retentionPanel.add(new JLabel("Debug options:"), retGbc);
+
+        JCheckBox retainChannelFilesSwitch = new JCheckBox("Retain channel files (for debugging)");
+        retainChannelFilesSwitch.setSelected(configManager.isRetainChannelFilesEnabled());
+        retainChannelFilesSwitch.setToolTipText("When enabled, saves separate mic and system audio files alongside merged recordings");
+        retainChannelFilesSwitch.addActionListener(e -> {
+            configManager.setRetainChannelFilesEnabled(retainChannelFilesSwitch.isSelected());
+            settingsDirty = true;
+        });
+        retGbc.gridx = 1;
+        retGbc.gridwidth = 2;
+        retGbc.weightx = 1.0;
+        retGbc.anchor = GridBagConstraints.WEST;
+        retentionPanel.add(retainChannelFilesSwitch, retGbc);
+
+        // Add retention panel to content panel
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.gridwidth = 3;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        contentPanel.add(retentionPanel, gbc);
+
+        row++;
+
         JPanel apiSettingsPanel = new JPanel(new GridBagLayout());
         apiSettingsPanel.setBorder(BorderFactory.createTitledBorder("API Settings"));
         GridBagConstraints apiGbc = new GridBagConstraints();

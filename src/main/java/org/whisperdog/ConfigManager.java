@@ -901,4 +901,110 @@ public class ConfigManager {
         properties.setProperty("systemAudioDevice", deviceName != null ? deviceName : "");
         saveConfig();
     }
+
+    // ========== Recording Retention Settings ==========
+
+    /**
+     * Checks if recording retention is enabled.
+     * When enabled, recordings are saved to a persistent location for later access.
+     *
+     * @return true if recording retention is enabled (default: false)
+     */
+    public boolean isRecordingRetentionEnabled() {
+        return Boolean.parseBoolean(properties.getProperty("recordingRetentionEnabled", "false"));
+    }
+
+    /**
+     * Sets whether recording retention is enabled.
+     *
+     * @param enabled true to enable recording retention
+     */
+    public void setRecordingRetentionEnabled(boolean enabled) {
+        properties.setProperty("recordingRetentionEnabled", String.valueOf(enabled));
+        saveConfig();
+    }
+
+    /**
+     * Gets the maximum number of recordings to retain.
+     *
+     * @return The retention count (default: 20, range: 1-100)
+     */
+    public int getRecordingRetentionCount() {
+        int count = Integer.parseInt(properties.getProperty("recordingRetentionCount", "20"));
+        return Math.max(1, Math.min(100, count));
+    }
+
+    /**
+     * Sets the maximum number of recordings to retain.
+     *
+     * @param count The retention count (will be clamped to 1-100)
+     */
+    public void setRecordingRetentionCount(int count) {
+        int clampedCount = Math.max(1, Math.min(100, count));
+        properties.setProperty("recordingRetentionCount", String.valueOf(clampedCount));
+        saveConfig();
+    }
+
+    /**
+     * Gets the custom storage path for retained recordings.
+     * If empty, the default path (%APPDATA%/WhisperDog/recordings) is used.
+     *
+     * @return The custom storage path, or empty string for default
+     */
+    public String getRecordingStoragePath() {
+        return properties.getProperty("recordingStoragePath", "");
+    }
+
+    /**
+     * Sets the custom storage path for retained recordings.
+     * Set to empty string or null to use the default path.
+     *
+     * @param path The custom storage path
+     */
+    public void setRecordingStoragePath(String path) {
+        properties.setProperty("recordingStoragePath", path != null ? path : "");
+        saveConfig();
+    }
+
+    /**
+     * Gets the recordings directory. Uses custom path if set, otherwise
+     * defaults to %APPDATA%/WhisperDog/recordings (or equivalent on other platforms).
+     * Creates the directory if it doesn't exist.
+     *
+     * @return The recordings directory
+     */
+    public File getRecordingsDirectory() {
+        String customPath = getRecordingStoragePath();
+        File recordingsDir;
+        if (customPath != null && !customPath.trim().isEmpty()) {
+            recordingsDir = new File(customPath);
+        } else {
+            recordingsDir = new File(getConfigDirectory(), "recordings");
+        }
+        if (!recordingsDir.exists()) {
+            recordingsDir.mkdirs();
+        }
+        return recordingsDir;
+    }
+
+    /**
+     * Checks if channel file retention is enabled for dual-source recordings.
+     * When enabled, separate mic and system channel files are saved alongside
+     * the merged recording for debugging purposes.
+     *
+     * @return true if channel file retention is enabled (default: false)
+     */
+    public boolean isRetainChannelFilesEnabled() {
+        return Boolean.parseBoolean(properties.getProperty("retainChannelFilesEnabled", "false"));
+    }
+
+    /**
+     * Sets whether channel file retention is enabled.
+     *
+     * @param enabled true to retain channel files
+     */
+    public void setRetainChannelFilesEnabled(boolean enabled) {
+        properties.setProperty("retainChannelFilesEnabled", String.valueOf(enabled));
+        saveConfig();
+    }
 }

@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "generated": "2026-01-29T22:02:52.113Z",
+  "entityType": "task",
+  "entityId": "0008",
+  "totalCheckpoints": 1,
+  "byType": {
+    "milestone": 1
+  },
+  "byDate": {
+    "2026-01-29": 1
+  },
+  "checkpoints": [
+    {
+      "id": "CP_2026_01_29_001",
+      "type": "milestone",
+      "created": "2026-01-29T22:02:52.107Z",
+      "filepath": ".scaffoldx\\xtasks\\0008_dual_source_attribution_accuracy\\checkpoints\\CP_2026_01_29_001_milestone.md",
+      "priority": "high",
+      "autoLoad": true
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# Artifacts Directory
+
+Store outputs produced during task implementation.
+
+## Expected Artifacts for Task 0009
+
+- [ ] `x-changelog-sync.md` - Command specification
+- [ ] `x-release-prep.md` - Command specification
+- [ ] `changelog_sentinel.md` - Domain sentinel
+- [ ] Sample outputs from WhisperDog testing

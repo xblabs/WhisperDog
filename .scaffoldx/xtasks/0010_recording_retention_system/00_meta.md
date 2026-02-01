@@ -1,7 +1,7 @@
 ---
 title: Recording Retention System
 task_id: "0010"
-status: review
+status: awaiting_verification
 priority: high
 created: 2026-01-25
 updated: 2026-01-25

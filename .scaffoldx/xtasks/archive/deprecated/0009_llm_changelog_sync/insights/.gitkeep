@@ -1,0 +1,12 @@
+# Insights Directory
+
+Capture learnings, discoveries, and insights during task implementation.
+
+## Purpose
+- Document unexpected findings
+- Record decisions made during implementation
+- Preserve context for future reference
+
+## File Naming Convention
+- `YYYY-MM-DD_topic.md` for dated insights
+- `INS_NNN_topic.md` for numbered insights

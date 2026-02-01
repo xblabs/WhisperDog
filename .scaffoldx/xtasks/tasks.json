@@ -9,7 +9,13 @@
       "created": "2025-12-30",
       "updated": "2026-01-02",
       "task_type": "executable",
-      "tags": ["reliability", "error-handling", "retry", "openai-api", "user-experience"],
+      "tags": [
+        "reliability",
+        "error-handling",
+        "retry",
+        "openai-api",
+        "user-experience"
+      ],
       "dependencies": [],
       "directory": ".scaffoldx/xtasks/0002_error_handling_retry_mechanism",
       "description": "Implement intelligent error handling and retry mechanism for OpenAI transcription failures with automatic retry for transient errors and user prompts for actionable errors"
@@ -23,7 +29,13 @@
       "created": "2025-12-30",
       "updated": "2026-01-02",
       "task_type": "executable",
-      "tags": ["audio", "mic-test", "silence-detection", "calibration", "user-experience"],
+      "tags": [
+        "audio",
+        "mic-test",
+        "silence-detection",
+        "calibration",
+        "user-experience"
+      ],
       "directory": ".scaffoldx/xtasks/0003_audio_processing_pipeline",
       "description": "Create microphone test screen in Options that allows users to calibrate silence detection thresholds with real-time feedback"
     },
@@ -36,7 +48,13 @@
       "created": "2025-12-30",
       "updated": "2026-01-22",
       "task_type": "executable",
-      "tags": ["ui", "ux", "post-processing", "search", "polish"],
+      "tags": [
+        "ui",
+        "ux",
+        "post-processing",
+        "search",
+        "polish"
+      ],
       "directory": ".scaffoldx/xtasks/0004_ui_ux_improvements",
       "description": "UI polish including post-processing UI reorganization, searchable logs, and long-process UX improvements (icons/padding in Task 0001)"
     },
@@ -49,25 +67,38 @@
       "created": "2025-12-30",
       "updated": "2025-12-30",
       "task_type": "executable",
-      "tags": ["audio", "mp4", "ffmpeg", "drag-drop", "file-handling"],
+      "tags": [
+        "audio",
+        "mp4",
+        "ffmpeg",
+        "drag-drop",
+        "file-handling"
+      ],
       "directory": ".scaffoldx/xtasks/0005_mp4_drag_drop_support",
       "description": "Add support for dragging MP4 files onto the app window, auto-extracting audio via ffmpeg for transcription"
     },
     {
       "id": "0006",
       "name": "System Audio Capture",
-      "status": "todo",
-      "progress": 0,
+      "status": "review",
+      "progress": 95,
       "priority": "high",
       "created": "2026-01-22",
-      "updated": "2026-01-22",
+      "updated": "2026-01-28",
       "task_type": "executable",
-      "tags": ["audio", "dual-source", "system-audio", "attribution", "recording", "wasapi"],
+      "tags": [
+        "audio",
+        "dual-source",
+        "system-audio",
+        "attribution",
+        "recording",
+        "wasapi"
+      ],
       "dependencies": [],
       "directory": ".scaffoldx/xtasks/0006_system_audio_capture",
       "description": "Dual-source recording: capture mic (User) and system audio (External) simultaneously with source-level attribution"
-    }
-    ,{
+    },
+    {
       "id": "0007",
       "name": "Whisper Vocabulary Hints",
       "status": "todo",
@@ -76,15 +107,153 @@
       "created": "2026-01-23",
       "updated": "2026-01-23",
       "task_type": "executable",
-      "tags": ["transcription", "whisper", "vocabulary", "prompt", "accuracy"],
+      "tags": [
+        "transcription",
+        "whisper",
+        "vocabulary",
+        "prompt",
+        "accuracy"
+      ],
       "dependencies": [],
       "directory": ".scaffoldx/xtasks/0007_whisper_vocabulary_hints",
       "description": "Add vocabulary hints setting that sends prompt parameter to Whisper API for proper noun/acronym priming"
+    },
+    {
+      "id": "0008",
+      "name": "Dual-Source Attribution Accuracy",
+      "status": "review",
+      "progress": 100,
+      "priority": "high",
+      "created": "2026-01-25",
+      "updated": "2026-01-29",
+      "task_type": "executable",
+      "tags": [
+        "audio",
+        "transcription",
+        "attribution",
+        "dual-source",
+        "rms",
+        "whisper"
+      ],
+      "dependencies": [
+        "0006"
+      ],
+      "directory": ".scaffoldx/xtasks/0008_dual_source_attribution_accuracy",
+      "description": "Fix incorrect [User+System] source attribution by adding dominance ratio comparison and segment smoothing to SourceActivityTracker"
+    },
+    {
+      "id": "0010",
+      "name": "Recording Retention System",
+      "status": "awaiting_verification",
+      "progress": 100,
+      "priority": "high",
+      "created": "2026-01-25",
+      "updated": "2026-01-25",
+      "task_type": "executable",
+      "tags": [
+        "audio",
+        "recordings",
+        "retention",
+        "storage",
+        "ui",
+        "settings"
+      ],
+      "dependencies": [],
+      "directory": ".scaffoldx/xtasks/0010_recording_retention_system",
+      "description": "Keep the last N recordings (configurable) in persistent storage with metadata manifest, settings UI, and recordings browser panel",
+      "state": "awaiting_verification",
+      "state_entered": "2026-02-01T13:02:18.704Z",
+      "last_updated": "2026-02-01",
+      "_modified": true,
+      "metadata": {
+        "created": "2026-02-01T13:02:18.704Z",
+        "lastUpdated": "2026-02-01T13:02:18.704Z"
+      },
+      "status_changed_at": "2026-02-01T13:02:18.704Z"
+    },
+    {
+      "id": "0011",
+      "name": "Synchronized Dual-Source Silence Removal",
+      "status": "todo",
+      "progress": 0,
+      "priority": "medium",
+      "created": "2026-01-28",
+      "updated": "2026-01-28",
+      "task_type": "executable",
+      "tags": [
+        "audio",
+        "silence-removal",
+        "dual-source",
+        "frame-sync",
+        "optimization"
+      ],
+      "dependencies": [],
+      "directory": ".scaffoldx/xtasks/0011_synchronized_dual_source_silence_removal",
+      "description": "Silence removal for dual-source recordings: detect silence in both tracks, compute intersection, splice identical frame ranges to maintain sync for source attribution"
+    },
+    {
+      "id": "0012",
+      "name": "Audio Level Normalization",
+      "status": "todo",
+      "progress": 0,
+      "priority": "high",
+      "created": "2026-01-30",
+      "updated": "2026-01-30",
+      "task_type": "executable",
+      "tags": [
+        "audio",
+        "normalization",
+        "dual-source",
+        "gain",
+        "clipping-prevention"
+      ],
+      "dependencies": [],
+      "directory": ".scaffoldx/xtasks/0012_audio_level_normalization",
+      "description": "Normalize audio levels between mic and system tracks before merge to handle device-dependent gain imbalances and prevent clipping"
+    },
+    {
+      "id": "0013",
+      "name": "Attribution Tuning with Diverse Test Corpus",
+      "status": "todo",
+      "progress": 0,
+      "priority": "medium",
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "task_type": "executable",
+      "tags": [
+        "audio",
+        "attribution",
+        "testing",
+        "tuning",
+        "regression",
+        "dual-source"
+      ],
+      "dependencies": [
+        "0010"
+      ],
+      "directory": ".scaffoldx/xtasks/0013_attribution_tuning_diverse_corpus",
+      "description": "Build diverse test corpus for dual-source attribution, tune algorithm parameters, create regression suite. Depends on Task 0010 for fragment retention."
+    },
+    {
+      "id": "0014",
+      "name": "Recipe System Audit and UX Improvements",
+      "status": "todo",
+      "progress": 0,
+      "priority": "medium",
+      "created": "2026-02-01",
+      "updated": "2026-02-01",
+      "task_type": "executable",
+      "tags": [
+        "ux",
+        "refactor",
+        "post-processing",
+        "pipeline",
+        "recipe"
+      ],
+      "dependencies": [],
+      "directory": ".scaffoldx/xtasks/0014_recipe_system_audit_and_ux_improvements",
+      "description": "Audit and improve post-processing pipeline (rename to Recipe/Step), add UX improvements (quick create, drag-drop, search), conditional logic, and import/export"
     }
   ],
-  "metadata": {
-    "version": "1.0.0",
-    "last_updated": "2026-01-23T00:00:00.000Z",
-    "total_tasks": 6
-  }
+  "lastTaskId": 14
 }

@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "created": "2026-01-29",
+    "annotator": "manual",
+    "version": "1.0",
+    "task": "0008",
+    "description": "Ground truth for dual-source attribution accuracy validation"
+  },
+  "recordings": {
+    "realworld_manni": {
+      "description": "Real-world recording where user introduces system audio then Manni speaks",
+      "expected_user_percentage": 45,
+      "expected_system_percentage": 55,
+      "expected_both_percentage": 0,
+      "tolerance_percentage": 5,
+      "baseline_false_both_rate": 18.5,
+      "target_false_both_rate": 5.0,
+      "segments": [
+        {
+          "text": "try a little bit with mic audio and system audio",
+          "expected_source": "USER",
+          "approximate_start_ms": 0,
+          "approximate_end_ms": 3000
+        },
+        {
+          "text": "Hello this is Manni I'm a train driver",
+          "expected_source": "SYSTEM",
+          "approximate_start_ms": 3000,
+          "approximate_end_ms": 8000
+        },
+        {
+          "text": "this was coming from the system audio",
+          "expected_source": "USER",
+          "approximate_start_ms": 8000,
+          "approximate_end_ms": 12000
+        }
+      ],
+      "notes": "The key issue was false [User+System] attribution when system had low ambient noise while user was clearly speaking, or vice versa."
+    }
+  },
+  "thresholds": {
+    "phase1_gate": {
+      "max_false_both_rate": 5.0,
+      "description": "Dominance ratio implementation target"
+    },
+    "phase2_gate": {
+      "max_false_both_rate": 2.0,
+      "description": "Segment smoothing target (if Phase 1 fails gate)"
+    },
+    "phase3_gate": {
+      "max_false_both_rate": 0.5,
+      "description": "LLM cleanup target (if Phase 2 fails gate)"
+    }
+  }
+}

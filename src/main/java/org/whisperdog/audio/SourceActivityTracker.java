@@ -28,8 +28,22 @@ public class SourceActivityTracker {
     /** Default RMS threshold for detecting activity (0.0-1.0 normalized scale) */
     public static final double DEFAULT_ACTIVITY_THRESHOLD = 0.005;
 
+    /**
+     * Default dominance ratio threshold. When both sources are above activity threshold,
+     * if one source is this many times louder than the other, it is considered the sole
+     * active source. Set to 3.0 meaning 3:1 ratio required for dominance.
+     */
+    public static final double DEFAULT_DOMINANCE_RATIO = 3.0;
+
+    /**
+     * Minimum RMS level to use as denominator in ratio calculations.
+     * Prevents division by zero and handles near-silent signals.
+     */
+    public static final double MIN_RMS_FOR_RATIO = 0.0001;
+
     private final int sampleIntervalMs;
     private final double activityThreshold;
+    private final double dominanceRatio;
 
     /**
      * Represents the active audio source.
@@ -69,7 +83,7 @@ public class SourceActivityTracker {
      * Create tracker with default settings.
      */
     public SourceActivityTracker() {
-        this(DEFAULT_SAMPLE_INTERVAL_MS, DEFAULT_ACTIVITY_THRESHOLD);
+        this(DEFAULT_SAMPLE_INTERVAL_MS, DEFAULT_ACTIVITY_THRESHOLD, DEFAULT_DOMINANCE_RATIO);
     }
 
     /**
@@ -78,8 +92,19 @@ public class SourceActivityTracker {
      * @param activityThreshold RMS threshold for detecting activity (0.0-1.0)
      */
     public SourceActivityTracker(int sampleIntervalMs, double activityThreshold) {
+        this(sampleIntervalMs, activityThreshold, DEFAULT_DOMINANCE_RATIO);
+    }
+
+    /**
+     * Create tracker with full custom settings including dominance ratio.
+     * @param sampleIntervalMs Interval between RMS samples in milliseconds
+     * @param activityThreshold RMS threshold for detecting activity (0.0-1.0)
+     * @param dominanceRatio Ratio threshold for single-source attribution when both active
+     */
+    public SourceActivityTracker(int sampleIntervalMs, double activityThreshold, double dominanceRatio) {
         this.sampleIntervalMs = sampleIntervalMs;
         this.activityThreshold = activityThreshold;
+        this.dominanceRatio = dominanceRatio;
     }
 
     /**
@@ -109,15 +134,19 @@ public class SourceActivityTracker {
             for (int i = 0; i < maxSamples; i++) {
                 long timeMs = (long) i * sampleIntervalMs;
 
+                // Get RMS values for this interval
+                double micLevel = i < micRms.length ? micRms[i] : 0.0;
+                double sysLevel = systemRms != null && i < systemRms.length ? systemRms[i] : 0.0;
+
                 // Check activity in each track
-                boolean micActive = i < micRms.length && micRms[i] >= activityThreshold;
-                boolean systemActive = systemRms != null && i < systemRms.length
-                    && systemRms[i] >= activityThreshold;
+                boolean micActive = micLevel >= activityThreshold;
+                boolean systemActive = sysLevel >= activityThreshold;
 
                 // Determine source for this interval
                 Source source;
                 if (micActive && systemActive) {
-                    source = Source.BOTH;
+                    // Both above threshold - use dominance ratio to determine true source
+                    source = determineSourceByDominance(micLevel, sysLevel);
                 } else if (micActive) {
                     source = Source.USER;
                 } else if (systemActive) {
@@ -154,6 +183,33 @@ public class SourceActivityTracker {
         }
 
         return timeline;
+    }
+
+    /**
+     * Determine source when both mic and system are above activity threshold.
+     * Uses dominance ratio to attribute to single source when one is clearly louder.
+     *
+     * @param micLevel RMS level from microphone
+     * @param sysLevel RMS level from system audio
+     * @return USER if mic dominates, SYSTEM if system dominates, BOTH if comparable
+     */
+    private Source determineSourceByDominance(double micLevel, double sysLevel) {
+        // Guard against division by zero - use minimum floor for denominator
+        double safeMicLevel = Math.max(micLevel, MIN_RMS_FOR_RATIO);
+        double safeSysLevel = Math.max(sysLevel, MIN_RMS_FOR_RATIO);
+
+        double ratio = safeMicLevel / safeSysLevel;
+
+        if (ratio >= dominanceRatio) {
+            // Mic is significantly louder - attribute to user only
+            return Source.USER;
+        } else if (ratio <= 1.0 / dominanceRatio) {
+            // System is significantly louder - attribute to system only
+            return Source.SYSTEM;
+        } else {
+            // Levels are comparable - genuine crosstalk
+            return Source.BOTH;
+        }
     }
 
     /**
@@ -240,6 +296,9 @@ public class SourceActivityTracker {
     /**
      * Merge segments shorter than the minimum duration with adjacent segments.
      * Helps reduce noise from brief fluctuations.
+     *
+     * When merging segments with different sources, uses the source of the longer
+     * neighbor to avoid falsely inflating BOTH attribution.
      */
     private List<ActivitySegment> mergeShortSegments(List<ActivitySegment> segments,
             long minDurationMs) {
@@ -251,15 +310,27 @@ public class SourceActivityTracker {
         for (int i = 1; i < segments.size(); i++) {
             ActivitySegment next = segments.get(i);
 
-            // If current segment is too short, merge with next
+            // If current segment is too short, merge with neighbor
             if (current.getDurationMs() < minDurationMs && merged.isEmpty()) {
                 // Very short first segment - extend next to cover it
                 current = new ActivitySegment(current.startMs, next.endMs, next.source);
             } else if (current.getDurationMs() < minDurationMs) {
-                // Short middle segment - extend previous to cover it
+                // Short middle segment - merge with neighbors
                 ActivitySegment prev = merged.remove(merged.size() - 1);
-                current = new ActivitySegment(prev.startMs, next.endMs,
-                    prev.source == next.source ? prev.source : Source.BOTH);
+
+                // Determine source: use the longer neighbor's source to avoid false BOTH
+                Source mergedSource;
+                if (prev.source == next.source) {
+                    mergedSource = prev.source;
+                } else if (prev.source == Source.BOTH || next.source == Source.BOTH) {
+                    // If either neighbor is BOTH, preserve that (genuine crosstalk context)
+                    mergedSource = Source.BOTH;
+                } else {
+                    // Different single sources - use the longer neighbor's source
+                    mergedSource = prev.getDurationMs() >= next.getDurationMs()
+                        ? prev.source : next.source;
+                }
+                current = new ActivitySegment(prev.startMs, next.endMs, mergedSource);
             } else {
                 merged.add(current);
                 current = next;

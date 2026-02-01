@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="Latest Version" src="https://img.shields.io/badge/Latest%20Version-v2.2.0-brightgreen?style=flat-square&logo=github&logoColor=white" />
+  <img alt="Latest Version" src="https://img.shields.io/badge/Latest%20Version-v2.2.1-brightgreen?style=flat-square&logo=github&logoColor=white" />
   <a href="LICENSE" target="https://opensource.org/license/mit">
     <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue?style=flat-square&logo=github&logoColor=white" />
   </a>
@@ -56,6 +56,14 @@ WhisperDog is your personal companion for capturing audio, transcribing it, and 
 - **Automatic Silence Removal** - RMS-based silence detection removes pauses before transcription
 - **MP3 Compression for Large Files** - Automatic conversion using ffmpeg with optimized speech settings
 - **Drag & Drop Support** - Drop WAV, MP3, OGG, M4A, FLAC files directly for transcription
+
+### Reliability & Calibration
+
+- **Error Handling & Retry** - Automatic retry with exponential backoff for transient API errors
+- **Mic Test Screen** - Real-time VU meter, silence threshold calibration, test recording with playback
+- **Pre-Flight Validation** - File size and format validation before API submission
+- **Large Recording Warnings** - Configurable threshold alerts for long recordings
+- **Recording Indicator** - System tray warning when recording exceeds duration threshold
 
 ### Transcription Backends
 - **OpenAI Whisper API** - Cloud-based transcription
@@ -115,7 +123,7 @@ cd whisperdog
 mvn clean package -DskipTests
 
 # Run the application
-java -jar target/whisperdog-2.2.0-jar-with-dependencies.jar
+java -jar target/whisperdog-2.2.1-jar-with-dependencies.jar
 
 # Or run with Maven
 mvn exec:java -Dexec.mainClass="org.whisperdog.AudioRecorderUI"
@@ -158,19 +166,44 @@ whisperdog/
 
 ### WhisperDog Releases
 
-#### v2.2.0 - System Audio Capture
+#### v2.2.1 - Recording Retention System and Icon Theming (2026-02-01)
+
+- **Recording Retention System** - Automatically save and manage recordings
+  - Keep last N recordings with configurable retention (default 10)
+  - Browser panel with metadata: duration, size, source type, transcription preview
+  - Play recordings in default audio player or delete with confirmation
+  - Open recordings folder directly from UI
+- **Icon Theming System** - Runtime icon coloring with semantic naming
+  - Context-aware theming: MENU, BUTTON, PANEL, DISABLED modes
+  - Light/dark theme support with pure black source SVGs
+  - Semantic icon names (mic.svg, sliders.svg) replace numeric indices
+- Fixed drag-and-drop cursor feedback for audio/video files
+- Improved temp file cleanup routing through ConfigManager
+- Enhanced dual-source merge logic with audio content validation
+
+---
+
+#### v2.2.0 - System Audio Capture (2026-01-25)
 
 - **System Audio Capture (WASAPI Loopback)** - Record what you hear from your computer
   - Capture system audio alongside microphone input
   - Configurable loopback device selection
   - Real-time mixing for combined transcription
   - Windows-only (requires XT-Audio library)
+- **Word-Level Timestamp Attribution** - Accurate [User]/[System] labels for dual-source recordings
+  - Uses OpenAI's `verbose_json` response with word-level timestamps
+  - Each word mapped to correct source based on actual timing
+- **Audio Device Labels** - Recording screen shows current mic and system audio device names
+  - Cross-platform default output detection
+  - Auto-refresh on window focus to detect device changes
+  - Click label to navigate to Settings
+- Upgraded from Java 11 to Java 17 (required by XT-Audio)
 - Improved temp file cleanup for long-running sessions
 - Dependency updates and code quality fixes
 
 ---
 
-#### v2.1.0
+#### v2.1.0 - Error Handling & Mic Calibration (2026-01-02)
 
 ##### Error Handling & Resilience
 
@@ -215,7 +248,7 @@ whisperdog/
 
 ---
 
-#### v2.0.0 - Initial WhisperDog release (rebrand from WhisperCat-xblabs)
+#### v2.0.0 - Initial WhisperDog Release (2025-12-26)
 
 - Complete rebrand with new identity
 - All features from WhisperCat-xblabs preserved

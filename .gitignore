@@ -61,7 +61,6 @@ WHISPERDOG_REBRAND_SPEC.md
 /.scaffoldx/config.private.json
 .claude/settings.local.json
 /**/*.backup
-/.scaffoldx/xcore/
 /.windsurf/rules/scaffoldx.md
 /scaffoldx.md
 /scaffoldx.mdc
@@ -72,3 +71,6 @@ WHISPERDOG_REBRAND_SPEC.md
 /CLAUDE.md
 /.scaffoldx/.triaged
 /.cursor/rules/scaffoldx.mdc
+**/*md.backup.*
+**/*mdc.backup.*
+**/*json.backup.*

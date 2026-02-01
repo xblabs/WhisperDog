@@ -908,10 +908,10 @@ public class ConfigManager {
      * Checks if recording retention is enabled.
      * When enabled, recordings are saved to a persistent location for later access.
      *
-     * @return true if recording retention is enabled (default: false)
+     * @return true if recording retention is enabled (default: true)
      */
     public boolean isRecordingRetentionEnabled() {
-        return Boolean.parseBoolean(properties.getProperty("recordingRetentionEnabled", "false"));
+        return Boolean.parseBoolean(properties.getProperty("recordingRetentionEnabled", "true"));
     }
 
     /**

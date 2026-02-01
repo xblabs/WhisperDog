@@ -62,13 +62,13 @@
 
 ## Cluster 6: Testing & Verification
 
-- [ ] Test with YouTube video + commentary
-- [ ] Test with voice message playback + response
-- [ ] Test toggle during active recording
+- [x] Test with YouTube video + commentary
+- [x] Test with voice message playback + response
+- [x] Test toggle during active recording
 - [ ] Test long recording (30+ min)
-- [ ] Test when system audio unavailable (graceful fallback)
-- [ ] Verify temp files cleaned up properly
-- [ ] Test in both light and dark themes
+- [x] Test when system audio unavailable (graceful fallback)
+- [x] Verify temp files cleaned up properly
+- [x] Test in dark theme (light theme removed)
 
 ---
 

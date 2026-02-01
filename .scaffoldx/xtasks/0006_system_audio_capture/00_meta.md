@@ -3,10 +3,10 @@
 ## Metadata
 - **ID**: 0006
 - **Name**: System Audio Capture
-- **Status**: todo
+- **Status**: review
 - **Priority**: high
 - **Created**: 2026-01-22
-- **Updated**: 2026-01-22
+- **Updated**: 2026-01-28
 - **Type**: executable
 - **Tags**: audio, dual-source, system-audio, attribution, recording
 

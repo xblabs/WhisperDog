@@ -253,7 +253,49 @@
       "dependencies": [],
       "directory": ".scaffoldx/xtasks/0014_recipe_system_audit_and_ux_improvements",
       "description": "Audit and improve post-processing pipeline (rename to Recipe/Step), add UX improvements (quick create, drag-drop, search), conditional logic, and import/export"
+    },
+    {
+      "id": "0015",
+      "name": "Recordings Panel UX Improvements",
+      "status": "todo",
+      "progress": 0,
+      "priority": "medium",
+      "created": "2026-02-01",
+      "updated": "2026-02-01",
+      "task_type": "executable",
+      "tags": [
+        "ui",
+        "ux",
+        "recordings",
+        "audio-playback",
+        "menu-icons"
+      ],
+      "dependencies": [
+        "0010",
+        "0016"
+      ],
+      "directory": ".scaffoldx/xtasks/0015_recordings_panel_ux",
+      "description": "Add content padding, improve button interactivity, implement expandable transcription, responsive ellipsis, inline audio playback, and manifest filesystem sync. Icon work moved to Task 0016."
+    },
+    {
+      "id": "0016",
+      "name": "Icon Theming System",
+      "status": "in_progress",
+      "progress": 0,
+      "priority": "medium",
+      "created": "2026-02-01",
+      "updated": "2026-02-01",
+      "task_type": "executable",
+      "tags": [
+        "ui",
+        "icons",
+        "theming",
+        "architecture"
+      ],
+      "dependencies": [],
+      "directory": ".scaffoldx/xtasks/0016_icon_theming_system",
+      "description": "Runtime icon theming with pure black source SVGs and context-aware ColorFilter application. Replaces index-based icon naming with semantic names and hierarchical color contexts."
     }
   ],
-  "lastTaskId": 14
+  "lastTaskId": 16
 }

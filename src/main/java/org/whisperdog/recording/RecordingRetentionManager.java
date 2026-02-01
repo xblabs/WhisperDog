@@ -282,11 +282,21 @@ public class RecordingRetentionManager {
     }
 
     /**
-     * Reloads the manifest from disk.
-     * Call this if the storage path has changed.
+     * Checks if recording retention is currently enabled.
+     *
+     * @return true if retention is enabled
+     */
+    public boolean isRetentionEnabled() {
+        return configManager.isRecordingRetentionEnabled();
+    }
+
+    /**
+     * Reloads the manifest from disk and reconciles with filesystem.
+     * Call this if the storage path has changed or to sync with actual files.
      */
     public void reloadManifest() {
         initializeManifest();
+        manifest.scanAndReconcile();
     }
 
     /**

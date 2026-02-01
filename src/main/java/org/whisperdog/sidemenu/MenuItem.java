@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.ui.FlatUIUtils;
 import com.formdev.flatlaf.util.UIScale;
+import org.whisperdog.ui.IconLoader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -60,13 +61,20 @@ public class MenuItem extends JPanel {
     }
 
     private Icon getIcon() {
+        // Use semantic icon loading via IconLoader
+        boolean collapsed = !menu.isMenuFull();
+        FlatSVGIcon icon = IconLoader.loadMenuIconByIndex(menuIndex, 24, collapsed);
+        if (icon != null) {
+            return icon;
+        }
+        // Fallback to legacy index-based loading if IconLoader fails
         Color lightColor = FlatUIUtils.getUIColor("Menu.icon.lightColor", Color.red);
         Color darkColor = FlatUIUtils.getUIColor("Menu.icon.darkColor", Color.red);
-        FlatSVGIcon icon = new FlatSVGIcon("icon/" + menuIndex + ".svg", 24, 24);
+        FlatSVGIcon legacyIcon = new FlatSVGIcon("icon/" + menuIndex + ".svg", 24, 24);
         FlatSVGIcon.ColorFilter f = new FlatSVGIcon.ColorFilter();
         f.add(Color.decode("#969696"), lightColor, darkColor);
-        icon.setColorFilter(f);
-        return icon;
+        legacyIcon.setColorFilter(f);
+        return legacyIcon;
     }
 
     private void init() {

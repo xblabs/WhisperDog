@@ -256,5 +256,64 @@ After fix applied:
 
 ---
 
-*Scrutinizer Audit Complete*
+## Verification Failures (2026-02-01)
+
+### CRITICAL: Recordings Not Being Saved
+
+**Symptom**: No files appear in `%APPDATA%\WhisperDog\recordings` after transcription.
+
+**Investigation Required**:
+1. Add debug logging to `retainRecording()` to verify it's called
+2. Check if `transcribedFile` exists at copy time
+3. Verify `isRecordingRetentionEnabled()` returns true (default is `false`)
+4. Check for silent IOException during `Files.copy()`
+
+**Files**:
+- [RecorderForm.java:2290-2300](src/main/java/org/whisperdog/recording/RecorderForm.java#L2290)
+- [RecordingRetentionManager.java:57-130](src/main/java/org/whisperdog/recording/RecordingRetentionManager.java#L57)
+
+---
+
+### UI: Menu Icon Order Mangled
+
+**Symptom**: Adding "Recordings" shifted icon assignments. Recordings shows Settings icon, Settings shows PostPro icon.
+
+**Root Cause**: Icons defined with fixed indices separate from menu text items.
+
+**Fix**: Locate icon array, insert placeholder at correct index.
+
+---
+
+### UI: RecordingsPanel Buttons Missing Icons
+
+**Symptom**: Play/Delete buttons show red placeholder squares.
+
+**Files**: [RecordingsPanel.java:152,160](src/main/java/org/whisperdog/recording/RecordingsPanel.java#L152)
+
+**Fix**: Add `play.svg` and `delete.svg` to resources, or use existing icons.
+
+---
+
+### Enhancement: Execution Log Full Path
+
+**Current**: `[13:14:34] Audio file: whisperdog_merged_xxx.wav`
+**Desired**: Full absolute path for easy copy-paste.
+
+---
+
+## Updated Verdict
+
+### FAIL - Critical Issues Found
+
+Task requires fixes before completion:
+- [ ] Debug and fix recording retention (CRITICAL)
+- [ ] Fix menu icon order
+- [ ] Add missing button icons (or placeholder)
+- [ ] Enhancement: Full path in execution log
+
+**Checkpoint**: `CP_2026_02_01_001` (milestone) documents all issues.
+
+---
+
+*Scrutinizer Audit Updated: 2026-02-01*
 *Standard: Hunt → Flag → Fix → Verify*

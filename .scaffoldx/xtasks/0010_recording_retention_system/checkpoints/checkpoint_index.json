@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "generated": "2026-02-01T13:19:19.586Z",
+  "entityType": "task",
+  "entityId": "0010",
+  "totalCheckpoints": 1,
+  "byType": {
+    "milestone": 1
+  },
+  "byDate": {
+    "2026-02-01": 1
+  },
+  "checkpoints": [
+    {
+      "id": "CP_2026_02_01_001",
+      "type": "milestone",
+      "created": "2026-02-01T13:19:19.581Z",
+      "filepath": ".scaffoldx\\xtasks\\0010_recording_retention_system\\checkpoints\\CP_2026_02_01_001_milestone.md",
+      "priority": "high",
+      "autoLoad": true
+    }
+  ]
+}

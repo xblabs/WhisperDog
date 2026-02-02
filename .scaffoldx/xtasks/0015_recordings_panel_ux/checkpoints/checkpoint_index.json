@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "generated": "2026-02-01T18:37:10.592Z",
+  "entityType": "task",
+  "entityId": "0015",
+  "totalCheckpoints": 2,
+  "byType": {
+    "save_point": 2
+  },
+  "byDate": {
+    "2026-02-01": 2
+  },
+  "checkpoints": [
+    {
+      "id": "CP_2026_02_01_002",
+      "type": "save_point",
+      "created": "2026-02-01T18:37:10.586Z",
+      "filepath": ".scaffoldx\\xtasks\\0015_recordings_panel_ux\\checkpoints\\CP_2026_02_01_002_save_point.md",
+      "priority": "high",
+      "autoLoad": true
+    },
+    {
+      "id": "CP_2026_02_01_001",
+      "type": "save_point",
+      "created": "2026-02-01T17:31:14.811Z",
+      "filepath": ".scaffoldx\\xtasks\\0015_recordings_panel_ux\\checkpoints\\CP_2026_02_01_001_save_point.md",
+      "priority": "high",
+      "autoLoad": true
+    }
+  ]
+}

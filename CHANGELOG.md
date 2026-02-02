@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [2.3.1] - 2026-02-02 - Text Copy & Version Display
+
 ### Added
 
 - Version label displayed at bottom of side menu (reads from pom.xml at build time)

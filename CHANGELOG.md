@@ -7,6 +7,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Inline Audio Playback** - Play recordings directly in the panel without external player
+  - Progress bar with system audio indicator color
+  - Play/Stop button toggle
+  - Prevents simultaneous playback of multiple recordings
+  - Graceful handling of missing audio files
+- **Expandable Transcription** - Click to expand/collapse full transcription text
+  - `[more]`/`[less]` toggle links
+  - Automatic re-layout after expansion
+  - Works with pre-truncated text (ends with "...")
+- **Responsive Ellipsis** - Transcription truncation adapts to panel width
+  - ComponentListener for resize events
+  - Debounced calculations
+- Full transcription storage - `.txt` files saved alongside `.wav` recordings
+
+### Changed
+
+- Recording card button styling: hand cursor, FlatLaf hover/press effects
+- Play/Stop button icons reduced to 10px (30% smaller)
+- Card padding refined: top/sides 10px, bottom 12px
+- Panel border padding: top 48px, sides 24px
+
+### Fixed
+
+- Thread-safe manifest with synchronized load/save and Windows file locking fallback
+- Manifest syncs on first panel access (firstRun flag) to detect external file changes
+- Text truncation uses fixed 60 char display length for consistency
+
 ---
 
 ## [2.2.1] - 2026-02-01 - Recording Retention System and Icon Theming

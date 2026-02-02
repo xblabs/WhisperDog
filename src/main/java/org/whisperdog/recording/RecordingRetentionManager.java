@@ -50,16 +50,16 @@ public class RecordingRetentionManager {
      * @param micChannelFile The microphone channel file (may be null for single-source)
      * @param systemChannelFile The system audio channel file (may be null for single-source)
      * @param durationMs The recording duration in milliseconds
-     * @param transcriptionPreview A preview of the transcription (first 100 chars or so)
+     * @param fullTranscription The full transcription text
      * @param isDualSource Whether this is a dual-source recording
      * @return The recording entry, or null if retention is disabled or failed
      */
-    public RecordingManifest.RecordingEntry retainRecording(
+    public synchronized RecordingManifest.RecordingEntry retainRecording(
             File mergedAudioFile,
             File micChannelFile,
             File systemChannelFile,
             long durationMs,
-            String transcriptionPreview,
+            String fullTranscription,
             boolean isDualSource) {
 
         if (!configManager.isRecordingRetentionEnabled()) {
@@ -84,6 +84,15 @@ public class RecordingRetentionManager {
             Files.copy(mergedAudioFile.toPath(), destMergedFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             logger.info("Retained recording: {}", destMergedFile.getAbsolutePath());
 
+            // Save full transcription to text file
+            String transcriptionFilename = null;
+            if (fullTranscription != null && !fullTranscription.isEmpty()) {
+                transcriptionFilename = baseFilename + ".txt";
+                File transcriptionFile = new File(recordingsDir, transcriptionFilename);
+                Files.writeString(transcriptionFile.toPath(), fullTranscription);
+                logger.debug("Saved transcription: {}", transcriptionFile.getAbsolutePath());
+            }
+
             // Create manifest entry
             RecordingManifest.RecordingEntry entry = new RecordingManifest.RecordingEntry();
             entry.setId(id);
@@ -91,7 +100,8 @@ public class RecordingRetentionManager {
             entry.setTimestamp(System.currentTimeMillis());
             entry.setDurationMs(durationMs);
             entry.setFileSizeBytes(destMergedFile.length());
-            entry.setTranscriptionPreview(truncatePreview(transcriptionPreview, 100));
+            entry.setTranscriptionPreview(truncatePreview(fullTranscription, 300));
+            entry.setTranscriptionFile(transcriptionFilename);
             entry.setDualSource(isDualSource);
 
             // Copy channel files if enabled and they exist
@@ -200,6 +210,18 @@ public class RecordingRetentionManager {
                 }
             }
         }
+
+        // Delete transcription file (null-safe)
+        if (entry.getTranscriptionFile() != null) {
+            File transcriptionFile = new File(recordingsDir, entry.getTranscriptionFile());
+            if (transcriptionFile.exists()) {
+                if (transcriptionFile.delete()) {
+                    logger.debug("Deleted transcription file: {}", transcriptionFile.getAbsolutePath());
+                } else {
+                    logger.warn("Failed to delete transcription file: {}", transcriptionFile.getAbsolutePath());
+                }
+            }
+        }
     }
 
     /**
@@ -273,6 +295,29 @@ public class RecordingRetentionManager {
     }
 
     /**
+     * Gets the full transcription text for a recording entry.
+     *
+     * @param entry The recording entry
+     * @return The full transcription text, or null if not available
+     */
+    public String getFullTranscription(RecordingManifest.RecordingEntry entry) {
+        if (entry == null || entry.getTranscriptionFile() == null) {
+            return null;
+        }
+        File recordingsDir = configManager.getRecordingsDirectory();
+        File transcriptionFile = new File(recordingsDir, entry.getTranscriptionFile());
+        if (!transcriptionFile.exists()) {
+            return null;
+        }
+        try {
+            return Files.readString(transcriptionFile.toPath());
+        } catch (IOException e) {
+            logger.error("Failed to read transcription file: {}", transcriptionFile.getAbsolutePath(), e);
+            return null;
+        }
+    }
+
+    /**
      * Gets the count of retained recordings.
      *
      * @return The number of recordings
@@ -294,9 +339,49 @@ public class RecordingRetentionManager {
      * Reloads the manifest from disk and reconciles with filesystem.
      * Call this if the storage path has changed or to sync with actual files.
      */
-    public void reloadManifest() {
-        initializeManifest();
+    public synchronized void reloadManifest() {
+        // Reload existing manifest instead of creating new instance to preserve synchronization
+        manifest.load();
         manifest.scanAndReconcile();
+        // Regenerate previews to use updated length (300 chars)
+        regeneratePreviews();
+    }
+
+    /**
+     * Regenerates metadata for all recordings: previews (300 chars) and missing durations.
+     */
+    private void regeneratePreviews() {
+        boolean changed = false;
+        for (RecordingManifest.RecordingEntry entry : manifest.getRecordings()) {
+            // Regenerate preview from full transcription
+            String fullText = getFullTranscription(entry);
+            if (fullText != null && !fullText.isEmpty()) {
+                String newPreview = truncatePreview(fullText, 300);
+                String oldPreview = entry.getTranscriptionPreview();
+                if (!newPreview.equals(oldPreview)) {
+                    entry.setTranscriptionPreview(newPreview);
+                    changed = true;
+                }
+            }
+
+            // Fix missing duration (0 = unknown, recalculate from audio file)
+            if (entry.getDurationMs() == 0) {
+                File audioFile = getAudioFile(entry);
+                if (audioFile != null && audioFile.exists()) {
+                    String format = AudioFileAnalyzer.detectFormat(audioFile);
+                    Float durationSeconds = AudioFileAnalyzer.estimateDuration(audioFile, format);
+                    if (durationSeconds != null && durationSeconds > 0) {
+                        entry.setDurationMs((long)(durationSeconds * 1000));
+                        changed = true;
+                        logger.debug("Fixed duration for {}: {}s", entry.getFilename(), durationSeconds);
+                    }
+                }
+            }
+        }
+        if (changed) {
+            manifest.save();
+            logger.info("Regenerated recording metadata");
+        }
     }
 
     /**

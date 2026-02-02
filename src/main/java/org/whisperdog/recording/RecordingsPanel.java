@@ -22,8 +22,10 @@ import java.util.List;
  */
 public class RecordingsPanel extends JPanel {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MMM dd, yyyy h:mm a");
-    private static final int MIN_TRUNCATION_LENGTH = 40;
-    private static final int DEFAULT_TRUNCATION_LENGTH = 80;
+    private static final int MIN_TRUNCATION_LENGTH = 50;
+    private static final int DEFAULT_TRUNCATION_LENGTH = 100;
+    private static final int BUTTON_ICON_SIZE = 10; // 30% smaller than 14
+    private static final int STACK_BUTTONS_THRESHOLD = 568; // Stack buttons when content width < this (768 - 200 sidebar)
 
     private final RecordingRetentionManager retentionManager;
     private final InlineAudioPlayer audioPlayer;
@@ -32,13 +34,17 @@ public class RecordingsPanel extends JPanel {
     private final JLabel statusLabel;
     private Timer resizeTimer;
     private int currentTruncationLength = DEFAULT_TRUNCATION_LENGTH;
+    private boolean firstRun = true;
+    private boolean buttonsStacked = false;
+    private boolean windowListenerAdded = false;
+    private final java.util.HashMap<String, Boolean> expandedStates = new java.util.HashMap<>();
 
     public RecordingsPanel(RecordingRetentionManager retentionManager) {
         this.retentionManager = retentionManager;
         this.audioPlayer = new InlineAudioPlayer();
 
         setLayout(new BorderLayout());
-        setBorder(new EmptyBorder(24, 24, 24, 24));
+        setBorder(new EmptyBorder(48, 24, 24, 24));
 
         // Header panel with title and buttons
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -89,10 +95,28 @@ public class RecordingsPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // Add resize listener with debouncing for responsive truncation
+        // Listen on both this panel AND the ancestor window (more reliable on some platforms)
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 handleResize();
+            }
+        });
+
+        // Also listen to ancestor window resize (componentResized may not fire on nested panels)
+        addHierarchyListener(e -> {
+            if (!windowListenerAdded &&
+                (e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                Window window = SwingUtilities.getWindowAncestor(this);
+                if (window != null) {
+                    windowListenerAdded = true;
+                    window.addComponentListener(new ComponentAdapter() {
+                        @Override
+                        public void componentResized(ComponentEvent evt) {
+                            handleResize();
+                        }
+                    });
+                }
             }
         });
 
@@ -117,48 +141,67 @@ public class RecordingsPanel extends JPanel {
     }
 
     /**
-     * Recalculates the truncation length based on current panel width and refreshes.
+     * Recalculates layout based on current panel width and refreshes if needed.
      */
     private void recalculateTruncation() {
         int newLength = calculateMaxChars();
+        int availableWidth = getWidth() - 48; // Same calculation as calculateMaxChars
+        boolean shouldStack = availableWidth < STACK_BUTTONS_THRESHOLD;
+
+        boolean needsRefresh = false;
         if (newLength != currentTruncationLength) {
             currentTruncationLength = newLength;
+            needsRefresh = true;
+        }
+        if (shouldStack != buttonsStacked) {
+            buttonsStacked = shouldStack;
+            needsRefresh = true;
+        }
+
+        if (needsRefresh) {
             refresh();
         }
     }
 
     /**
      * Calculates the maximum characters for truncation based on available width.
+     * Returns chars for approximately 1 line (collapsed preview).
      */
     private int calculateMaxChars() {
-        int panelWidth = contentPanel.getWidth();
+        // Use RecordingsPanel width minus border padding (24px left + 24px right = 48px)
+        // contentPanel.getWidth() is unreliable - BoxLayout sizes to content, not viewport
+        int panelWidth = getWidth() - 48;
         if (panelWidth <= 0) {
             return DEFAULT_TRUNCATION_LENGTH;
         }
-        // Approximate: 7 pixels per character at 11pt font
-        // Subtract ~200px for button panel and padding
-        int availableWidth = panelWidth - 200;
-        int charsPerLine = Math.max(MIN_TRUNCATION_LENGTH, availableWidth / 7);
-        // Allow approximately 2 lines
-        return Math.min(charsPerLine * 2, 300);
+        // Approximate: 7 pixels per character at 13pt bold font
+        // Subtract ~160px for button panel (140px) + card padding + [more] link
+        int availableWidth = panelWidth - 160;
+        return Math.max(MIN_TRUNCATION_LENGTH, availableWidth / 7);
     }
 
     /**
      * Refreshes the recordings list from the manager.
      */
     public void refresh() {
+        // On first run, sync manifest with filesystem
+        if (firstRun) {
+            firstRun = false;
+            retentionManager.reloadManifest();
+        }
+
         contentPanel.removeAll();
 
         List<RecordingManifest.RecordingEntry> recordings = retentionManager.getRecordings();
         headerLabel.setText(String.format("Recordings (%d)", recordings.size()));
 
-        // Update retention status indicator
+        // Only show warning when retention is disabled
         if (retentionManager.isRetentionEnabled()) {
-            statusLabel.setText("Recording retention is enabled");
-            statusLabel.setForeground(new Color(0, 128, 0)); // Green
+            statusLabel.setVisible(false);
         } else {
             statusLabel.setText("Recording retention is disabled - recordings will not be saved");
             statusLabel.setForeground(new Color(192, 0, 0)); // Red
+            statusLabel.setVisible(true);
         }
 
         if (recordings.isEmpty()) {
@@ -181,53 +224,162 @@ public class RecordingsPanel extends JPanel {
 
     /**
      * Creates a card component for a single recording entry.
+     * Uses GridBagLayout to ensure button column stays fixed width.
      */
     private JPanel createRecordingCard(RecordingManifest.RecordingEntry entry) {
         // Outer card with border
         JPanel card = new JPanel(new BorderLayout());
         card.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Component.borderColor"), 1));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Main content panel
-        JPanel contentWrapper = new JPanel(new BorderLayout(10, 5));
-        contentWrapper.setBorder(new EmptyBorder(10, 10, 10, 10));
+        // Main content panel using GridBagLayout for strict 2-column layout
+        JPanel contentWrapper = new JPanel(new GridBagLayout());
+        contentWrapper.setBorder(new EmptyBorder(10, 10, 12, 10));
+        GridBagConstraints gbc = new GridBagConstraints();
 
-        // Left side: info
+        // Column 0: Info panel (fills available space)
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setAlignmentY(Component.TOP_ALIGNMENT);
 
-        // Date and time
-        String dateStr = DATE_FORMAT.format(new Date(entry.getTimestamp()));
-        JLabel dateLabel = new JLabel(dateStr);
-        dateLabel.setFont(dateLabel.getFont().deriveFont(Font.BOLD, 13f));
-        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        infoPanel.add(dateLabel);
-
-        // Duration, size, and source type
-        String durationStr = formatDuration(entry.getDurationMs());
-        String sizeStr = formatFileSize(entry.getFileSizeBytes());
-        String sourceStr = entry.isDualSource() ? "Dual source" : "Mic only";
-        JLabel metaLabel = new JLabel(String.format("%s | %s | %s", durationStr, sizeStr, sourceStr));
-        metaLabel.setFont(metaLabel.getFont().deriveFont(11f));
-        metaLabel.setForeground(Color.GRAY);
-        metaLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        infoPanel.add(metaLabel);
-
-        // Transcription preview (expandable, responsive)
+        // Line 1: Transcription preview (bold, truncated) with [more]/[less] toggle
         String preview = entry.getTranscriptionPreview();
+        boolean hasMoreContent = false;
+        String truncatedText = "";
         if (preview != null && !preview.isEmpty()) {
-            infoPanel.add(Box.createVerticalStrut(3));
-            infoPanel.add(createExpandablePreview(preview, currentTruncationLength));
+            truncatedText = preview.length() > currentTruncationLength
+                ? truncate(preview, currentTruncationLength)
+                : preview;
+            hasMoreContent = preview.length() > currentTruncationLength
+                || preview.endsWith("...")
+                || entry.getTranscriptionFile() != null;
         }
 
-        contentWrapper.add(infoPanel, BorderLayout.CENTER);
+        // Create title label with [more]/[less] link if there's more content
+        JLabel titleLabel = new JLabel();
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 13f));
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Right side: buttons
+        // Line 3: Full transcription area (hidden by default, shown when expanded)
+        // Using JTextArea instead of HTML JLabel to respect layout constraints
+        JTextArea fullTextArea = new JTextArea();
+        fullTextArea.setFont(fullTextArea.getFont().deriveFont(11f));
+        fullTextArea.setForeground(UIManager.getColor("Label.disabledForeground"));
+        fullTextArea.setLineWrap(true);
+        fullTextArea.setWrapStyleWord(true);
+        fullTextArea.setEditable(false);
+        fullTextArea.setOpaque(false);
+        fullTextArea.setBorder(null);
+        fullTextArea.setAlignmentX(Component.LEFT_ALIGNMENT);
+        fullTextArea.setVisible(false);
+
+        if (preview != null && !preview.isEmpty()) {
+            if (hasMoreContent) {
+                final String truncated = truncatedText;
+                final String entryId = entry.getId();
+                final String[] fullText = {null};
+
+                // Check if this entry was previously expanded (survives refresh)
+                boolean wasExpanded = expandedStates.getOrDefault(entryId, false);
+
+                titleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+                // Set initial state based on stored expanded state
+                if (wasExpanded) {
+                    titleLabel.setText("<html>" + escapeHtml(truncated) + " <u style='color:#888'>[less]</u></html>");
+                    fullText[0] = retentionManager.getFullTranscription(entry);
+                    if (fullText[0] == null) fullText[0] = preview;
+                    // Will set fullTextArea text after infoPanel is added to layout
+                } else {
+                    titleLabel.setText("<html>" + escapeHtml(truncated) + " <u style='color:#888'>[more]</u></html>");
+                }
+
+                titleLabel.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        boolean isExpanded = !expandedStates.getOrDefault(entryId, false);
+                        expandedStates.put(entryId, isExpanded);
+
+                        if (isExpanded) {
+                            // Load full text on first expand
+                            if (fullText[0] == null) {
+                                fullText[0] = retentionManager.getFullTranscription(entry);
+                                if (fullText[0] == null) {
+                                    fullText[0] = preview;
+                                }
+                            }
+                            // Update title to show [less]
+                            titleLabel.setText("<html>" + escapeHtml(truncated) + " <u style='color:#888'>[less]</u></html>");
+                            // JTextArea respects container width for wrapping - no pixel width needed
+                            fullTextArea.setText(fullText[0]);
+                            fullTextArea.setVisible(true);
+                        } else {
+                            // Collapse: show [more], hide full text
+                            titleLabel.setText("<html>" + escapeHtml(truncated) + " <u style='color:#888'>[more]</u></html>");
+                            fullTextArea.setVisible(false);
+                        }
+                        // Re-layout the card
+                        infoPanel.revalidate();
+                        infoPanel.repaint();
+                    }
+                });
+
+                // If was expanded, set the full text visible after adding to layout
+                if (wasExpanded) {
+                    fullTextArea.setVisible(true);
+                }
+            } else {
+                titleLabel.setText(truncatedText);
+            }
+            infoPanel.add(titleLabel);
+            infoPanel.add(Box.createVerticalStrut(3));
+        }
+
+        // Line 2: Date + duration + size + source (combined, small, gray, selectable)
+        String dateStr = DATE_FORMAT.format(new Date(entry.getTimestamp()));
+        String durationStr = formatDuration(entry.getDurationMs());
+        String sizeStr = formatFileSize(entry.getFileSizeBytes());
+        String sourceStr = entry.isImported() ? "Imported" : (entry.isDualSource() ? "Dual source" : "Mic only");
+        JTextField metaField = new JTextField(String.format("%s | %s | %s | %s", dateStr, durationStr, sizeStr, sourceStr));
+        metaField.setFont(metaField.getFont().deriveFont(11f));
+        metaField.setForeground(Color.GRAY);
+        metaField.setEditable(false);
+        metaField.setBorder(null);
+        metaField.setOpaque(false);
+        metaField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        infoPanel.add(metaField);
+
+        // Line 3: Full transcription (added below meta, hidden by default unless restored)
+        if (hasMoreContent) {
+            // If restoring expanded state, set the text now
+            boolean wasExpanded = expandedStates.getOrDefault(entry.getId(), false);
+            if (wasExpanded) {
+                String fullText = retentionManager.getFullTranscription(entry);
+                if (fullText == null) fullText = preview;
+                // JTextArea handles wrapping based on container width - no pixel calc needed
+                fullTextArea.setText(fullText);
+            }
+            infoPanel.add(Box.createVerticalStrut(5));
+            infoPanel.add(fullTextArea);
+        }
+
+        // Add infoPanel to column 0 (fills horizontal space, anchored top)
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.insets = new Insets(0, 0, 0, 10);
+        contentWrapper.add(infoPanel, gbc);
+
+        // Right side: buttons (column 1, fixed width - must stay visible)
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+        int axis = buttonsStacked ? BoxLayout.Y_AXIS : BoxLayout.X_AXIS;
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, axis));
         buttonPanel.setAlignmentY(Component.TOP_ALIGNMENT);
+        // Ensure buttons always have minimum space (prevents being pushed off-screen)
+        buttonPanel.setMinimumSize(new Dimension(140, 30));
 
         // Progress bar for inline playback (initially hidden)
         JProgressBar progressBar = new JProgressBar();
@@ -237,17 +389,29 @@ public class RecordingsPanel extends JPanel {
         progressBar.setBackground(UIManager.getColor("Panel.background"));
         progressBar.setForeground(InlineAudioPlayer.getProgressColor());
 
-        JButton playButton = createStyledButton("Play", "play-2");
+        JButton playButton = createStyledButton("Play", "play-2", BUTTON_ICON_SIZE);
         playButton.addActionListener(e -> handlePlayButton(entry, playButton, progressBar));
         buttonPanel.add(playButton);
 
-        buttonPanel.add(Box.createVerticalStrut(5));
+        if (buttonsStacked) {
+            buttonPanel.add(Box.createVerticalStrut(5));
+        } else {
+            buttonPanel.add(Box.createHorizontalStrut(5));
+        }
 
         JButton deleteButton = createStyledButton("Delete", "delete");
         deleteButton.addActionListener(e -> deleteRecording(entry));
         buttonPanel.add(deleteButton);
 
-        contentWrapper.add(buttonPanel, BorderLayout.EAST);
+        // Add buttonPanel to column 1 (fixed width, anchored top)
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0;
+        gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.NORTHEAST;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        contentWrapper.add(buttonPanel, gbc);
 
         card.add(contentWrapper, BorderLayout.CENTER);
         card.add(progressBar, BorderLayout.SOUTH);
@@ -279,8 +443,12 @@ public class RecordingsPanel extends JPanel {
      * Creates a styled button with hand cursor and FlatLaf hover/press states.
      */
     private JButton createStyledButton(String text, String iconName) {
+        return createStyledButton(text, iconName, 14);
+    }
+
+    private JButton createStyledButton(String text, String iconName, int iconSize) {
         JButton button = new JButton(text);
-        button.setIcon(IconLoader.loadButton(iconName, 14));
+        button.setIcon(IconLoader.loadButton(iconName, iconSize));
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         button.setFocusPainted(false);
@@ -294,43 +462,14 @@ public class RecordingsPanel extends JPanel {
     }
 
     /**
-     * Creates an expandable/collapsible transcription preview label.
+     * Escapes HTML special characters in text.
      */
-    private JLabel createExpandablePreview(String fullText, int maxLength) {
-        boolean needsTruncation = fullText.length() > maxLength;
-        String truncatedText = needsTruncation ? truncate(fullText, maxLength) : fullText;
-
-        JLabel previewLabel = new JLabel();
-        previewLabel.setFont(previewLabel.getFont().deriveFont(Font.ITALIC, 11f));
-        previewLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
-        previewLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        if (needsTruncation) {
-            // Add expand indicator and make clickable
-            previewLabel.setText("<html>" + truncatedText + " <u style='color:#666'>[more]</u></html>");
-            previewLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            previewLabel.setToolTipText("Click to expand/collapse");
-
-            final boolean[] expanded = {false};
-            previewLabel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    expanded[0] = !expanded[0];
-                    if (expanded[0]) {
-                        previewLabel.setText("<html>" + fullText + " <u style='color:#666'>[less]</u></html>");
-                    } else {
-                        previewLabel.setText("<html>" + truncatedText + " <u style='color:#666'>[more]</u></html>");
-                    }
-                    // Trigger re-layout
-                    contentPanel.revalidate();
-                    contentPanel.repaint();
-                }
-            });
-        } else {
-            previewLabel.setText("<html>" + fullText + "</html>");
-        }
-
-        return previewLabel;
+    private String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;")
+                   .replace("\"", "&quot;");
     }
 
     /**
@@ -368,11 +507,12 @@ public class RecordingsPanel extends JPanel {
         long minutes = seconds / 60;
         seconds = seconds % 60;
         if (minutes < 60) {
-            return String.format("%d:%02d", minutes, seconds);
+            return seconds > 0 ? String.format("%dmin %ds", minutes, seconds) : minutes + "min";
         }
         long hours = minutes / 60;
         minutes = minutes % 60;
-        return String.format("%d:%02d:%02d", hours, minutes, seconds);
+        return seconds > 0 ? String.format("%dh %dmin %ds", hours, minutes, seconds)
+                           : String.format("%dh %dmin", hours, minutes);
     }
 
     /**

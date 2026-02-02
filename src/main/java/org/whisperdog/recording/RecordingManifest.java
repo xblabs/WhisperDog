@@ -26,6 +26,7 @@ public class RecordingManifest {
     private final File recordingsDir;
     private final Gson gson;
     private List<RecordingEntry> entries;
+    private final Object saveLock = new Object();
 
     /**
      * Represents a single recording entry in the manifest.
@@ -37,7 +38,9 @@ public class RecordingManifest {
         private long durationMs;
         private long fileSizeBytes;
         private String transcriptionPreview;
+        private String transcriptionFile;
         private boolean dualSource;
+        private boolean imported;  // True for files imported/recovered from disk (not recorded live)
         private String micChannelFile;
         private String systemChannelFile;
 
@@ -94,12 +97,28 @@ public class RecordingManifest {
             this.transcriptionPreview = transcriptionPreview;
         }
 
+        public String getTranscriptionFile() {
+            return transcriptionFile;
+        }
+
+        public void setTranscriptionFile(String transcriptionFile) {
+            this.transcriptionFile = transcriptionFile;
+        }
+
         public boolean isDualSource() {
             return dualSource;
         }
 
         public void setDualSource(boolean dualSource) {
             this.dualSource = dualSource;
+        }
+
+        public boolean isImported() {
+            return imported;
+        }
+
+        public void setImported(boolean imported) {
+            this.imported = imported;
         }
 
         public String getMicChannelFile() {
@@ -137,47 +156,66 @@ public class RecordingManifest {
      * Loads the manifest from disk.
      */
     public void load() {
-        if (!manifestFile.exists()) {
-            entries = new ArrayList<>();
-            return;
-        }
+        synchronized (saveLock) {
+            if (!manifestFile.exists()) {
+                entries = new ArrayList<>();
+                return;
+            }
 
-        try (Reader reader = new FileReader(manifestFile)) {
-            ManifestData data = gson.fromJson(reader, ManifestData.class);
-            if (data != null && data.recordings != null) {
-                entries = new ArrayList<>(data.recordings);
-            } else {
+            try (Reader reader = new FileReader(manifestFile)) {
+                ManifestData data = gson.fromJson(reader, ManifestData.class);
+                if (data != null && data.recordings != null) {
+                    entries = new ArrayList<>(data.recordings);
+                } else {
+                    entries = new ArrayList<>();
+                }
+                logger.info("Loaded manifest with {} recordings", entries.size());
+            } catch (Exception e) {
+                logger.error("Failed to load recording manifest", e);
                 entries = new ArrayList<>();
             }
-            logger.info("Loaded manifest with {} recordings", entries.size());
-        } catch (Exception e) {
-            logger.error("Failed to load recording manifest", e);
-            entries = new ArrayList<>();
         }
     }
 
     /**
-     * Saves the manifest to disk using atomic write.
+     * Saves the manifest to disk with synchronization and Windows-safe fallback.
      */
     public void save() {
-        File tempFile = new File(manifestFile.getParentFile(), MANIFEST_FILENAME + ".tmp");
+        synchronized (saveLock) {
+            File tempFile = new File(manifestFile.getParentFile(), MANIFEST_FILENAME + ".tmp");
 
-        try (Writer writer = new FileWriter(tempFile)) {
-            ManifestData data = new ManifestData();
-            data.recordings = entries;
-            data.version = 1;
-            data.lastUpdated = System.currentTimeMillis();
-            gson.toJson(data, writer);
-            writer.flush();
+            try (Writer writer = new FileWriter(tempFile)) {
+                ManifestData data = new ManifestData();
+                data.recordings = new ArrayList<>(entries); // Copy to avoid concurrent modification
+                data.version = 1;
+                data.lastUpdated = System.currentTimeMillis();
+                gson.toJson(data, writer);
+                writer.flush();
+            } catch (IOException e) {
+                logger.error("Failed to write temp manifest file", e);
+                if (tempFile.exists()) {
+                    tempFile.delete();
+                }
+                return;
+            }
 
-            // Atomic move
-            Files.move(tempFile.toPath(), manifestFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            logger.debug("Saved manifest with {} recordings", entries.size());
-        } catch (IOException e) {
-            logger.error("Failed to save recording manifest", e);
-            // Clean up temp file on failure
-            if (tempFile.exists()) {
-                tempFile.delete();
+            // Try atomic move first, fall back to copy+delete for Windows file locking
+            try {
+                Files.move(tempFile.toPath(), manifestFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                logger.debug("Saved manifest with {} recordings", entries.size());
+            } catch (IOException e) {
+                // Windows file locking fallback: copy content then delete temp
+                logger.debug("Atomic move failed, using fallback save: {}", e.getMessage());
+                try {
+                    Files.copy(tempFile.toPath(), manifestFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    tempFile.delete();
+                    logger.debug("Saved manifest with {} recordings (fallback)", entries.size());
+                } catch (IOException e2) {
+                    logger.error("Failed to save recording manifest", e2);
+                    if (tempFile.exists()) {
+                        tempFile.delete();
+                    }
+                }
             }
         }
     }
@@ -366,9 +404,15 @@ public class RecordingManifest {
         entry.setFilename(file.getName());
         entry.setTimestamp(timestamp);
         entry.setFileSizeBytes(file.length());
-        entry.setDurationMs(0); // Unknown for orphaned files
+
+        // Calculate duration from audio file
+        String format = AudioFileAnalyzer.detectFormat(file);
+        Float durationSeconds = AudioFileAnalyzer.estimateDuration(file, format);
+        entry.setDurationMs(durationSeconds != null ? (long)(durationSeconds * 1000) : 0);
+
         entry.setTranscriptionPreview("(Recovered recording - no transcription)");
         entry.setDualSource(false); // Unknown
+        entry.setImported(true);  // Mark as imported/recovered
 
         // Check if channel files exist
         String baseName = file.getName().replace(".wav", "");

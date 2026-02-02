@@ -17,6 +17,7 @@ import java.io.File;
 public class InlineAudioPlayer {
     private static final Logger logger = LogManager.getLogger(InlineAudioPlayer.class);
     private static final Color PROGRESS_COLOR = new Color(100, 181, 246); // Light blue
+    private static final int BUTTON_ICON_SIZE = 10; // 30% smaller than 14
 
     private Clip currentClip;
     private JButton currentButton;
@@ -48,7 +49,7 @@ public class InlineAudioPlayer {
 
             // Update button to Stop
             playButton.setText("Stop");
-            FlatSVGIcon stopIcon = IconLoader.loadButton("stop", 14);
+            FlatSVGIcon stopIcon = IconLoader.loadButton("stop", BUTTON_ICON_SIZE);
             if (stopIcon != null) {
                 playButton.setIcon(stopIcon);
             }
@@ -116,7 +117,7 @@ public class InlineAudioPlayer {
 
         if (currentButton != null) {
             currentButton.setText("Play");
-            FlatSVGIcon playIcon = IconLoader.loadButton("play-2", 14);
+            FlatSVGIcon playIcon = IconLoader.loadButton("play-2", BUTTON_ICON_SIZE);
             if (playIcon != null) {
                 currentButton.setIcon(playIcon);
             }

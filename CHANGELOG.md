@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Version label displayed at bottom of side menu (reads from pom.xml at build time)
+- Copy button on recording cards to copy transcription to clipboard
+- Selectable transcription text (can highlight and copy)
+
 ---
 
 ## [2.3.0] - 2026-02-02 - Recordings Panel UX

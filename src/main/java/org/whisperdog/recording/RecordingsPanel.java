@@ -12,6 +12,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -255,10 +256,35 @@ public class RecordingsPanel extends JPanel {
                 || entry.getTranscriptionFile() != null;
         }
 
-        // Create title label with [more]/[less] link if there's more content
-        JLabel titleLabel = new JLabel();
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 13f));
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Create title row with selectable text field, copy button, and [more]/[less] link
+        JPanel titleRow = new JPanel();
+        titleRow.setLayout(new BoxLayout(titleRow, BoxLayout.X_AXIS));
+        titleRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Selectable title text field
+        JTextField titleField = new JTextField();
+        titleField.setFont(titleField.getFont().deriveFont(Font.BOLD, 13f));
+        titleField.setEditable(false);
+        titleField.setBorder(null);
+        titleField.setOpaque(false);
+
+        // Copy button (icon only)
+        JButton copyButton = new JButton();
+        copyButton.setIcon(IconLoader.loadButton("copy", BUTTON_ICON_SIZE));
+        copyButton.setToolTipText("Copy text");
+        copyButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        copyButton.setBorderPainted(false);
+        copyButton.setContentAreaFilled(false);
+        copyButton.setFocusPainted(false);
+        copyButton.setMargin(new Insets(0, 4, 0, 4));
+        copyButton.setVisible(false); // Will show if there's text
+
+        // [more]/[less] link label
+        JLabel moreLink = new JLabel();
+        moreLink.setFont(moreLink.getFont().deriveFont(13f));
+        moreLink.setForeground(Color.GRAY);
+        moreLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        moreLink.setVisible(false); // Will show if there's more content
 
         // Line 3: Full transcription area (hidden by default, shown when expanded)
         // Using JTextArea instead of HTML JLabel to respect layout constraints
@@ -274,27 +300,39 @@ public class RecordingsPanel extends JPanel {
         fullTextArea.setVisible(false);
 
         if (preview != null && !preview.isEmpty()) {
-            if (hasMoreContent) {
-                final String truncated = truncatedText;
-                final String entryId = entry.getId();
-                final String[] fullText = {null};
+            final String truncated = truncatedText;
+            final String entryId = entry.getId();
+            final String[] fullText = {null};
 
+            titleField.setText(truncated);
+            copyButton.setVisible(true);
+
+            // Copy button action - copies full text if available, otherwise preview
+            copyButton.addActionListener(e -> {
+                String textToCopy = fullText[0] != null ? fullText[0] : retentionManager.getFullTranscription(entry);
+                if (textToCopy == null) textToCopy = preview;
+                java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+                    .setContents(new StringSelection(textToCopy), null);
+                Notificationmanager.getInstance().showNotification(ToastNotification.Type.SUCCESS, "Text copied");
+            });
+
+            if (hasMoreContent) {
                 // Check if this entry was previously expanded (survives refresh)
                 boolean wasExpanded = expandedStates.getOrDefault(entryId, false);
 
-                titleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                moreLink.setVisible(true);
 
                 // Set initial state based on stored expanded state
                 if (wasExpanded) {
-                    titleLabel.setText("<html>" + escapeHtml(truncated) + " <u style='color:#888'>[less]</u></html>");
+                    moreLink.setText("[less]");
                     fullText[0] = retentionManager.getFullTranscription(entry);
                     if (fullText[0] == null) fullText[0] = preview;
                     // Will set fullTextArea text after infoPanel is added to layout
                 } else {
-                    titleLabel.setText("<html>" + escapeHtml(truncated) + " <u style='color:#888'>[more]</u></html>");
+                    moreLink.setText("[more]");
                 }
 
-                titleLabel.addMouseListener(new MouseAdapter() {
+                moreLink.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
                         boolean isExpanded = !expandedStates.getOrDefault(entryId, false);
@@ -308,14 +346,14 @@ public class RecordingsPanel extends JPanel {
                                     fullText[0] = preview;
                                 }
                             }
-                            // Update title to show [less]
-                            titleLabel.setText("<html>" + escapeHtml(truncated) + " <u style='color:#888'>[less]</u></html>");
+                            // Update link to show [less]
+                            moreLink.setText("[less]");
                             // JTextArea respects container width for wrapping - no pixel width needed
                             fullTextArea.setText(fullText[0]);
                             fullTextArea.setVisible(true);
                         } else {
                             // Collapse: show [more], hide full text
-                            titleLabel.setText("<html>" + escapeHtml(truncated) + " <u style='color:#888'>[more]</u></html>");
+                            moreLink.setText("[more]");
                             fullTextArea.setVisible(false);
                         }
                         // Re-layout the card
@@ -328,10 +366,18 @@ public class RecordingsPanel extends JPanel {
                 if (wasExpanded) {
                     fullTextArea.setVisible(true);
                 }
-            } else {
-                titleLabel.setText(truncatedText);
             }
-            infoPanel.add(titleLabel);
+
+            // Assemble title row: text + copy button + [more] link
+            titleRow.add(titleField);
+            titleRow.add(copyButton);
+            if (hasMoreContent) {
+                titleRow.add(Box.createHorizontalStrut(4));
+                titleRow.add(moreLink);
+            }
+            titleRow.add(Box.createHorizontalGlue()); // Push everything left
+
+            infoPanel.add(titleRow);
             infoPanel.add(Box.createVerticalStrut(3));
         }
 
@@ -459,17 +505,6 @@ public class RecordingsPanel extends JPanel {
                 "margin: 4,8,4,8;");
 
         return button;
-    }
-
-    /**
-     * Escapes HTML special characters in text.
-     */
-    private String escapeHtml(String text) {
-        if (text == null) return "";
-        return text.replace("&", "&amp;")
-                   .replace("<", "&lt;")
-                   .replace(">", "&gt;")
-                   .replace("\"", "&quot;");
     }
 
     /**

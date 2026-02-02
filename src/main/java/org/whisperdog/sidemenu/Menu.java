@@ -9,10 +9,28 @@ import org.whisperdog.sidemenu.mode.ToolBarAccentColor;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public class Menu extends JPanel {
+
+    private static final String APP_VERSION = loadVersion();
+
+    private static String loadVersion() {
+        try (InputStream is = Menu.class.getResourceAsStream("/version.properties")) {
+            if (is != null) {
+                Properties props = new Properties();
+                props.load(is);
+                return props.getProperty("app.version", "dev");
+            }
+        } catch (IOException e) {
+            // Ignore
+        }
+        return "dev";
+    }
 
     private final String menuItems[][] = {
             {"~~"},
@@ -103,8 +121,16 @@ public class Menu extends JPanel {
         toolBarAccentColor = new ToolBarAccentColor(this);
         toolBarAccentColor.setVisible(false);  // Hidden
 
+        // Version label at bottom
+        versionLabel = new JLabel("v" + APP_VERSION);
+        versionLabel.putClientProperty(FlatClientProperties.STYLE, ""
+                + "font:-1;"  // Smaller font
+                + "foreground:$Menu.title.foreground");
+        versionLabel.setHorizontalAlignment(JLabel.CENTER);
+
         add(header);
         add(scroll);
+        add(versionLabel);
         // add(lightDarkMode);  // DISABLED
         // add(toolBarAccentColor);  // DISABLED
     }
@@ -198,6 +224,7 @@ public class Menu extends JPanel {
     }
 
     private JLabel header;
+    private JLabel versionLabel;
     private JScrollPane scroll;
     private JPanel panelMenu;
     private LightDarkMode lightDarkMode;
@@ -269,11 +296,16 @@ public class Menu extends JPanel {
                 // int ldx = x + ldgap;
                 // int ldy = y + height - ldHeight - ldgap - accentColorHeight;
 
+                // Version label at bottom
+                int versionHeight = versionLabel.getPreferredSize().height;
+                int versionY = y + height - versionHeight - gap;
+                versionLabel.setBounds(x, versionY, width, versionHeight);
+
                 int menux = x;
                 int menuy = y + iconHeight + gap;
                 int menuWidth = width;
-                // Full height for menu since toggle is hidden
-                int menuHeight = height - (iconHeight + gap) - gap;
+                // Reduced height to make room for version label
+                int menuHeight = height - (iconHeight + gap) - versionHeight - (gap * 2);
                 scroll.setBounds(menux, menuy, menuWidth, menuHeight);
 
                 // DISABLED: Light/Dark toggle bounds

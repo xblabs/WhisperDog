@@ -4,7 +4,7 @@
     "start": 1,
     "end": 300
   },
-  "count": 7,
+  "count": 9,
   "generated": "2026-01-02T09:40:00.000Z",
   "issues": [
     {
@@ -77,10 +77,20 @@
       "created": "2026-01-02",
       "tags": "validation, openai-api, file-type, drag-drop",
       "file_path": "active/0001-0300/ISS_00008_file_type_validation.md"
+    },
+    {
+      "id": "ISS_00012",
+      "title": "Audio files lost on transcription failure - no WAV or MP3 recovery",
+      "status": "in-progress",
+      "type": "bug",
+      "priority": "critical",
+      "created": "2026-02-17T17:18:24.753Z",
+      "tags": "[\"recording\",\"data-loss\",\"file-management\"]",
+      "file_path": "active\\0001-0300\\ISS_00012_audio_files_lost_on_transcription_failure_-_no_wav.md"
     }
   ],
   "meta": {
-    "lastUpdated": "2026-01-30T16:31:20.794Z",
+    "lastUpdated": "2026-02-17T20:43:39.460Z",
     "count": 8
   }
 }

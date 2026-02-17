@@ -9,6 +9,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2.3.2] - 2026-02-17 - Audio File Recovery on Transcription Failure
+
+### Fixed
+
+- **Critical data-loss bug (ISS_00012)**: Audio files no longer deleted when transcription fails
+  - Original WAV, silence-removed WAV, compressed MP3, and system track all preserved on failure
+  - Console logs absolute paths of preserved files for manual recovery
+  - `OpenAITranscribeClient` no longer owns file lifecycle — caller manages cleanup
+  - Removed `deleteOnExit()` from `SilenceRemover` and `ChunkedTranscriptionWorker`
+  - Chunked transcription preserves all chunk files on partial failure
+  - Files only cleaned up after confirmed success or explicit user cancellation
+
+---
+
 ## [2.3.1] - 2026-02-02 - Text Copy & Version Display
 
 ### Added

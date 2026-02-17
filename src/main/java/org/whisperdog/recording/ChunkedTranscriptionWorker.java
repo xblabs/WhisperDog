@@ -246,44 +246,82 @@ public class ChunkedTranscriptionWorker extends SwingWorker<String, ChunkedTrans
 
     @Override
     protected void done() {
-        // Clean up temporary chunk files
-        cleanupChunks();
-
         if (callback == null) return;
 
         if (cancelled.get() || isCancelled()) {
+            // User cancellation: clean up chunks (user chose to discard)
+            cleanupChunks();
             callback.onCancelled();
             return;
         }
 
         try {
             String result = get();
-            if (result != null) {
+            if (isSuccessfulChunkedTranscript(result)) {
+                // ISS_00012: All chunks succeeded — safe to clean up
+                cleanupChunks();
                 callback.onComplete(result);
             } else {
+                // Failure: preserve ALL chunk files for manual recovery
+                logPreservedChunks();
                 callback.onError("Transcription returned no results");
             }
         } catch (Exception e) {
             logger.error("Error in chunked transcription", e);
+            // Failure: preserve ALL chunk files for manual recovery
+            logPreservedChunks();
             callback.onError("Transcription failed: " + e.getMessage());
         }
     }
 
     /**
-     * Cleans up temporary chunk files.
+     * ISS_00012: A chunked transcription succeeds only when all chunks produced
+     * a valid transcript (no "[TRANSCRIPTION FAILED FOR CHUNK ...]" markers).
+     */
+    private boolean isSuccessfulChunkedTranscript(String transcript) {
+        return transcript != null && !transcript.isBlank()
+            && !transcript.contains("[TRANSCRIPTION FAILED FOR CHUNK ");
+    }
+
+    /**
+     * Cleans up temporary chunk files. Only called on success or user cancellation (ISS_00012).
      */
     private void cleanupChunks() {
         for (File chunk : chunks) {
             try {
                 if (chunk.exists()) {
-                    boolean deleted = chunk.delete();
-                    if (!deleted) {
-                        chunk.deleteOnExit();
+                    if (chunk.delete()) {
+                        logger.debug("Cleaned up chunk file: {}", chunk.getName());
+                    } else {
+                        logger.warn("Could not delete temp chunk: {}", chunk.getName());
                     }
                 }
             } catch (Exception e) {
                 logger.warn("Could not delete temp chunk: " + chunk.getName(), e);
             }
+        }
+    }
+
+    /**
+     * Logs paths of all preserved chunk files after a transcription failure (ISS_00012).
+     */
+    private void logPreservedChunks() {
+        ConsoleLogger console = ConsoleLogger.getInstance();
+        int count = 0;
+        for (File chunk : chunks) {
+            if (chunk.exists()) {
+                String msg = String.format(java.util.Locale.US,
+                    "Audio file preserved for recovery: %s (%.2f MB)",
+                    chunk.getAbsolutePath(), chunk.length() / 1_048_576.0);
+                logger.warn(msg);
+                console.log(msg);
+                count++;
+            }
+        }
+        if (count > 0) {
+            String summary = String.format("Chunked transcription failed. %d chunk file(s) preserved for recovery", count);
+            logger.warn(summary);
+            console.logError(summary);
         }
     }
 

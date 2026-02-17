@@ -28,6 +28,16 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+/**
+ * Client for OpenAI Whisper transcription API.
+ * <p>
+ * File lifecycle: This client does NOT own file cleanup. When compression is needed,
+ * the compressed file is tracked via {@link #getLastCompressedFile()} so the caller
+ * can manage its lifecycle based on transcription outcome.
+ * <p>
+ * Single-flight constraint: This client is designed for sequential use — do not invoke
+ * {@code transcribe()} or {@code transcribeWithTimestamps()} concurrently on the same instance.
+ */
 public class OpenAITranscribeClient {
     private static final Logger logger = LogManager.getLogger(OpenAITranscribeClient.class);
     private static final String API_URL = "https://api.openai.com/v1/audio/transcriptions";
@@ -37,8 +47,19 @@ public class OpenAITranscribeClient {
     private static final int SOCKET_TIMEOUT = 600000; // 10 minutes for large file processing
     private final ConfigManager configManager;
 
+    /** Tracks the compressed file created during the most recent transcribe() call, if any. */
+    private File lastCompressedFile;
+
     public OpenAITranscribeClient(ConfigManager configManager) {
         this.configManager = configManager;
+    }
+
+    /**
+     * Returns the compressed MP3 file created during the most recent transcription call,
+     * or null if no compression was needed. The caller is responsible for deleting this file.
+     */
+    public File getLastCompressedFile() {
+        return lastCompressedFile;
     }
 
     /**
@@ -189,6 +210,8 @@ public class OpenAITranscribeClient {
     }
 
     public String transcribe(File audioFile) throws TranscriptionException {
+        this.lastCompressedFile = null;  // Reset before each call
+
         // Pre-submission validation: file type (ISS_00008)
         try {
             TranscriptionValidator.validateFileType(audioFile);
@@ -200,7 +223,7 @@ public class OpenAITranscribeClient {
 
         // Check if file size exceeds limit and compress if necessary
         File fileToTranscribe = audioFile;
-        File compressedFile = null;  // Track for cleanup
+        File compressedFile = null;
         if (audioFile.length() > MAX_FILE_SIZE) {
             logger.warn("Audio file size ({} MB) exceeds OpenAI limit (25 MB). Compressing...",
                 audioFile.length() / (1024.0 * 1024.0));
@@ -326,12 +349,8 @@ public class OpenAITranscribeClient {
                 throw new TranscriptionException("Network error: " + e.getMessage(), e, false, true);
             }
         } finally {
-            // Clean up internally-created compressed file to prevent temp file accumulation
-            if (compressedFile != null && compressedFile.exists()) {
-                if (!compressedFile.delete()) {
-                    logger.debug("Could not delete temp compressed file: {}", compressedFile.getName());
-                }
-            }
+            // Track compressed file for caller-managed cleanup (ISS_00012)
+            this.lastCompressedFile = compressedFile;
         }
     }
 
@@ -344,6 +363,8 @@ public class OpenAITranscribeClient {
      * @throws TranscriptionException if transcription fails
      */
     public TranscriptionResult transcribeWithTimestamps(File audioFile) throws TranscriptionException {
+        this.lastCompressedFile = null;  // Reset before each call
+
         // Pre-submission validation: file type (ISS_00008)
         try {
             TranscriptionValidator.validateFileType(audioFile);
@@ -497,11 +518,8 @@ public class OpenAITranscribeClient {
                 throw new TranscriptionException("Network error: " + e.getMessage(), e, false, true);
             }
         } finally {
-            if (compressedFile != null && compressedFile.exists()) {
-                if (!compressedFile.delete()) {
-                    logger.debug("Could not delete temp compressed file: {}", compressedFile.getName());
-                }
-            }
+            // Track compressed file for caller-managed cleanup (ISS_00012)
+            this.lastCompressedFile = compressedFile;
         }
     }
 }

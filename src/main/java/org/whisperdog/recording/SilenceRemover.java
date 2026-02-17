@@ -210,10 +210,11 @@ public class SilenceRemover {
             console.logSuccess("Silence removed: " + compressedFile.getName());
             console.log(String.format("Silence removal took %dms", elapsedTime));
 
-            // Schedule deletion if configured (will be deleted when application closes)
-            if (!keepCompressed) {
-                compressedFile.deleteOnExit();
-                console.log("Compressed file will be auto-deleted when application closes");
+            // ISS_00012: No deleteOnExit() — caller manages file lifecycle based on
+            // transcription outcome. When keepCompressed is false, RecorderForm deletes
+            // the file after successful transcription; on failure, files are preserved.
+            if (keepCompressed) {
+                console.log("Compressed file will be retained permanently");
             }
 
             return compressedFile;
@@ -463,23 +464,48 @@ public class SilenceRemover {
     }
 
     /**
-     * Creates new audio data by removing silence regions.
+     * Creates new audio data by removing silence regions with smooth fade transitions.
+     * Applies fade-out before cuts and fade-in after cuts to avoid choppy audio.
      */
     private static byte[] spliceAudio(byte[] audioData, AudioFormat format,
                                      List<SilenceRegion> silences) {
         int frameSize = format.getFrameSize();
+        int sampleSizeInBytes = format.getSampleSizeInBits() / 8;
+        boolean isBigEndian = format.isBigEndian();
+        float sampleRate = format.getSampleRate();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
+        // Fade duration: ~100ms for natural transition
+        int fadeDurationFrames = (int) (sampleRate * 0.10);
+        int fadeDurationBytes = fadeDurationFrames * frameSize;
+
         long lastEndFrame = 0;
+        boolean isFirstChunk = true;
 
         for (SilenceRegion silence : silences) {
-            // Copy audio from last position to start of this silence
             int startByte = (int) (lastEndFrame * frameSize);
             int endByte = (int) (silence.startFrame * frameSize);
 
             if (endByte > startByte && startByte < audioData.length) {
                 int length = Math.min(endByte - startByte, audioData.length - startByte);
-                output.write(audioData, startByte, length);
+
+                // Extract chunk and apply fades
+                byte[] chunk = new byte[length];
+                System.arraycopy(audioData, startByte, chunk, 0, length);
+
+                // Apply fade-in at start (except for very first chunk)
+                if (!isFirstChunk && length > fadeDurationBytes) {
+                    applyFade(chunk, 0, fadeDurationBytes, sampleSizeInBytes, isBigEndian, true);
+                }
+
+                // Apply fade-out at end (before the silence cut)
+                if (length > fadeDurationBytes) {
+                    applyFade(chunk, length - fadeDurationBytes, fadeDurationBytes,
+                             sampleSizeInBytes, isBigEndian, false);
+                }
+
+                output.write(chunk, 0, length);
+                isFirstChunk = false;
             }
 
             lastEndFrame = silence.endFrame;
@@ -488,9 +514,60 @@ public class SilenceRemover {
         // Copy remaining audio after last silence
         int startByte = (int) (lastEndFrame * frameSize);
         if (startByte < audioData.length) {
-            output.write(audioData, startByte, audioData.length - startByte);
+            int length = audioData.length - startByte;
+            byte[] chunk = new byte[length];
+            System.arraycopy(audioData, startByte, chunk, 0, length);
+
+            // Apply fade-in at start (after the last silence)
+            if (!isFirstChunk && length > fadeDurationBytes) {
+                applyFade(chunk, 0, fadeDurationBytes, sampleSizeInBytes, isBigEndian, true);
+            }
+
+            output.write(chunk, 0, length);
         }
 
         return output.toByteArray();
+    }
+
+    /**
+     * Applies a fade (in or out) to a portion of audio data using a cosine curve.
+     */
+    private static void applyFade(byte[] audioData, int offset, int length,
+                                  int sampleSizeInBytes, boolean isBigEndian, boolean fadeIn) {
+        int totalSamples = length / sampleSizeInBytes;
+
+        for (int i = 0; i < totalSamples; i++) {
+            int bytePos = offset + (i * sampleSizeInBytes);
+            if (bytePos + sampleSizeInBytes > audioData.length) break;
+
+            // Cosine curve for smooth transition
+            double progress = (double) i / totalSamples;
+            double multiplier = fadeIn
+                ? 0.5 * (1.0 - Math.cos(Math.PI * progress))   // 0 → 1
+                : 0.5 * (1.0 + Math.cos(Math.PI * progress));  // 1 → 0
+
+            if (sampleSizeInBytes == 2) {
+                // 16-bit audio
+                int sample;
+                if (isBigEndian) {
+                    sample = (audioData[bytePos] << 8) | (audioData[bytePos + 1] & 0xFF);
+                } else {
+                    sample = (audioData[bytePos] & 0xFF) | (audioData[bytePos + 1] << 8);
+                }
+                sample = (int) (sample * multiplier);
+                if (isBigEndian) {
+                    audioData[bytePos] = (byte) (sample >> 8);
+                    audioData[bytePos + 1] = (byte) sample;
+                } else {
+                    audioData[bytePos] = (byte) sample;
+                    audioData[bytePos + 1] = (byte) (sample >> 8);
+                }
+            } else if (sampleSizeInBytes == 1) {
+                // 8-bit audio (unsigned, 128 = silence)
+                int sample = audioData[bytePos] & 0xFF;
+                sample = 128 + (int) ((sample - 128) * multiplier);
+                audioData[bytePos] = (byte) sample;
+            }
+        }
     }
 }

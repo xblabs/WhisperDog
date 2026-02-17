@@ -295,7 +295,33 @@
       "dependencies": [],
       "directory": ".scaffoldx/xtasks/0016_icon_theming_system",
       "description": "Runtime icon theming with pure black source SVGs and context-aware ColorFilter application. Replaces index-based icon naming with semantic names and hierarchical color contexts."
+    },
+    {
+      "id": "0017",
+      "path": ".scaffoldx/xtasks/0017_retry_failed_transcriptions",
+      "created": "2026-02-17",
+      "last_updated": "2026-02-17",
+      "name": "Retry failed transcriptions",
+      "description": "Startup dialog + menu item to detect and re-submit preserved audio files from failed transcriptions (ISS_00012 follow-up)",
+      "priority": "medium",
+      "complex": false,
+      "estimated_hours": "0",
+      "tags": [
+        "recording",
+        "recovery",
+        "ui"
+      ],
+      "status": "todo",
+      "progress": 0,
+      "actual_hours": "0",
+      "parent_task_id": null,
+      "child_task_ids": [],
+      "dependencies": [],
+      "task_type": "executable",
+      "test_task": false,
+      "deletable": true,
+      "environment_created": "claude-desktop"
     }
   ],
-  "lastTaskId": 16
+  "lastTaskId": 17
 }

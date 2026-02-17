@@ -2287,8 +2287,11 @@ public class RecorderForm extends javax.swing.JPanel {
             } finally {
                 isRecording = false;
 
+                boolean transcriptionSucceeded = isSuccessfulTranscript(transcript);
+                boolean userCancelled = cancelledByUser;
+
                 // Retain recording before cleanup (if enabled)
-                if (transcribedFile != null && transcript != null) {
+                if (transcribedFile != null && transcriptionSucceeded) {
                     recordingRetentionManager.retainRecording(
                         transcribedFile,
                         audioFile,  // mic channel
@@ -2299,12 +2302,23 @@ public class RecorderForm extends javax.swing.JPanel {
                     );
                 }
 
-                // Clean up temp audio files to prevent accumulation in long-running sessions
-                cleanupTempAudioFile(audioFile);
-                cleanupTempAudioFile(systemTrackFile);
-                // Also clean up merged file if it's different from the original
-                if (transcribedFile != null && !transcribedFile.equals(audioFile)) {
-                    cleanupTempAudioFile(transcribedFile);
+                // ISS_00012: Gate file cleanup on transcription outcome
+                if (transcriptionSucceeded || userCancelled) {
+                    // Success or user-chosen discard: clean up all temp files
+                    cleanupTempAudioFile(audioFile);
+                    cleanupTempAudioFile(systemTrackFile);
+                    if (transcribedFile != null && !transcribedFile.equals(audioFile)) {
+                        cleanupTempAudioFile(transcribedFile);
+                    }
+                    // Also clean up compressed MP3 if OpenAITranscribeClient created one
+                    File compressedMp3 = whisperClient.getLastCompressedFile();
+                    if (compressedMp3 != null) {
+                        cleanupTempAudioFile(compressedMp3);
+                    }
+                } else {
+                    // Failure: preserve all files for recovery
+                    logPreservedFiles(audioFile, systemTrackFile, transcribedFile,
+                                      whisperClient.getLastCompressedFile());
                 }
             }
 
@@ -2361,6 +2375,50 @@ public class RecorderForm extends javax.swing.JPanel {
                     logger.debug("Failed to clean up temp file: {}", file.getName());
                 }
             }
+        }
+
+        /**
+         * Canonical success predicate for transcription outcome (ISS_00012).
+         */
+        private boolean isSuccessfulTranscript(String transcript) {
+            return transcript != null && !transcript.isBlank();
+        }
+
+        /**
+         * Logs paths of all preserved audio files after a transcription failure (ISS_00012).
+         * Files are preserved in the temp directory for manual recovery.
+         */
+        private void logPreservedFiles(File audioFile, File systemTrackFile,
+                                       File transcribedFile, File compressedMp3) {
+            ConsoleLogger console = ConsoleLogger.getInstance();
+            int count = 0;
+
+            count += logPreservedFile(audioFile);
+            count += logPreservedFile(systemTrackFile);
+            if (transcribedFile != null && !transcribedFile.equals(audioFile)) {
+                count += logPreservedFile(transcribedFile);
+            }
+            count += logPreservedFile(compressedMp3);
+
+            if (count > 0) {
+                String summary = String.format("Transcription failed. %d audio file(s) preserved in %s",
+                    count, ConfigManager.getTempDirectory().getAbsolutePath());
+                logger.warn(summary);
+                console.logError(summary);
+            }
+        }
+
+        /**
+         * Logs a single preserved file if it exists. Returns 1 if logged, 0 otherwise.
+         */
+        private int logPreservedFile(File file) {
+            if (file == null || !file.exists()) return 0;
+            String msg = String.format(java.util.Locale.US,
+                "Audio file preserved for recovery: %s (%.2f MB)",
+                file.getAbsolutePath(), file.length() / 1_048_576.0);
+            logger.warn(msg);
+            ConsoleLogger.getInstance().log(msg);
+            return 1;
         }
     }
 

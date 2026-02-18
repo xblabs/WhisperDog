@@ -44,6 +44,13 @@ public class RecordingsPanel extends JPanel {
     private boolean windowListenerAdded = false;
     private final java.util.HashMap<String, Boolean> expandedStates = new java.util.HashMap<>();
 
+    /**
+     * Stops any currently playing audio. Called when navigating away from this panel.
+     */
+    public void stopPlayback() {
+        audioPlayer.stop();
+    }
+
     public RecordingsPanel(RecordingRetentionManager retentionManager,
                            ConfigManager configManager,
                            RecorderForm recorderForm) {

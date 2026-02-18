@@ -64,6 +64,7 @@ public class AudioAnalyzer {
 
     /**
      * Removes silence from audio data based on RMS threshold.
+     * Delegates to the duration-aware overload with 0ms minimum (removes all silence).
      *
      * @param audioData Raw 16-bit PCM audio bytes
      * @param sampleRate Sample rate in Hz (e.g., 16000)
@@ -71,36 +72,81 @@ public class AudioAnalyzer {
      * @return Result containing filtered audio and metrics
      */
     public SilenceRemovalResult removeSilence(byte[] audioData, float sampleRate, double silenceThreshold) {
+        return removeSilence(audioData, sampleRate, silenceThreshold, 0);
+    }
+
+    /**
+     * Removes silence from audio data based on RMS threshold and minimum silence duration.
+     * Only silence regions lasting at least minSilenceDurationMs are removed.
+     * Matches the algorithm used by SilenceRemover for consistent behavior.
+     *
+     * @param audioData Raw 16-bit PCM audio bytes
+     * @param sampleRate Sample rate in Hz (e.g., 16000)
+     * @param silenceThreshold RMS threshold below which audio is considered silence (0.0-1.0)
+     * @param minSilenceDurationMs Minimum consecutive silence duration (ms) to qualify for removal
+     * @return Result containing filtered audio and metrics
+     */
+    public SilenceRemovalResult removeSilence(byte[] audioData, float sampleRate,
+                                              double silenceThreshold, int minSilenceDurationMs) {
         if (audioData == null || audioData.length < 2) {
             return new SilenceRemovalResult(new byte[0], 1.0, 0.0);
         }
-
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         // 100ms analysis windows (matches SilenceRemover for consistent calibration)
         int samplesPerWindow = (int) (sampleRate * 0.1);
         int bytesPerWindow = samplesPerWindow * 2;
         int windowCount = audioData.length / bytesPerWindow;
+        int minSilenceWindows = Math.max(1, (int) (minSilenceDurationMs / 100.0));
 
+        // First pass: classify each window as silent or not
+        boolean[] isSilent = new boolean[windowCount];
         int silentWindows = 0;
-
         for (int w = 0; w < windowCount; w++) {
             int offset = w * bytesPerWindow;
             byte[] window = new byte[bytesPerWindow];
             System.arraycopy(audioData, offset, window, 0, bytesPerWindow);
-
             double windowRMS = calculateRMS(window);
+            isSilent[w] = windowRMS < silenceThreshold;
+            if (isSilent[w]) silentWindows++;
+        }
 
-            if (windowRMS >= silenceThreshold) {
-                output.write(window, 0, window.length);
+        // Second pass: identify silence regions that meet the minimum duration,
+        // and mark which windows to remove
+        boolean[] remove = new boolean[windowCount];
+        int regionStart = -1;
+        for (int w = 0; w <= windowCount; w++) {
+            boolean silent = (w < windowCount) && isSilent[w];
+            if (silent) {
+                if (regionStart == -1) regionStart = w;
             } else {
-                silentWindows++;
+                if (regionStart != -1) {
+                    int regionLength = w - regionStart;
+                    if (regionLength >= minSilenceWindows) {
+                        for (int r = regionStart; r < w; r++) {
+                            remove[r] = true;
+                        }
+                    }
+                    regionStart = -1;
+                }
+            }
+        }
+
+        // Third pass: write non-removed windows to output
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        int removedWindows = 0;
+        for (int w = 0; w < windowCount; w++) {
+            if (remove[w]) {
+                removedWindows++;
+            } else {
+                int offset = w * bytesPerWindow;
+                output.write(audioData, offset, bytesPerWindow);
             }
         }
 
         double totalDuration = audioData.length / 2.0 / sampleRate;
         double silenceRatio = windowCount > 0 ? (double) silentWindows / windowCount : 0;
-        double nonSilenceDuration = totalDuration * (1 - silenceRatio);
+        double removedDuration = removedWindows * 0.1;
+        double nonSilenceDuration = totalDuration - removedDuration;
 
         return new SilenceRemovalResult(output.toByteArray(), silenceRatio, nonSilenceDuration);
     }

@@ -68,10 +68,17 @@ public class InlineAudioPlayer {
             });
             progressTimer.start();
 
-            // Handle playback completion
+            // Handle playback completion.
+            // Capture clip reference so the deferred callback only resets state
+            // if this clip is still the active one (avoids race when switching tracks).
+            final Clip clipRef = currentClip;
             currentClip.addLineListener(event -> {
                 if (event.getType() == LineEvent.Type.STOP) {
-                    SwingUtilities.invokeLater(this::resetPlaybackState);
+                    SwingUtilities.invokeLater(() -> {
+                        if (currentClip == clipRef) {
+                            resetPlaybackState();
+                        }
+                    });
                 }
             });
 

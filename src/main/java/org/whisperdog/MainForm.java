@@ -36,6 +36,7 @@ public class MainForm extends JLayeredPane {
     private ConfigManager configManager;
     public RecorderForm recorderForm;
     public SettingsForm settingsForm;
+    private RecordingsPanel recordingsPanel;
     private int currentMenuIndex = 0;
     private int currentSubIndex = 0;
     private static final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger(MainForm.class);
@@ -127,6 +128,12 @@ public class MainForm extends JLayeredPane {
             // Don't stop recording when switching screens - let user keep recording
             // Recording continues in background, only stopped by explicit user action
 
+            // Stop audio playback when leaving recordings screen
+            boolean leavingRecordingsScreen = (currentMenuIndex == 1) && (index != 1);
+            if (leavingRecordingsScreen && recordingsPanel != null) {
+                recordingsPanel.stopPlayback();
+            }
+
             // Stop audio test and auto-save settings ONLY when leaving settings screen
             boolean leavingSettingsScreen = (currentMenuIndex == 2 && currentSubIndex == 1) &&
                                            !(index == 2 && subIndex == 1);
@@ -154,7 +161,7 @@ public class MainForm extends JLayeredPane {
                 if (recorderForm == null) {
                     recorderForm = new RecorderForm(configManager);
                 }
-                RecordingsPanel recordingsPanel = new RecordingsPanel(
+                recordingsPanel = new RecordingsPanel(
                         recorderForm.getRecordingRetentionManager(), configManager, recorderForm);
                 showForm(recordingsPanel);
             } else if (index == 2) {

@@ -365,9 +365,10 @@ public class MicTestPanel extends JPanel {
         double rms = analyzer.calculateRMS(recordedAudio);
         double peak = analyzer.calculatePeak(recordedAudio);
 
-        // Remove silence
+        // Remove silence (respecting minimum silence duration from slider)
+        int minSilenceMs = minDurationSlider.getValue();
         AudioAnalyzer.SilenceRemovalResult result = analyzer.removeSilence(
-            recordedAudio, SAMPLE_RATE, threshold);
+            recordedAudio, SAMPLE_RATE, threshold, minSilenceMs);
         filteredAudio = result.audioData;
 
         // Update UI with both linear and dB values

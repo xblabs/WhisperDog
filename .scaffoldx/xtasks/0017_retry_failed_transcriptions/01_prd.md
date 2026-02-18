@@ -1,58 +1,112 @@
-# PRD: Audio Recovery and Crash Resilience
+# PRD: Retry Failed Transcriptions
 
 ## Problem
 
-Two remaining data-loss gaps after ISS_00012:
+ISS_00012 added file preservation on transcription failure. Preserved audio files remain in `ConfigManager.getTempDirectory()` (platform temp + `/WhisperDog/`), but users have no in-app path to retry them. Console logs print file paths, but users must manually locate and re-process files outside the app.
 
-1. **No recovery path for preserved files**: Failed transcriptions now preserve audio files in temp, but users have no in-app way to retry. They see console logs with paths but must manually locate files.
-2. **Mid-recording crash loss**: Audio is held in memory during recording and only written to disk on stop. JVM crash, OOM, or OS kill = total loss of captured audio.
+## User Flow
 
-## Part A: Retry Failed Transcriptions
+### Startup detection
 
-### User Flow
+1. App launches. After `MainForm` initialization completes (after native library extraction and hotkey setup), a background `SwingWorker` scans `ConfigManager.getTempDirectory()` for recoverable files.
+2. Scanner returns a list of `RecoverableSession` objects (grouped by timestamp).
+3. If the list is non-empty, show `RecoveryDialog` on EDT.
+4. If empty, do nothing (no toast, no UI disruption).
 
-**Startup detection**:
-1. App launches, scans `ConfigManager.getTempDirectory()` for orphaned `whisperdog_*` files
-2. If found, show dialog listing files with name, size, last modified date
-3. Actions: **Retry All** | **Discard All** | **Open Folder**
-4. Retry queues files through existing transcription pipeline
-5. Discard deletes after confirmation
+### Recovery dialog
 
-**Menu item**: "Recover recordings" in side menu, opens same dialog on demand. Toast if no files found.
+Modal dialog listing recoverable sessions. Each row shows:
+- Recording timestamp (extracted from filename)
+- Selected file name, size, last modified date
+- Source type label (e.g., "Raw recording", "Silence-removed", "Compressed")
 
-### Requirements
+**Actions**:
+- **Retry All**: Queue all sessions for transcription via `RecoveryTranscriptionWorker`. Dialog stays open showing per-session progress (pending/transcribing/done/failed). Close button enabled after all complete.
+- **Discard All**: Confirmation prompt ("Delete N files permanently?"). On confirm, delete all listed files. On cancel, return to dialog.
+- **Open Folder**: `Desktop.open(ConfigManager.getTempDirectory())`.
+- **Close**: Dismiss dialog. Files remain in place for next startup or manual trigger.
 
-- Scan for `whisperdog_mic_*.wav`, `whisperdog_*_nosilence.wav`, `whisperdog_compressed_*.mp3`
-- Age filter: only files from last 7 days
-- After successful retry, clean up preserved files
-- After failed retry, leave in place (ISS_00012 behavior)
+### On-demand trigger
 
-## Part B: Incremental WAV Writes
+"Recover" button added to `RecordingsPanel` toolbar (alongside existing Refresh and Open Folder buttons). Clicking it runs the same scanner. If files found, opens `RecoveryDialog`. If no files found, shows toast: "No recoverable recordings found."
 
-### Problem
+## File Scanner Requirements
 
-Audio accumulated in memory buffers during recording, flushed to WAV only on stop. JVM crash mid-recording = total loss.
+### Target directory
 
-### Solution
+`ConfigManager.getTempDirectory()` - resolves to `%TEMP%\WhisperDog\` on Windows, `/tmp/WhisperDog/` on Unix.
 
-Replace record-to-memory with incremental disk writes:
-- Open WAV file at recording start
-- Write audio chunks to disk periodically (every 1-2 seconds)
-- Update WAV header (RIFF + data chunk sizes) on each flush
-- Finalize header on normal stop
-- On crash, partial WAV is playable up to last flush
+### File patterns
 
-### Requirements
+Scan for files matching these patterns:
+- `whisperdog_mic_YYYYMMDD_HHMMSS.wav` (raw mic recording)
+- `whisperdog_mic_YYYYMMDD_HHMMSS_nosilence.wav` (silence-removed)
+- `whisperdog_compressed_*.mp3` (compressed for API upload)
 
-- Audio written incrementally during recording
-- Partial WAV files are valid and playable
-- No audible artifacts or gaps
-- Memory usage bounded (not proportional to duration)
-- SilenceRemover compatibility maintained
-- Normal flow (start -> stop -> transcribe) produces identical results
+### Filters
+
+- **Age**: Only files modified within the last 7 days. Older files are stale and likely orphaned from abandoned sessions.
+- **Recency guard**: Exclude files modified within the last 60 seconds. These may belong to an active recording in progress.
+- **Recording state guard**: If `RecorderForm.isRecording()` returns true, exclude all `whisperdog_mic_*` files with today's date prefix. Prevents scanner from picking up the file currently being written.
+
+### Grouping and selection
+
+Files are grouped into sessions by timestamp prefix (`YYYYMMDD_HHMMSS`). For each session, the scanner selects one file to retry using this priority:
+
+1. `*_nosilence.wav` - silence removal completed successfully before failure; best candidate (smaller, cleaner audio)
+2. `whisperdog_mic_*.wav` - raw recording; usable but may contain silence
+3. `whisperdog_compressed_*.mp3` - lossy; only if WAV variants are missing
+
+Compressed files (`whisperdog_compressed_*.mp3`) have random suffixes and cannot be grouped by timestamp. They are listed as standalone sessions.
+
+All files in a session (not just the selected one) are tracked. On successful retry, ALL files in that session are deleted. On failure, ALL files are preserved.
+
+## Transcription and Retention
+
+### Pipeline entry point
+
+A new `RecoveryTranscriptionWorker` (extends `SwingWorker<String, String>`) handles recovery transcription. It does NOT reuse `AudioTranscriptionWorker` because that class depends on `RecorderForm` state (active recording context, pre-flight dialogs, dual-source merge logic) that is unavailable during recovery.
+
+`RecoveryTranscriptionWorker` performs:
+1. Call `OpenAITranscribeClient.transcribe(selectedFile)` directly. No silence removal (already done or not applicable). No pre-flight analysis (file already exists, user explicitly chose to retry).
+2. On success: call `RecordingRetentionManager.retainRecoveredRecording(audioFile, transcription)` to persist the transcript with `imported = true`.
+3. On failure: leave all session files in place. Report error to dialog.
+
+### Retention integration
+
+`RecordingRetentionManager` gets a new method:
+
+```java
+public synchronized RecordingManifest.RecordingEntry retainRecoveredRecording(
+    File audioFile,
+    String fullTranscription)
+```
+
+This method:
+- Copies `audioFile` to recordings directory
+- Saves transcription to text file
+- Creates `RecordingEntry` with `imported = true`, `dualSource = false`, `durationMs` read from WAV header (or 0 if unreadable)
+- Adds entry to manifest
+- Returns the entry (or null if retention is disabled)
+
+Recovered recordings appear in `RecordingsPanel` with source label "Imported" (the `imported` field already exists on `RecordingEntry`).
+
+## Failure Modes
+
+| Scenario | Behavior |
+|----------|----------|
+| Scanner finds 0 files | Startup: silent. On-demand: toast "No recoverable recordings found." |
+| File is corrupt/truncated | `OpenAITranscribeClient.transcribe()` will fail. Files preserved. Error shown in dialog row. |
+| Transcription backend config changed | Uses current config (API key, model, backend). If current config is invalid, standard TranscriptionException handling applies. |
+| User closes dialog mid-retry | In-progress workers continue. Files cleaned up on success, preserved on failure. No orphan state. |
+| Disk full during retention | `retainRecoveredRecording` returns null. Transcription text still shown in dialog. Original files preserved. User can copy transcript manually. |
+| Retention disabled in settings | Transcription succeeds but is not persisted. Dialog shows transcript text. Original files cleaned up (transcription was successful). |
+| Multiple retries of same session | If user opens dialog again after a failed retry, the same files appear. No duplicate state. |
 
 ## Out of Scope
 
-- Automatic retry on failure (separate concern)
+- Automatic retry on failure (requires background scheduling, separate concern)
+- Incremental WAV writes / crash resilience during recording (separate task with different premises)
 - Recording format changes (remain WAV/PCM)
 - Dual-source recording pipeline changes
+- Individual file selection within a session (scanner picks the best candidate automatically)

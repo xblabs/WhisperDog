@@ -1,0 +1,245 @@
+# Scrutinizer Run Log: Task 0017
+
+<!-- Append-only. Each run adds a new entry below. -->
+
+
+---
+
+## Run: 2026-02-17T21:56:18.5958107+00:00
+
+## Scrutinizer Task Report: Task 0017
+
+| File | Initial Score | Issues | Final Score |
+|------|--------------|--------|-------------|
+| 01_prd.md | 14/25 | Missing deterministic file targets and failure handling branches; scope contradiction on dual-source impact (`01_prd.md:15`, `01_prd.md:58`) | 14/25 |
+| 02_implementation_plan.md | 16/25 | New classes named, but integration call sites/method contracts are implicit; no deterministic recovery matrix (`02_implementation_plan.md:31`, `02_implementation_plan.md:47`) | 16/25 |
+| 03_checklist.md | 13/25 | Execution items exist, but lacks file-level verification commands and rollback criteria (`03_checklist.md:26`, `03_checklist.md:52`) | 13/25 |
+
+**Overall**: NEEDS_REVISION
+
+### Fit Check
+
+**Persona**: Dr. Elaine Moretti (Archaeologist)
+**Task Age**: 0 tasks since creation (0 months)
+**Risk Level**: MEDIUM
+
+| Factor | Score | Evidence |
+|--------|-------|----------|
+| Task age | 100% | `0017` is current highest task ID in `.scaffoldx/xtasks/tasks.json` |
+| Target file drift | 90% | No commits since `2026-02-17` for likely touchpoints; plan does not fully enumerate modified files |
+| Component existence | 90% | `ConfigManager.getTempDirectory()` exists (`ConfigManager.java:107`), `SilenceRemover` exists, menu/recorder classes exist |
+| Governance alignment | 85% | No direct AI-GOV conflict, but task corpus has internal premise/scope contradictions |
+| Import/usage | 60% | Planned new modules have high-level consumers, but no deterministic file+method wiring |
+| Parallel impl absence | 70% | Existing retry/recovery surfaces already exist (`RecorderForm`, `ChunkedTranscriptionWorker`, `RecordingManifest`) |
+| Merge safety | 30% | High-risk touchpoints (`RecorderForm.java` is 2474 lines); crash-loss premise is only partially true in current code |
+
+**Danger Signals**:
+- HIGH: Premise mismatch with current code. Mic path already streams directly to WAV via `AudioSystem.write(...)` (`AudioRecorder.java:44`), while in-memory accumulation is concentrated in system capture (`SystemAudioCapture.java:45`, `AudioCaptureManager.java:157`).
+- HIGH: Scope contradiction. PRD says dual-source changes are out of scope (`01_prd.md:58`), but the remaining memory-loss exposure is mainly in dual-source/system-audio flow.
+- MEDIUM: Task metadata drift. `tasks.json` description covers Part A only, while task corpus includes Part B incremental writer work (`tasks.json:305`).
+
+**Fit Score**: 76%
+**Verdict**: DRIFT
+**Summary**: The task is still relevant, but its premises and scope boundaries need correction before implementation. Clarify whether Part B targets only mic flow, dual-source flow, or both, then pin exact integration files/method signatures.
+
+**Drift Items**:
+1. Reconcile task scope across `tasks.json`, `00_meta.md`, and PRD so Part A/Part B are either split or explicitly unified.
+2. Update Part B premise to reflect current implementation reality (mic path already streams to disk; system path buffers in memory).
+3. Add deterministic integration targets in plan/checklist: exact files, methods, and verification commands for scanner/dialog/worker/writer wiring.
+
+
+---
+
+## Run: 2026-02-17T22:19:26.252Z
+
+## Scrutinizer Task Report: Task 0017 (Deep Audit)
+
+### Prior Run Status
+
+Run 1 (2026-02-17T21:56) identified NEEDS_REVISION with DRIFT. **No corpus changes since.** All prior findings remain unaddressed. This run deepens the audit with verified codebase evidence.
+
+---
+
+### File-by-File Audit
+
+| File | Score | Delta | Status |
+|------|-------|-------|--------|
+| 01_prd.md | 11/25 | -3 | NEEDS_REVISION |
+| 02_implementation_plan.md | 11/25 | -5 | NEEDS_REVISION |
+| 03_checklist.md | 11/25 | -2 | NEEDS_REVISION |
+
+**Overall**: NEEDS_REVISION (11.0/25 avg, down from 14.3/25)
+
+Scores decreased because this run verified premises against actual source code, revealing deeper issues than the prior surface-level audit detected.
+
+---
+
+### 01_prd.md: 11/25
+
+**Scoring**:
+- Zero Follow-Up: 2/5 - Open questions about retry destination, file priority, Part A/B interaction
+- Zero Steering: 2/5 - Human must resolve premise mismatch and scope contradiction before implementation
+- Zero Guessing: 2/5 - "Existing transcription pipeline" has 3 entry points; file selection logic undefined
+- Deterministic Output: 3/5 - Part A user flow is mostly deterministic; Part B premise is factually wrong
+- Self-Contained: 2/5 - Missing failure modes, WAV format specs, Part A/B dependency
+
+**Issues**:
+
+1. **CRITICAL - Premise Error (Part B, line 34)**:
+   > "Audio is held in memory during recording and only written to disk on stop"
+
+   **FALSE for mic-only recording.** Verified: `AudioRecorder.java:44` calls `AudioSystem.write(ais, AudioFileFormat.Type.WAVE, wavFile)` which streams directly from `TargetDataLine` to disk in real-time. No `ByteArrayOutputStream`, no in-memory accumulation.
+
+   The memory-buffering problem exists ONLY in `SystemAudioCapture.java:320` (`capturedAudio = new ByteArrayOutputStream()`) with data accumulated at line 388-390 (`capturedAudio.write(converted)`) and flushed to disk only on `stop()` at line 555-557.
+
+   **Impact**: An implementing LLM would either (a) waste effort modifying AudioRecorder which needs no change, or (b) correctly identify the system capture path but then hit the out-of-scope wall.
+
+2. **CRITICAL - Scope Contradiction (lines 34 vs 58)**:
+   - Line 34-43: Part B describes replacing "record-to-memory" with incremental writes
+   - Line 58: "Out of Scope: Dual-source recording pipeline changes"
+
+   The ONLY recording path that buffers in memory IS the dual-source/system-audio path. If dual-source is out of scope, Part B has near-zero value because the mic path already streams to disk. This is a logical contradiction that blocks implementation.
+
+3. **MISSING - Retry Destination (Part A)**:
+   Where does a successful retry transcript go? Options: (a) RecordingRetentionManager with "recovered" tag, (b) RecordingsPanel directly, (c) displayed in a dialog then discarded. Each requires different implementation. PRD says "Retry queues files through existing transcription pipeline" but the pipeline ends at `AudioTranscriptionWorker.done()` which integrates with RecorderForm state - not available during recovery flow.
+
+4. **MISSING - File Priority Logic (Part A, line 25)**:
+   Scanner finds `whisperdog_mic_*.wav`, `*_nosilence.wav`, `whisperdog_compressed_*.mp3` for the same session. Which file gets retried? The raw WAV? The silence-removed version? The compressed MP3? "Best available" is not defined. The `_nosilence.wav` may represent completed preprocessing (good) or a partial failure artifact (bad).
+
+5. **MISSING - Failure Modes**:
+   - Scanner finds file currently being written by active recording
+   - Scanner finds corrupt/truncated WAV (valid for Part B crash scenario)
+   - Transcription backend config has changed since original attempt
+   - Disk full during retry
+   - User closes dialog mid-retry
+
+6. **MISSING - Part A/B Interaction**:
+   If Part B produces partial WAVs on crash, should Part A's scanner detect and offer these for retry? This creates an implicit dependency between the two parts that is not documented.
+
+7. **AMBIGUOUS - "existing transcription pipeline" (line 18)**:
+   Three entry points exist:
+   - `AudioTranscriptionWorker` (full pipeline: silence removal, pre-flight, transcription, retention)
+   - `ChunkedTranscriptionWorker` (chunked files only, no pre-flight)
+   - `RetryHandler` (single-file retry with backoff)
+
+   Which one? Each has different preconditions and side effects.
+
+---
+
+### 02_implementation_plan.md: 11/25
+
+**Scoring**:
+- Zero Follow-Up: 2/5 - Missing file targets, method contracts, error handling
+- Zero Steering: 2/5 - Human must identify which classes to modify for B2
+- Zero Guessing: 2/5 - "Modify recording classes" requires guessing which ones
+- Deterministic Output: 3/5 - New class creation is clear; integration wiring is not
+- Self-Contained: 2/5 - No method signatures, no threading model, no error contracts
+
+**Issues**:
+
+1. **MISSING - Integration File Targets (A4, B2)**:
+   - A4 says "Side menu" but `Menu.java:35-43` uses a fixed `menuItems[][]` array. Plan must specify: new top-level item? Sub-item under Recordings? Button in RecordingsPanel toolbar?
+   - B2 says "Replace `ByteArrayOutputStream` accumulation" but does not name `SystemAudioCapture.java` as the target. Does not mention that `AudioRecorder.java` needs NO changes.
+   - A4 says "post-init background scan" but does not specify where in `MainForm.java` initialization sequence or which thread.
+
+2. **WRONG TARGET (B2, line 47-49)**:
+   > "Replace `ByteArrayOutputStream` accumulation with incremental writes"
+   > "Recording stop triggers `finalize()` instead of `AudioSystem.write()`"
+
+   `AudioSystem.write()` is used by `AudioRecorder` (mic path) which ALREADY streams to disk. The plan implies replacing it, but it needs no replacement. The actual target is `SystemAudioCapture.java:320,388` and its consumer `AudioCaptureManager.java:157-162`.
+
+3. **MISSING - Method Contracts**:
+   - `PreservedRecordingScanner`: What fields does `PreservedRecording` hold? Is it immutable? What's the return type (List? Stream?)?
+   - `RecoveryWorker`: What callbacks? How does the caller learn success/failure? Does it extend `SwingWorker<String, Void>` like `AudioTranscriptionWorker`?
+   - `IncrementalWavWriter`: Constructor params (sample rate, bit depth, channels)? Thread safety guarantees? Behavior on write error? Flush semantics?
+
+4. **MISSING - Threading Model**:
+   - Recovery dialog must run on EDT
+   - RecoveryWorker must run off EDT
+   - Startup scan must not block app launch
+   - None of this is specified
+
+5. **MISSING - Error Handling Strategy**:
+   - Scanner finds 0 files (A4 says toast, but dialog integration unclear)
+   - RecoveryWorker fails (leave files, but how does dialog update?)
+   - IncrementalWavWriter gets IOException mid-recording (abort recording? Silent retry? Fallback to memory?)
+
+6. **AMBIGUOUS - "best available file" (A3, line 24)**:
+   Selection priority undefined. Given files: `whisperdog_mic_20260217_143022.wav` + `whisperdog_mic_20260217_143022_nosilence.wav` + `whisperdog_compressed_abc123.mp3`. Which one? The `_nosilence.wav` could be a successful preprocessing artifact (prefer it) or a partial failure artifact (avoid it).
+
+---
+
+### 03_checklist.md: 11/25
+
+**Scoring**:
+- Zero Follow-Up: 2/5 - Would need clarification on verification approach for every step
+- Zero Steering: 2/5 - No verification commands, no rollback criteria, no "done" definition
+- Zero Guessing: 3/5 - Individual step descriptions are clear in isolation
+- Deterministic Output: 2/5 - No way to deterministically verify completion of any step
+- Self-Contained: 2/5 - No tests, no verification, no B2 target identification
+
+**Issues**:
+
+1. **NO VERIFICATION STEPS**: All 23 items are "do" items. None have "verify" counterparts. Examples of what's missing:
+   - After "Create PreservedRecordingScanner": Verify it finds test fixtures placed in temp dir
+   - After "Wire to existing transcription pipeline": Verify transcript appears in retention/UI
+   - After "Replace in-memory buffer accumulation": Verify system audio still records correctly
+
+2. **NO ROLLBACK CRITERIA**: If step B2 ("Replace in-memory buffer accumulation") breaks system audio recording, what's the rollback? The checklist gives no guidance.
+
+3. **MISSING ITEMS**:
+   - No unit tests for any component
+   - No integration test for full retry flow (scan -> dialog -> retry -> verify transcript)
+   - No manual test procedure for startup dialog behavior
+   - No step for updating `tasks.json` description to include Part B
+   - No step for verifying Part A/B interaction (partial WAV from crash -> scanner detection)
+
+4. **ORDERING ISSUE**: B2 ("Replace in-memory buffer accumulation with incremental writes") requires first identifying WHICH class has the buffer. This analysis should precede B1 (creating the writer), or at minimum B1 should reference the target class. Currently B2 references a problem without naming its location.
+
+5. **MISSING - Regression Guard**: No step to verify existing recording flow (mic-only, dual-source, silence removal, chunked transcription) still works after changes. These are critical regression paths.
+
+---
+
+### Fit Check (Updated)
+
+**Risk Level**: HIGH (upgraded from MEDIUM)
+
+| Factor | Score | Evidence |
+|--------|-------|----------|
+| Task age | 100% | Created today, highest task ID |
+| Target file drift | 90% | No commits since creation for target files |
+| Component existence | 90% | All referenced classes exist in codebase |
+| Premise accuracy | 35% | **CRITICAL**: Part B premise is factually wrong for mic path; correct only for system audio path (`SystemAudioCapture.java:320,388` vs `AudioRecorder.java:44`) |
+| Scope coherence | 25% | **CRITICAL**: Out-of-scope dual-source IS the problem Part B describes; logical contradiction |
+| Integration clarity | 40% | New classes named but no file/method wiring; 3 ambiguous pipeline entry points |
+| Metadata consistency | 50% | `tasks.json:305` describes Part A only; `00_meta.md` and PRD describe both parts |
+| Merge safety | 55% | `RecorderForm.java` is 2474 lines; `SystemAudioCapture.java` uses JNA/WASAPI (fragile) |
+
+**Fit Score**: 61%
+**Verdict**: DRIFT (worsened from 76%)
+
+**Danger Signals**:
+
+1. **CRITICAL - Premise Inversion**: The PRD states audio is "held in memory during recording" as a universal problem. Codebase evidence:
+   - `AudioRecorder.java:44`: `AudioSystem.write(ais, Type.WAVE, wavFile)` - streams to disk. **No crash-loss risk.**
+   - `SystemAudioCapture.java:320`: `capturedAudio = new ByteArrayOutputStream()` - buffers in memory. **Full crash-loss risk.**
+   - `SystemAudioCapture.java:388`: `capturedAudio.write(converted)` - accumulates every callback in memory.
+   - `SystemAudioCapture.java:555`: `return capturedAudio.toByteArray()` - only retrieves on stop.
+
+   An implementing LLM following the PRD would target the wrong class.
+
+2. **CRITICAL - Scope Deadlock**: Part B says fix memory buffering. Out-of-scope says don't touch dual-source. The memory buffering IS dual-source. Implementation is logically blocked.
+
+3. **HIGH - Pipeline Ambiguity**: "Existing transcription pipeline" resolves to 3 different entry points with different preconditions. Wrong choice causes silent failures or duplicate processing.
+
+4. **MEDIUM - Metadata Split**: `tasks.json` knows only Part A. An LLM using `x-task-status` would see an incomplete picture of the task scope.
+
+**Drift Items** (cumulative with Run 1):
+1. **[UNRESOLVED from Run 1]** Reconcile task scope across `tasks.json`, `00_meta.md`, and PRD
+2. **[UNRESOLVED from Run 1]** Update Part B premise to reflect mic-streams-to-disk / system-buffers-in-memory reality
+3. **[UNRESOLVED from Run 1]** Add deterministic integration targets (files, methods, verification)
+4. **[NEW]** Resolve scope deadlock: either include dual-source in Part B scope, or redefine Part B's value proposition for mic-only (e.g., WAV header resilience for truncated files)
+5. **[NEW]** Define retry destination: where do recovered transcripts go? Specify RecordingRetentionManager integration contract
+6. **[NEW]** Define file priority logic for scanner: when multiple artifacts exist for one session, which gets retried?
+7. **[NEW]** Add verification steps and regression test items to checklist
+8. **[NEW]** Specify pipeline entry point for recovery flow (new dedicated worker, not reuse of AudioTranscriptionWorker)

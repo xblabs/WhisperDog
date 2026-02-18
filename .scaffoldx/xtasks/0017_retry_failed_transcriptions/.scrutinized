@@ -243,3 +243,123 @@ Scores decreased because this run verified premises against actual source code, 
 6. **[NEW]** Define file priority logic for scanner: when multiple artifacts exist for one session, which gets retried?
 7. **[NEW]** Add verification steps and regression test items to checklist
 8. **[NEW]** Specify pipeline entry point for recovery flow (new dedicated worker, not reuse of AudioTranscriptionWorker)
+
+
+---
+
+## Run: 2026-02-18T11:24:31.882Z
+
+## Scrutinizer Verification Report: Task 0017
+
+**Mode**: Verify Implementation
+**Personas**: Marcus Webb (Cold Reader) + Alex Chen (Pragmatic Shipper)
+**Task**: Retry failed transcriptions
+**Status**: todo
+
+### File Coverage
+
+| Planned File | Action | Status | Evidence |
+|-------------|--------|--------|----------|
+| `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java` | Create | FOUND | Last modified: 2026-02-18T10:44:22.218Z, 169 lines |
+| `src/main/java/org/whisperdog/ui/RecoveryDialog.java` | Create | FOUND | Last modified: 2026-02-18T10:45:58.480Z, 262 lines |
+| `src/main/java/org/whisperdog/recording/RecoveryTranscriptionWorker.java` | Create | FOUND | Last modified: 2026-02-18T10:45:15.140Z, 93 lines |
+| `src/main/java/org/whisperdog/recording/RecordingRetentionManager.java` | Modify | FOUND | Last modified: 2026-02-18T10:44:42.678Z (after task date 2026-02-17), 476 lines |
+| `src/main/java/org/whisperdog/recording/RecordingsPanel.java` | Modify | FOUND | Last modified: 2026-02-18T10:46:50.511Z (after task date 2026-02-17), 604 lines |
+| `src/main/java/org/whisperdog/MainForm.java` | Modify | FOUND | Last modified: 2026-02-18T10:47:12.856Z (after task date 2026-02-17), 321 lines |
+
+**File Coverage**: 6/6 planned files accounted for (100.00%)
+
+### Unplanned Changes
+
+| File | Change Type | Classification |
+|------|-------------|---------------|
+| `src/main/java/org/whisperdog/recording/RecorderForm.java` | Modified | Supporting integration (exposes `isRecording()` used by recovery scan guard) |
+| `.scaffoldx/xtasks/0017_retry_failed_transcriptions/03_checklist.md` | Modified | Documentation/progress sync |
+
+**Plan Adherence**: 75.00% of current workspace changes were on-plan
+
+### Checklist Verification
+
+| # | Item | Marked | Verified | Evidence |
+|---|------|--------|----------|----------|
+| 1 | "Create `PreservedRecordingScanner.java` in `org.whisperdog.recording`" | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:19` |
+| 2 | "Implement `RecoverableSession` value object..." | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:37` |
+| 3 | "Implement `scan()` method with file pattern matching..." | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:25`, `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:70` |
+| 4 | "Add 7-day age filter and 60-second recency guard" | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:22`, `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:99` |
+| 5 | "Add recording-in-progress guard..." | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:111`, `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:121` |
+| 6 | "Implement timestamp grouping and file priority selection..." | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:92`, `src/main/java/org/whisperdog/recording/PreservedRecordingScanner.java:145` |
+| 8 | "Add `retainRecoveredRecording(...)` to `RecordingRetentionManager.java`" | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecordingRetentionManager.java:150` |
+| 9 | "Implementation: copy file, save transcript, ... imported=true, add to manifest, prune" | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecordingRetentionManager.java:170`, `src/main/java/org/whisperdog/recording/RecordingRetentionManager.java:204`, `src/main/java/org/whisperdog/recording/RecordingRetentionManager.java:207` |
+| 11 | "Create `RecoveryTranscriptionWorker.java`..." | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecoveryTranscriptionWorker.java:19` |
+| 12 | "Implement `doInBackground()`..." | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecoveryTranscriptionWorker.java:42` |
+| 13 | "Implement `done()`: success retain+delete, failure preserve" | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecoveryTranscriptionWorker.java:67`, `src/main/java/org/whisperdog/recording/RecoveryTranscriptionWorker.java:86` |
+| 14 | "Wire `onSuccess` and `onFailure` callbacks" | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecoveryTranscriptionWorker.java:25`, `src/main/java/org/whisperdog/recording/RecoveryTranscriptionWorker.java:80` |
+| 16 | "Create `RecoveryDialog.java` in `org.whisperdog.ui`" | [x] | VERIFIED | `src/main/java/org/whisperdog/ui/RecoveryDialog.java:22` |
+| 17 | "Implement session list layout..." | [x] | VERIFIED | `src/main/java/org/whisperdog/ui/RecoveryDialog.java:63`, `src/main/java/org/whisperdog/ui/RecoveryDialog.java:127` |
+| 18 | "Implement Retry All button... `SwingUtilities.invokeLater()`" | [x] | VERIFIED | `src/main/java/org/whisperdog/ui/RecoveryDialog.java:81`, `src/main/java/org/whisperdog/ui/RecoveryDialog.java:191` |
+| 19 | "Implement Discard All button with confirmation prompt..." | [x] | VERIFIED | `src/main/java/org/whisperdog/ui/RecoveryDialog.java:85`, `src/main/java/org/whisperdog/ui/RecoveryDialog.java:215`, `src/main/java/org/whisperdog/ui/RecoveryDialog.java:224` |
+| 20 | "Implement Open Folder button: `Desktop.open(...)`" | [x] | VERIFIED | `src/main/java/org/whisperdog/ui/RecoveryDialog.java:89`, `src/main/java/org/whisperdog/ui/RecoveryDialog.java:241` |
+| 21 | "Implement Close button: dismiss dialog..." | [x] | VERIFIED | `src/main/java/org/whisperdog/ui/RecoveryDialog.java:93` |
+| 22 | "Apply FlatLaf theming consistent with existing dialogs" | [x] | PARTIAL | Dialog uses UI defaults/colors (`src/main/java/org/whisperdog/ui/RecoveryDialog.java:108`, `src/main/java/org/whisperdog/ui/RecoveryDialog.java:129`) but has no explicit FlatLaf-specific styling hooks |
+| 24 | "Add \"Recover\" button to `RecordingsPanel.java` toolbar..." | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecordingsPanel.java:78` |
+| 25 | "Add `configManager` and `recorderForm` parameters... update call site..." | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecordingsPanel.java:47`, `src/main/java/org/whisperdog/MainForm.java:157` |
+| 26 | "Wire Recover button: scan -> dialog if files found, toast if empty" | [x] | VERIFIED | `src/main/java/org/whisperdog/recording/RecordingsPanel.java:83`, `src/main/java/org/whisperdog/recording/RecordingsPanel.java:85`, `src/main/java/org/whisperdog/recording/RecordingsPanel.java:89` |
+| 28 | "Add startup scanner to `MainForm.java` (after line 78, after `GlobalHotkeyManager.init`)" | [x] | PARTIAL | Startup scanner exists (`src/main/java/org/whisperdog/MainForm.java:82`), but codebase uses `GlobalHotkeyListener` and does not contain `GlobalHotkeyManager.init` |
+| 29 | "Implement as `SwingWorker`: background scan, EDT dialog if files found" | [x] | VERIFIED | `src/main/java/org/whisperdog/MainForm.java:83`, `src/main/java/org/whisperdog/MainForm.java:90`, `src/main/java/org/whisperdog/MainForm.java:97` |
+| 35 | "Build project with `mvn package` - confirm no compilation errors" | [x] | VERIFIED | `mvn package -DskipTests` executed 2026-02-18T11:21:34Z, `BUILD SUCCESS` |
+
+**Checklist Verification**: 23/25 completed items fully verified in code (92.00%)
+
+### Danger Signals
+
+- MEDIUM: Additional implementation touched `src/main/java/org/whisperdog/recording/RecorderForm.java` outside the plan's file summary table (justified, but undocumented in the table).
+
+### Persona Analysis
+
+**Marcus Webb (Cold Reader)**:
+Plan-to-reality alignment is strong on the six planned implementation files, with concrete evidence for all major recovery flow elements. The main gaps are documentation precision: one theming claim is implicit rather than explicit, and one checklist statement references a hotkey init call that no longer exists in this codebase.
+
+**Alex Chen (Pragmatic Shipper)**:
+The feature implementation is close to shippable for recovery flow, and the extra `RecorderForm.isRecording()` change is a practical integration detail. Remaining risk is verification debt (manual checklist tests still open) and traceability debt (source changes are currently uncommitted under task-tagged history).
+
+### Verdict
+
+| Metric | Score | Weight | Weighted |
+|--------|-------|--------|----------|
+| File Coverage | 100.00% | 35% | 35.00% |
+| Checklist Verification | 92.00% | 30% | 27.60% |
+| Plan Adherence | 75.00% | 20% | 15.00% |
+| Completion Status | 71.43% | 15% | 10.71% |
+
+**Weighted Score**: 88.31%
+**Verdict**: PARTIAL
+**Summary**: Planned implementation files are present and mostly aligned with the checklist, but plan-adherence and completion state are not yet clean enough for a PASS.
+
+### Recommended Actions
+- [ ] Add `RecorderForm.java` as an explicit supporting modification in `02_implementation_plan.md` Files Summary.
+- [ ] Finish remaining verification/regression checklist items (scanner fixtures, worker success/failure paths, startup/no-startup cases, mic/dual-source regressions).
+- [ ] Commit current source changes with task-linked commit message (`0017`) to close traceability gap.
+
+### Fit Check
+
+**Persona**: Dr. Elaine Moretti (Archaeologist)
+**Task Age**: 1 task since creation (2026-02-17 -> 2026-02-18)
+**Risk Level**: LOW
+
+| Factor | Score | Evidence |
+|--------|-------|----------|
+| Task age | 100% | Current highest task is `0018`; this task is one increment behind |
+| Target file drift | 100% | 0 commits touching planned target files since task creation date (`2026-02-17`) |
+| Component existence | 100% | All planned classes/files resolve and exist in expected paths |
+| Governance alignment | 100% | No detected conflict with current AI-GOV rules for this implementation scope |
+| Import/usage | 100% | New modules are referenced (`MainForm`, `RecordingsPanel`, `RecoveryDialog`) |
+| Parallel impl absence | 100% | No duplicate class implementations detected for planned new classes |
+| Merge safety | 85% | Implementation is coherent, but current work is still uncommitted and has minor documentation drift |
+
+**Danger Signals**:
+- None.
+
+**Fit Score**: 98.50%
+**Verdict**: FIT
+**Summary**: Task `0017` still fits the codebase and connects cleanly to current architecture. Primary remaining work is execution hygiene, not conceptual relevance.
+

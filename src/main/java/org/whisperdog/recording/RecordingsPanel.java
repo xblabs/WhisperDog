@@ -17,6 +17,8 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import org.whisperdog.ConfigManager;
+import org.whisperdog.ui.RecoveryDialog;
 
 /**
  * Panel for browsing and managing retained recordings.
@@ -29,6 +31,8 @@ public class RecordingsPanel extends JPanel {
     private static final int STACK_BUTTONS_THRESHOLD = 568; // Stack buttons when content width < this (768 - 200 sidebar)
 
     private final RecordingRetentionManager retentionManager;
+    private final ConfigManager configManager;
+    private final RecorderForm recorderForm;
     private final InlineAudioPlayer audioPlayer;
     private final JPanel contentPanel;
     private final JLabel headerLabel;
@@ -40,8 +44,12 @@ public class RecordingsPanel extends JPanel {
     private boolean windowListenerAdded = false;
     private final java.util.HashMap<String, Boolean> expandedStates = new java.util.HashMap<>();
 
-    public RecordingsPanel(RecordingRetentionManager retentionManager) {
+    public RecordingsPanel(RecordingRetentionManager retentionManager,
+                           ConfigManager configManager,
+                           RecorderForm recorderForm) {
         this.retentionManager = retentionManager;
+        this.configManager = configManager;
+        this.recorderForm = recorderForm;
         this.audioPlayer = new InlineAudioPlayer();
 
         setLayout(new BorderLayout());
@@ -66,6 +74,24 @@ public class RecordingsPanel extends JPanel {
         openFolderButton.setIcon(IconLoader.loadButton("folder", 14));
         openFolderButton.addActionListener(e -> retentionManager.openInFileManager());
         headerButtons.add(openFolderButton);
+
+        JButton recoverButton = new JButton("Recover");
+        recoverButton.setToolTipText("Retry failed transcriptions");
+        recoverButton.addActionListener(e -> {
+            PreservedRecordingScanner scanner = new PreservedRecordingScanner(configManager);
+            java.util.List<PreservedRecordingScanner.RecoverableSession> sessions =
+                    scanner.scan(recorderForm.isRecording());
+            if (sessions.isEmpty()) {
+                Notificationmanager.getInstance().showNotification(
+                        ToastNotification.Type.INFO, "No recoverable recordings found.");
+            } else {
+                Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+                new RecoveryDialog(parentFrame, sessions, retentionManager, configManager)
+                        .setVisible(true);
+                refresh();
+            }
+        });
+        headerButtons.add(recoverButton);
 
         headerPanel.add(headerButtons, BorderLayout.EAST);
 

@@ -3,8 +3,10 @@ package org.whisperdog;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.util.UIScale;
+import org.whisperdog.recording.PreservedRecordingScanner;
 import org.whisperdog.recording.RecorderForm;
 import org.whisperdog.recording.RecordingsPanel;
+import org.whisperdog.ui.RecoveryDialog;
 import org.whisperdog.settings.SettingsForm;
 import org.whisperdog.sidemenu.Menu;
 import org.whisperdog.sidemenu.MenuAction;
@@ -76,6 +78,34 @@ public class MainForm extends JLayeredPane {
         extractNativeLibraries();
         String hotkey = configManager.getKeyCombination();
         globalHotkeyListener = new GlobalHotkeyListener(this, hotkey, configManager.getKeySequence());
+
+        // Launch background recovery scan for preserved audio files from failed transcriptions
+        new SwingWorker<java.util.List<PreservedRecordingScanner.RecoverableSession>, Void>() {
+            @Override
+            protected java.util.List<PreservedRecordingScanner.RecoverableSession> doInBackground() {
+                PreservedRecordingScanner scanner = new PreservedRecordingScanner(configManager);
+                return scanner.scan(false); // not recording at startup
+            }
+            @Override
+            protected void done() {
+                try {
+                    java.util.List<PreservedRecordingScanner.RecoverableSession> sessions = get();
+                    if (!sessions.isEmpty()) {
+                        if (recorderForm == null) {
+                            recorderForm = new RecorderForm(configManager);
+                        }
+                        RecoveryDialog dialog = new RecoveryDialog(
+                                (Frame) SwingUtilities.getWindowAncestor(MainForm.this),
+                                sessions,
+                                recorderForm.getRecordingRetentionManager(),
+                                configManager);
+                        dialog.setVisible(true);
+                    }
+                } catch (Exception e) {
+                    logger.debug("Startup recovery scan failed", e);
+                }
+            }
+        }.execute();
     }
 
     @Override
@@ -124,7 +154,8 @@ public class MainForm extends JLayeredPane {
                 if (recorderForm == null) {
                     recorderForm = new RecorderForm(configManager);
                 }
-                RecordingsPanel recordingsPanel = new RecordingsPanel(recorderForm.getRecordingRetentionManager());
+                RecordingsPanel recordingsPanel = new RecordingsPanel(
+                        recorderForm.getRecordingRetentionManager(), configManager, recorderForm);
                 showForm(recordingsPanel);
             } else if (index == 2) {
                 // Settings menu

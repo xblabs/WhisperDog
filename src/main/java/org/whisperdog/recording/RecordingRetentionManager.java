@@ -140,6 +140,82 @@ public class RecordingRetentionManager {
     }
 
     /**
+     * Retain a recovered recording with imported flag.
+     * Simpler than retainRecording(): no channel files, no dual-source.
+     *
+     * @param audioFile The recovered audio file to retain
+     * @param fullTranscription The transcription text
+     * @return entry if retained, null if retention disabled or failed
+     */
+    public synchronized RecordingManifest.RecordingEntry retainRecoveredRecording(
+            File audioFile,
+            String fullTranscription) {
+
+        if (!configManager.isRecordingRetentionEnabled()) {
+            logger.debug("Recording retention is disabled");
+            return null;
+        }
+
+        if (audioFile == null || !audioFile.exists()) {
+            logger.warn("Cannot retain recovered recording: audio file is null or does not exist");
+            return null;
+        }
+
+        try {
+            File recordingsDir = configManager.getRecordingsDirectory();
+            String timestamp = DATE_FORMAT.format(new Date());
+            String baseFilename = "recording_" + timestamp;
+            String id = UUID.randomUUID().toString();
+
+            // Copy audio file
+            String extension = audioFile.getName().endsWith(".mp3") ? ".mp3" : ".wav";
+            String audioFilename = baseFilename + extension;
+            File destAudioFile = new File(recordingsDir, audioFilename);
+            Files.copy(audioFile.toPath(), destAudioFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            logger.info("Retained recovered recording: {}", destAudioFile.getAbsolutePath());
+
+            // Save transcription to text file
+            String transcriptionFilename = null;
+            if (fullTranscription != null && !fullTranscription.isEmpty()) {
+                transcriptionFilename = baseFilename + ".txt";
+                File transcriptionFile = new File(recordingsDir, transcriptionFilename);
+                Files.writeString(transcriptionFile.toPath(), fullTranscription);
+                logger.debug("Saved transcription: {}", transcriptionFile.getAbsolutePath());
+            }
+
+            // Read duration from WAV header (0 if unreadable)
+            long durationMs = 0;
+            String format = AudioFileAnalyzer.detectFormat(audioFile);
+            Float durationSeconds = AudioFileAnalyzer.estimateDuration(audioFile, format);
+            if (durationSeconds != null && durationSeconds > 0) {
+                durationMs = (long) (durationSeconds * 1000);
+            }
+
+            // Create manifest entry
+            RecordingManifest.RecordingEntry entry = new RecordingManifest.RecordingEntry();
+            entry.setId(id);
+            entry.setFilename(audioFilename);
+            entry.setTimestamp(System.currentTimeMillis());
+            entry.setDurationMs(durationMs);
+            entry.setFileSizeBytes(destAudioFile.length());
+            entry.setTranscriptionPreview(truncatePreview(fullTranscription, 300));
+            entry.setTranscriptionFile(transcriptionFilename);
+            entry.setDualSource(false);
+            entry.setImported(true);
+
+            // Add to manifest and prune
+            manifest.addRecording(entry);
+            pruneOldRecordings();
+
+            return entry;
+
+        } catch (IOException e) {
+            logger.error("Failed to retain recovered recording", e);
+            return null;
+        }
+    }
+
+    /**
      * Prunes old recordings when the count exceeds the configured limit.
      */
     private void pruneOldRecordings() {

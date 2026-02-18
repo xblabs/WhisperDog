@@ -235,5 +235,6 @@ On-demand:
 | CREATE | `RecoveryDialog.java` | `org.whisperdog.ui` |
 | CREATE | `RecoveryTranscriptionWorker.java` | `org.whisperdog.recording` |
 | MODIFY | `RecordingRetentionManager.java` | Add `retainRecoveredRecording()` method |
-| MODIFY | `RecordingsPanel.java` | Add "Recover" button to toolbar |
-| MODIFY | `MainForm.java` | Add startup scanner after init |
+| MODIFY | `RecorderForm.java` | Add public `isRecording()` getter |
+| MODIFY | `RecordingsPanel.java` | Add "Recover" button to toolbar, add `configManager`/`recorderForm` constructor params |
+| MODIFY | `MainForm.java` | Add startup scanner after init, update `RecordingsPanel` construction |

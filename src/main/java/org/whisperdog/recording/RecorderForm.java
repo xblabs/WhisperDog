@@ -2836,4 +2836,13 @@ public class RecorderForm extends javax.swing.JPanel {
         return recordingRetentionManager;
     }
 
+    /**
+     * Checks if a recording is currently in progress.
+     *
+     * @return true if recording is active
+     */
+    public boolean isRecording() {
+        return isRecording;
+    }
+
 }

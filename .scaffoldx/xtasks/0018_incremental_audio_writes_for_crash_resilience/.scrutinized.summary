@@ -1,0 +1,49 @@
+# Scrutinizer Summary: Task 0018
+
+<!-- Append-only. Each run adds a new entry below. -->
+
+---
+
+## Run: 2026-02-18T10:18:14Z
+**Mode**: Task (specification audit) + Fit Check
+**Corpus Version**: Initial draft
+**Verdict**: PASS (post-fix) (92%)
+**Fit**: FIT (97%)
+**Key Findings**:
+- CRITICAL: Implementation plan had wrong file paths for SystemAudioCapture.java and AudioCaptureManager.java (said `recording` package, actually `audio` package) - FIXED
+- MEDIUM: PRD sample rate contradiction between meta ("16kHz") and constraints ("44100/48000 Hz") - FIXED
+- MEDIUM: Missing failure modes in PRD (disk full, writer init failure, stop() before init) - FIXED
+- LOW: Line number reference off by 2 in PRD and checklist (320 -> 322) - FIXED
+- LOW: Windows-specific kill command in checklist - FIXED
+- Cross-package import added to plan (SystemAudioCapture imports from recording package)
+**Files**: 3/3 audited | **Initial Scores**: 19, 17, 21 | **Final Scores**: 23, 23, 23
+
+---
+
+## Run: 2026-02-18T10:33:23Z
+**Mode**: Task (specification audit) + Fit Check
+**Corpus Version**: Updated in-place during audit
+**Verdict**: PASS (24/25 average)
+**Fit**: FIT (96%)
+**Key Findings**:
+- PRD init-failure branch was non-deterministic; fixed to deterministic fail-fast behavior.
+- Implementation plan sample-rate guidance was mismatched; corrected to post-conversion guidance.
+- Checklist action items now use explicit repository paths.
+- No fit drift detected: task is current, references resolve, no parallel implementation found.
+**Files**: 3/3 audited | **Initial Scores**: 24, 24, 24 | **Final Scores**: 24, 24, 24
+
+
+---
+
+## Run: 2026-02-18T10:33:58Z
+**Mode**: Task (specification audit) + Fit Check
+**Corpus Version**: Updated in-place during audit
+**Verdict**: PASS (24/25 average)
+**Fit**: FIT (96%)
+**Key Findings**:
+- PRD init-failure branch was non-deterministic; fixed to deterministic fail-fast behavior.
+- Implementation plan sample-rate guidance was mismatched; corrected to post-conversion guidance.
+- Checklist action items now use explicit repository paths.
+- No fit drift detected: task is current, references resolve, no parallel implementation found.
+**Files**: 3/3 audited | **Initial Scores**: 24, 24, 24 | **Final Scores**: 24, 24, 24
+

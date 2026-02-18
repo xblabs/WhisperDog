@@ -1,0 +1,436 @@
+# Scrutinizer Run Log: Task 0018
+
+<!-- Append-only. Each run adds a new entry below. -->
+
+---
+
+## Run: 2026-02-18T10:18:14Z
+
+## Scrutinizer Task Report: Task 0018
+
+**Mode**: Task (specification audit of all corpus files)
+**Persona**: Marcus Webb (Cold Reader)
+**Layer**: application
+
+---
+
+### File 1: 01_prd.md
+
+#### Pre-scan: Axiom Extraction
+
+Stated givens:
+1. `SystemAudioCapture.java:322` initializes `ByteArrayOutputStream`
+2. Lines 388-390 append converted bytes
+3. Lines 555-557 return byte array on `stop()`
+4. `AudioCaptureManager.java:157-162` writes WAV from byte array
+5. `AudioRecorder.java:44` calls `AudioSystem.write()`
+6. System audio: "16kHz mono 16-bit" (meta) vs "system's sample rate (typically 44100 or 48000 Hz)" (constraints)
+7. ~19 MB for 10-minute recording
+
+Unstated axioms:
+- Where temp files are written (no path specified in PRD)
+- What happens if writer initialization fails
+- Cross-package relationship between target files
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 4/5 | Target files named but `IncrementalWavWriter` has no package/path in PRD. Implementer must look at plan for location. |
+| Q2 | WHAT content goes in each? | 3/5 | **CONTRADICTION**: Meta says "16kHz mono 16-bit". Constraints said "at the system's sample rate (typically 44100 or 48000 Hz)". Actual code evidence: `writeWavFile(..., 16000, 1)` uses 16kHz. PRD contradicted itself on the output format of the conversion pipeline. |
+| Q3 | WHAT triggers execution? | 5/5 | Clear: writer opened at capture start, each callback writes, stop() finalizes. |
+| Q4 | HOW do I know I'm done? | 4/5 | 7 explicit requirements. "Identical results to current behavior" is hard to verify precisely. |
+| Q5 | WHAT if X fails? | 3/5 | Crash case documented well. Missing: disk full during write, IOException on writer initialization, temp directory inaccessible, stop() called before writer initialized. |
+
+**Total**: 19/25 (76%)
+**Status**: NEEDS_REVISION
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 9 | "`SystemAudioCapture.java:320`" | Line 320 is a logger call. Actual init is at line 322. | Changed `:320` to `:322` |
+| 37 | "output is 16-bit PCM at the system's sample rate (typically 44100 or 48000 Hz)" | Contradicts meta ("16kHz mono 16-bit") and actual code (`writeWavFile(..., 16000, 1)`). After conversion the output is 16kHz, not the system rate. | Rewrote: "output is 16-bit mono PCM at 16kHz (resampled from the system's native rate)" |
+| 33 | "header reflects last-written sizes" | Incomplete. What if zero bytes were written before crash? | Added: "If crash occurs before first write, the file contains only the 44-byte header with Subchunk2Size=0 (empty but valid WAV)." |
+
+#### Contradiction Detection (Cross-check)
+
+| Statement A | Statement B | Conflict |
+|-------------|-------------|----------|
+| Meta: "16kHz mono 16-bit" | Constraints: "system's sample rate (typically 44100 or 48000 Hz)" | Direct contradiction on sample rate after conversion |
+
+#### QED Gate
+
+FAIL (pre-fix) - An implementer reading only the PRD constraints section would initialize `IncrementalWavWriter` with 44100 or 48000 Hz instead of 16000 Hz.
+
+#### Fixes Applied
+1. Line reference 320 -> 322 for ByteArrayOutputStream init
+2. Constraints section: rewritten sample rate description to match actual behavior (16kHz post-conversion)
+3. Added crash-before-first-write edge case to behavior spec
+4. Added failure modes section: disk full, writer init failure, stop() before init
+
+**Revised Score**: 23/25 (92%)
+
+---
+
+### File 2: 02_implementation_plan.md
+
+#### Pre-scan: Axiom Extraction
+
+Stated givens:
+1. `SystemAudioCapture.java` at `src/main/java/org/whisperdog/recording/SystemAudioCapture.java`
+2. `AudioCaptureManager.java` at `src/main/java/org/whisperdog/recording/AudioCaptureManager.java`
+3. `AudioRecorder.java` at `src/main/java/org/whisperdog/recording/AudioRecorder.java`
+4. `IncrementalWavWriter.java` at `src/main/java/org/whisperdog/recording/IncrementalWavWriter.java`
+
+**CRITICAL**: Axioms 1 and 2 are FALSE.
+- SystemAudioCapture.java is at `src/main/java/org/whisperdog/audio/SystemAudioCapture.java`
+- AudioCaptureManager.java is at `src/main/java/org/whisperdog/audio/AudioCaptureManager.java`
+
+Both files are in the `org.whisperdog.audio` package, not `org.whisperdog.recording`.
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 2/5 | **WRONG PATHS**: SystemAudioCapture.java and AudioCaptureManager.java paths specify `org.whisperdog.recording` but both files are in `org.whisperdog.audio`. An LLM executing cold would fail to locate these files. |
+| Q2 | WHAT content goes in each? | 5/5 | Excellent detail. Full API signature for IncrementalWavWriter, WAV header layout table, write cycle pseudocode, specific line-by-line changes for each modified file. |
+| Q3 | WHAT triggers execution? | 4/5 | Writer initialization timing described ("after WASAPI format negotiation") but exact code location not pinpointed. |
+| Q4 | HOW do I know I'm done? | 3/5 | Files Summary table is clear but no verification steps in the plan itself. Relies on checklist for all verification. |
+| Q5 | WHAT if X fails? | 3/5 | Error handling for audio callback is good (log, flag, don't throw). Missing: writer initialization failure, stop() when writer is null, RandomAccessFile seek failure. |
+
+**Total**: 17/25 (68%)
+**Status**: NEEDS_REVISION
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 77 | "`src/.../recording/SystemAudioCapture.java`" | Wrong package. File is in `org.whisperdog.audio`. | Changed to `src/.../audio/SystemAudioCapture.java` |
+| 98 | "`src/.../recording/AudioCaptureManager.java`" | Wrong package. File is in `org.whisperdog.audio`. | Changed to `src/.../audio/AudioCaptureManager.java` |
+| 88 | "Must happen after WASAPI format negotiation" | Where in the code flow? What method? What line? | Added: "Initialize in the first invocation of the audio callback (around lines 380-390), guarded by a null check on the writer field." |
+| - | (missing) | No mention of cross-package import: SystemAudioCapture (audio pkg) must import IncrementalWavWriter (recording pkg). | Added import note. |
+
+#### Contradiction Detection (Cross-check)
+
+| Statement A | Statement B | Conflict |
+|-------------|-------------|----------|
+| Plan: "File: .../recording/SystemAudioCapture.java" | Codebase: file at .../audio/SystemAudioCapture.java | Wrong package |
+| Plan: "File: .../recording/AudioCaptureManager.java" | Codebase: file at .../audio/AudioCaptureManager.java | Wrong package |
+
+#### QED Gate
+
+FAIL (pre-fix) - An LLM executing cold would search for SystemAudioCapture.java in the `recording` package, fail to find it, and either error out or create a new file in the wrong location.
+
+#### Fixes Applied
+1. Corrected SystemAudioCapture.java path to `org.whisperdog.audio`
+2. Corrected AudioCaptureManager.java path to `org.whisperdog.audio`
+3. Updated Files Summary table with correct paths
+4. Added cross-package import note (`import org.whisperdog.recording.IncrementalWavWriter`)
+5. Added writer initialization location guidance (first callback invocation, null check)
+
+**Revised Score**: 23/25 (92%)
+
+---
+
+### File 3: 03_checklist.md
+
+#### Pre-scan: Axiom Extraction
+
+Stated givens:
+1. Writer file pattern: `whisperdog_system_YYYYMMDD_HHMMSS.wav`
+2. Temp directory: `ConfigManager.getTempDirectory()`
+3. Phase sequence: IncrementalWavWriter -> SystemAudioCapture -> AudioCaptureManager -> crash test -> regression
+4. Verify steps with specific test criteria
+
+Unstated axioms:
+- What audio player to use for verification (implied: any)
+- How to force-kill JVM on Windows specifically
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 4/5 | References files by name (acceptable, as plan provides paths). |
+| Q2 | WHAT content goes in each? | 4/5 | Specific constructor args, method names, verification criteria. |
+| Q3 | WHAT triggers execution? | 5/5 | Phases are sequential, items within phases are sequential. Clear ordering. |
+| Q4 | HOW do I know I'm done? | 5/5 | Every phase has a **Verify** step with concrete test criteria. Phase 4 includes force-kill test. Phase 5 has 6 regression items. |
+| Q5 | WHAT if X fails? | 3/5 | No explicit recovery paths. What if Phase 1 verify fails? What if build fails in Phase 5? |
+
+**Total**: 21/25 (84%)
+**Status**: NEEDS_REVISION (minor)
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 14 | "line 320" | Same line number error as PRD. Actual init is at line 322. | Changed to "field at line 45, init at line 322" |
+| 30 | "force-kill JVM (`kill -9` or Task Manager)" | On Windows, `kill -9` requires Unix-like environment. | Changed to: "Task Manager 'End Process' or `taskkill /F /PID <pid>` on Windows" |
+| 15 | "Writer file placed in `ConfigManager.getTempDirectory()`" | This detail is ONLY in the checklist, not in PRD or plan. | Flagged for plan addition (not checklist issue). |
+
+#### QED Gate
+
+PASS (conditional) - Checklist is executable with plan context. Missing recovery paths are a minor gap.
+
+#### Fixes Applied
+1. Line reference updated to "field at line 45, init at line 322"
+2. Updated force-kill instructions for Windows
+
+**Revised Score**: 23/25 (92%)
+
+---
+
+### Aggregate Task Scores
+
+| File | Initial Score | Issues | Final Score |
+|------|--------------|--------|-------------|
+| 01_prd.md | 19/25 (76%) | Sample rate contradiction, missing failure modes, line number error | 23/25 (92%) |
+| 02_implementation_plan.md | 17/25 (68%) | **WRONG FILE PATHS** for 2 target files, missing import, no verification | 23/25 (92%) |
+| 03_checklist.md | 21/25 (84%) | Line number error, Windows-specific kill command | 23/25 (92%) |
+
+**Overall**: NEEDS_REVISION -> Fixes applied -> PASS (post-fix)
+
+---
+
+### Fit Check
+
+**Persona**: Dr. Elaine Moretti (Archaeologist)
+**Task Age**: 0 tasks since creation (0 months)
+**Risk Level**: LOW
+
+| Factor | Score | Evidence |
+|--------|-------|----------|
+| Task age | 100% | Task 0018 is the newest task (ID 18 of 18). Created 2026-02-18. Zero drift. |
+| Target file drift | 100% | 0 commits touching SystemAudioCapture.java, AudioCaptureManager.java, or AudioRecorder.java since task creation. |
+| Component existence | 100% | All 3 target files exist. `ByteArrayOutputStream capturedAudio` field verified at line 45. `writeWavFile()` method verified at lines 304-329. `AudioSystem.write()` verified at line 45 of AudioRecorder.java. |
+| Governance alignment | 100% | No AI-GOV conflicts. Task targets `/src/` code (traditional implementation per AI-GOV-008 rule 2). |
+| Import/usage | 80% | Plan specifies consumers (SystemAudioCapture, optionally AudioRecorder) for IncrementalWavWriter. Cross-package import now documented. Downstream consumers (SilenceRemover, ChunkedTranscriptionWorker) already accept `File` type. |
+| Parallel impl absence | 100% | No existing IncrementalWavWriter, WavWriter, or incremental WAV writing utility. `AudioFileAnalyzer` uses `RandomAccessFile` for reading (precedent for the pattern) but serves a different purpose. |
+| Merge safety | 100% | No deprecated patterns reintroduced. `RandomAccessFile` is established in codebase. `synchronized` blocks already used in SystemAudioCapture for thread safety. |
+
+**Danger Signals**:
+- None detected.
+
+**Fit Score**: 97%
+**Verdict**: FIT
+**Summary**: Task 0018 is brand new, precisely targeted, and fully aligned with the current codebase. All target files exist at their expected locations with the expected content. The IncrementalWavWriter has no parallel implementation. Downstream consumers already work with `File` references.
+
+---
+
+## Run: 2026-02-18T10:33:23Z
+
+## Scrutinizer Task Report: Task 0018
+
+**Mode**: Task (specification audit of all corpus files)
+**Persona**: Marcus Webb (Cold Reader)
+**Layer**: application
+
+### File 1: 01_prd.md
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 5/5 | Target files and ownership boundaries are explicit. |
+| Q2 | WHAT content goes in each? | 5/5 | System path behavior, format constraints, and failure semantics are specified concretely. |
+| Q3 | WHAT triggers execution? | 5/5 | Callback write cycle and stop/crash branches are explicit. |
+| Q4 | HOW do I know I'm done? | 4/5 | Requirements are clear, but "identical results" still depends on checklist verification evidence. |
+| Q5 | WHAT if X fails? | 5/5 | Disk-full, writer-init failure, and pre-init stop branches are now deterministic. |
+
+**Initial Score**: 24/25
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 54 | "falls back ... or recording fails fast" (previous wording) | Non-deterministic branch; two incompatible behaviors. | Rewritten to deterministic fail-fast behavior with no in-memory fallback. |
+
+**Final Score**: 24/25
+
+### File 2: 02_implementation_plan.md
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 5/5 | File set and package locations are explicit and consistent with codebase paths. |
+| Q2 | WHAT content goes in each? | 5/5 | Class API, WAV header schema, and method-level changes are concrete. |
+| Q3 | WHAT triggers execution? | 5/5 | Writer init timing and callback write path are defined. |
+| Q4 | HOW do I know I'm done? | 5/5 | Plan maps directly to checklist phases and verifications. |
+| Q5 | WHAT if X fails? | 4/5 | Callback write failure handling is clear; init-failure/stop-before-init handling is referenced via PRD and checklist. |
+
+**Initial Score**: 24/25
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 17 | "e.g. 44100 or 48000" (previous wording) | Contradicted post-conversion 16kHz output guidance in same corpus. | Rewritten to post-conversion sample-rate guidance (.g. 16000, derive from converted stream). |
+
+**Final Score**: 24/25
+
+### File 3: 03_checklist.md
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 5/5 | Checklist now uses explicit source paths for create/modify targets. |
+| Q2 | WHAT content goes in each? | 5/5 | Implementation actions and verify criteria are concrete per phase. |
+| Q3 | WHAT triggers execution? | 5/5 | Sequential phase structure and verify gates are explicit. |
+| Q4 | HOW do I know I'm done? | 5/5 | Done state is verifiable through per-phase checks plus regression/build gates. |
+| Q5 | WHAT if X fails? | 4/5 | Crash validation and IO failure handling are covered; optional phase still defers a decision to execution time. |
+
+**Initial Score**: 24/25
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 5, 14, 23, 47 | File names without full paths (previous wording) | Cold execution required path inference. | Rewritten to explicit repository paths. |
+
+**Final Score**: 24/25
+
+---
+
+| File | Initial Score | Issues | Final Score |
+|------|--------------|--------|-------------|
+| 01_prd.md | 24/25 | Non-deterministic init-failure branch | 24/25 |
+| 02_implementation_plan.md | 24/25 | Sample-rate guidance mismatch | 24/25 |
+| 03_checklist.md | 24/25 | Missing full file paths in action items | 24/25 |
+
+**Overall**: PASS
+
+### Fit Check
+
+**Persona**: Dr. Elaine Moretti (Archaeologist)
+**Task Age**: 0 tasks since creation (0 months)
+**Risk Level**: LOW
+
+| Factor | Score | Evidence |
+|--------|-------|----------|
+| Task age | 100% | Task  018 is current max ID (maxId=18), created 2026-02-18. |
+| Target file drift | 100% | 0 commits since 2026-02-18 for SystemAudioCapture.java, AudioCaptureManager.java, and AudioRecorder.java; new writer file not yet created. |
+| Component existence | 100% | SystemAudioCapture, AudioCaptureManager, AudioRecorder, ConfigManager, SilenceRemover, and ChunkedTranscriptionWorker all resolve in src/main/java. |
+| Governance alignment | 100% | No contradiction with current AI-GOV rules; task is application-layer recording resilience work. |
+| Import/usage | 80% | Pre-implementation state; plan explicitly defines consumer/import path (SystemAudioCapture imports IncrementalWavWriter). |
+| Parallel impl absence | 100% | No existing IncrementalWavWriter class or duplicate class-level writer implementation detected. |
+| Merge safety | 100% | Planned change removes in-memory buffering risk path and aligns with current temp-file/transcription flow. |
+
+**Danger Signals**:
+- None detected.
+
+**Fit Score**: 96%
+**Verdict**: FIT
+**Summary**: Task premises still hold, references are current, and planned integration points are explicit. No supersession or duplicate-implementation risk is currently visible.
+
+
+---
+
+## Run: 2026-02-18T10:33:58Z
+
+## Scrutinizer Task Report: Task 0018
+
+**Mode**: Task (specification audit of all corpus files)
+**Persona**: Marcus Webb (Cold Reader)
+**Layer**: application
+
+### File 1: 01_prd.md
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 5/5 | Target files and ownership boundaries are explicit. |
+| Q2 | WHAT content goes in each? | 5/5 | System path behavior, format constraints, and failure semantics are specified concretely. |
+| Q3 | WHAT triggers execution? | 5/5 | Callback write cycle and stop/crash branches are explicit. |
+| Q4 | HOW do I know I'm done? | 4/5 | Requirements are clear, but "identical results" still depends on checklist verification evidence. |
+| Q5 | WHAT if X fails? | 5/5 | Disk-full, writer-init failure, and pre-init stop branches are now deterministic. |
+
+**Initial Score**: 24/25
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 54 | "falls back ... or recording fails fast" (previous wording) | Non-deterministic branch; two incompatible behaviors. | Rewritten to deterministic fail-fast behavior with no in-memory fallback. |
+
+**Final Score**: 24/25
+
+### File 2: 02_implementation_plan.md
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 5/5 | File set and package locations are explicit and consistent with codebase paths. |
+| Q2 | WHAT content goes in each? | 5/5 | Class API, WAV header schema, and method-level changes are concrete. |
+| Q3 | WHAT triggers execution? | 5/5 | Writer init timing and callback write path are defined. |
+| Q4 | HOW do I know I'm done? | 5/5 | Plan maps directly to checklist phases and verifications. |
+| Q5 | WHAT if X fails? | 4/5 | Callback write failure handling is clear; init-failure/stop-before-init handling is referenced via PRD and checklist. |
+
+**Initial Score**: 24/25
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 17 | "e.g. 44100 or 48000" (previous wording) | Contradicted post-conversion 16kHz output guidance in same corpus. | Rewritten to post-conversion sample-rate guidance (`e.g. 16000`, derive from converted stream). |
+
+**Final Score**: 24/25
+
+### File 3: 03_checklist.md
+
+#### 5-Question Audit
+
+| # | Question | Score | Finding |
+|---|----------|-------|---------|
+| Q1 | WHAT files do I create? | 5/5 | Checklist now uses explicit source paths for create/modify targets. |
+| Q2 | WHAT content goes in each? | 5/5 | Implementation actions and verify criteria are concrete per phase. |
+| Q3 | WHAT triggers execution? | 5/5 | Sequential phase structure and verify gates are explicit. |
+| Q4 | HOW do I know I'm done? | 5/5 | Done state is verifiable through per-phase checks plus regression/build gates. |
+| Q5 | WHAT if X fails? | 4/5 | Crash validation and IO failure handling are covered; optional phase still defers a decision to execution time. |
+
+**Initial Score**: 24/25
+
+#### Ambiguity Flags
+
+| Line | Text | Problem | Fix |
+|------|------|---------|-----|
+| 5, 14, 23, 47 | File names without full paths (previous wording) | Cold execution required path inference. | Rewritten to explicit repository paths. |
+
+**Final Score**: 24/25
+
+---
+
+| File | Initial Score | Issues | Final Score |
+|------|--------------|--------|-------------|
+| 01_prd.md | 24/25 | Non-deterministic init-failure branch | 24/25 |
+| 02_implementation_plan.md | 24/25 | Sample-rate guidance mismatch | 24/25 |
+| 03_checklist.md | 24/25 | Missing full file paths in action items | 24/25 |
+
+**Overall**: PASS
+
+### Fit Check
+
+**Persona**: Dr. Elaine Moretti (Archaeologist)
+**Task Age**: 0 tasks since creation (0 months)
+**Risk Level**: LOW
+
+| Factor | Score | Evidence |
+|--------|-------|----------|
+| Task age | 100% | Task `0018` is current max ID (`maxId=18`), created `2026-02-18`. |
+| Target file drift | 100% | 0 commits since `2026-02-18` for `SystemAudioCapture.java`, `AudioCaptureManager.java`, and `AudioRecorder.java`; new writer file not yet created. |
+| Component existence | 100% | `SystemAudioCapture`, `AudioCaptureManager`, `AudioRecorder`, `ConfigManager`, `SilenceRemover`, and `ChunkedTranscriptionWorker` all resolve in `src/main/java`. |
+| Governance alignment | 100% | No contradiction with current AI-GOV rules; task is application-layer recording resilience work. |
+| Import/usage | 80% | Pre-implementation state; plan explicitly defines consumer/import path (`SystemAudioCapture` imports `IncrementalWavWriter`). |
+| Parallel impl absence | 100% | No existing `IncrementalWavWriter` class or duplicate class-level writer implementation detected. |
+| Merge safety | 100% | Planned change removes in-memory buffering risk path and aligns with current temp-file/transcription flow. |
+
+**Danger Signals**:
+- None detected.
+
+**Fit Score**: 96%
+**Verdict**: FIT
+**Summary**: Task premises still hold, references are current, and planned integration points are explicit. No supersession or duplicate-implementation risk is currently visible.
+

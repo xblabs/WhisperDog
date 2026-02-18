@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="Latest Version" src="https://img.shields.io/badge/Latest%20Version-v2.2.1-brightgreen?style=flat-square&logo=github&logoColor=white" />
+  <img alt="Latest Version" src="https://img.shields.io/badge/Latest%20Version-v2.4.0-brightgreen?style=flat-square&logo=github&logoColor=white" />
   <a href="LICENSE" target="https://opensource.org/license/mit">
     <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue?style=flat-square&logo=github&logoColor=white" />
   </a>
@@ -165,6 +165,43 @@ whisperdog/
 ## Version History
 
 ### WhisperDog Releases
+
+#### v2.4.0 - Crash Resilience and Audio Playback Fixes (2026-02-18)
+
+- **Incremental WAV Writer** - Disk-first audio capture survives crashes and unexpected shutdowns
+- **Retry UI for Failed Transcriptions** - Recovery dialog to scan and retry failed recordings
+- Fixed silence removal min duration being ignored in mic test calibration panel
+- Fixed audio playback continuing after navigating away from recordings screen
+- Fixed playback race condition when switching between tracks
+
+---
+
+#### v2.3.2 - Audio File Recovery on Transcription Failure (2026-02-17)
+
+- **Critical data-loss bug fix** - Audio files no longer deleted when transcription fails
+  - Original WAV, silence-removed WAV, compressed MP3, and system track all preserved
+  - Console logs absolute paths for manual recovery
+  - Files only cleaned up after confirmed success or explicit user cancellation
+
+---
+
+#### v2.3.1 - Text Copy & Version Display (2026-02-02)
+
+- Version label displayed at bottom of side menu
+- Copy button on recording cards to copy transcription to clipboard
+- Selectable transcription text (can highlight and copy)
+
+---
+
+#### v2.3.0 - Recordings Panel UX (2026-02-02)
+
+- **Inline Audio Playback** - Play recordings directly in the panel with progress bar and Play/Stop toggle
+- **Expandable Transcription** - Click to expand/collapse full transcription text with [more]/[less] toggles
+- **Responsive Ellipsis** - Transcription truncation adapts to panel width
+- Full transcription storage as `.txt` files alongside `.wav` recordings
+- Thread-safe manifest with synchronized load/save and Windows file locking fallback
+
+---
 
 #### v2.2.1 - Recording Retention System and Icon Theming (2026-02-01)
 

@@ -9,6 +9,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2.4.0] - 2026-02-18 - Crash Resilience and Audio Playback Fixes
+
+### Added
+
+- **Incremental WAV Writer** - Disk-first audio capture for crash resilience
+  - Audio written incrementally to disk during recording instead of buffering in memory
+  - Recordings survive application crashes and unexpected shutdowns
+  - System audio capture also uses disk-first approach
+- **Retry UI for Failed Transcriptions** - Recovery dialog for failed transcription attempts
+  - Scan for recoverable recordings with retry option
+  - Accessible from Recordings panel header
+
+### Fixed
+
+- **Silence removal min duration ignored in mic test panel** - The "Min Silence" slider value was never passed to the removal algorithm; short pauses between words were stripped out regardless of setting. AudioAnalyzer.removeSilence() now groups consecutive silent windows and only removes regions meeting the minimum duration threshold
+- **Audio playback continues after leaving recordings screen** - Navigating away from recordings no longer leaves orphaned Clip objects playing in the background
+- **Playback race condition when switching tracks** - Clicking play on a different recording while one was playing only stopped the current track without starting the new one. Fixed by guarding the deferred LineListener callback against stale clip references
+
+---
+
 ## [2.3.2] - 2026-02-17 - Audio File Recovery on Transcription Failure
 
 ### Fixed

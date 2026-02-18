@@ -74,3 +74,4 @@ WHISPERDOG_REBRAND_SPEC.md
 **/*md.backup.*
 **/*mdc.backup.*
 **/*json.backup.*
+/AGENTS.md

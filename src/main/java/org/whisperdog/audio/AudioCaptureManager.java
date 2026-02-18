@@ -5,11 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.whisperdog.ConfigManager;
 import org.whisperdog.recording.AudioRecorder;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -85,13 +81,13 @@ public class AudioCaptureManager {
 
         // Initialize system audio if requested and available
         systemAudioEnabled.set(false);
+        systemTrackFile = null;
         if (enableSystemAudio && isSystemAudioAvailable()) {
             systemCapture = new SystemAudioCapture();
             boolean initialized = (preferredLoopbackDevice != null && !preferredLoopbackDevice.isEmpty())
                 ? systemCapture.initialize(preferredLoopbackDevice)
                 : systemCapture.initialize();  // Auto-detect default output device
             if (initialized) {
-                systemTrackFile = new File(tempDir, "whisperdog_system_" + timeStamp + ".wav");
                 systemAudioEnabled.set(true);
                 logger.info("System audio capture initialized");
             } else {
@@ -112,6 +108,8 @@ public class AudioCaptureManager {
             } catch (Exception e) {
                 logger.error("Failed to start system audio capture: {}", e.getMessage(), e);
                 systemAudioEnabled.set(false);
+                systemCapture.dispose();
+                systemCapture = null;
             }
         }
 
@@ -127,7 +125,7 @@ public class AudioCaptureManager {
 
         logger.info("Capture started - mic: {}, system: {}",
             micTrackFile.getName(),
-            systemAudioEnabled.get() ? systemTrackFile.getName() : "disabled");
+            systemAudioEnabled.get() ? "enabled" : "disabled");
     }
 
     /**
@@ -150,19 +148,27 @@ public class AudioCaptureManager {
             logger.info("Mic recording stopped");
         }
 
-        // Stop system audio and save to file
+        // Stop system audio and capture resulting file
         if (systemAudioEnabled.get() && systemCapture != null) {
             try {
                 logger.info("System audio diagnostics: {}", systemCapture.getDiagnostics());
-                byte[] systemAudioData = systemCapture.stop();
-                if (systemAudioData.length > 0) {
-                    writeWavFile(systemTrackFile, systemAudioData, 16000, 1);
+                File capturedSystemFile = systemCapture.stop();
+                if (capturedSystemFile != null && capturedSystemFile.exists()) {
+                    systemTrackFile = capturedSystemFile;
+                    long pcmBytes = Math.max(0, capturedSystemFile.length() - 44);
                     logger.info("System audio saved: {} bytes, {}s",
-                        systemAudioData.length,
-                        String.format("%.1f", systemAudioData.length / 2.0 / 16000));
+                        pcmBytes,
+                        String.format("%.1f", pcmBytes / 2.0 / 16000));
+                } else {
+                    systemTrackFile = null;
+                }
+
+                if (systemCapture.hasWriteError()) {
+                    logger.warn("System audio capture reported write error: {}",
+                        systemCapture.getWriteErrorMessage());
                 }
             } catch (Exception e) {
-                logger.error("Failed to save system audio: {}", e.getMessage(), e);
+                logger.error("Failed to finalize system audio capture: {}", e.getMessage(), e);
             } finally {
                 systemCapture.dispose();
                 systemCapture = null;
@@ -206,13 +212,6 @@ public class AudioCaptureManager {
                 return false;
             }
 
-            // Create new file if needed
-            if (systemTrackFile == null) {
-                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                String tempDir = ConfigManager.getTempDirectory().getPath();
-                systemTrackFile = new File(tempDir, "whisperdog_system_" + timeStamp + ".wav");
-            }
-
             try {
                 systemCapture.start();
                 systemAudioEnabled.set(true);
@@ -227,13 +226,20 @@ public class AudioCaptureManager {
         } else {
             // Disable system audio mid-recording
             if (systemCapture != null) {
-                byte[] partialData = systemCapture.stop();
+                File partialFile = systemCapture.stop();
                 systemCapture.dispose();
                 systemCapture = null;
-                // Note: partial data is discarded when disabled mid-recording
+                long pcmBytes = (partialFile != null && partialFile.exists())
+                    ? Math.max(0, partialFile.length() - 44)
+                    : 0;
+                // Note: partial data is discarded when disabled mid-recording.
+                if (partialFile != null && partialFile.exists() && !partialFile.delete()) {
+                    logger.debug("Could not delete partial system audio file: {}", partialFile.getAbsolutePath());
+                }
                 logger.info("System audio capture disabled mid-recording ({} bytes captured)",
-                    partialData.length);
+                    pcmBytes);
             }
+            systemTrackFile = null;
             systemAudioEnabled.set(false);
             return true;
         }
@@ -273,7 +279,7 @@ public class AudioCaptureManager {
      * Only valid after stopCapture() is called and system audio was enabled.
      */
     public File getSystemTrackFile() {
-        return systemAudioEnabled.get() ? systemTrackFile : null;
+        return systemTrackFile;
     }
 
     /**
@@ -298,35 +304,4 @@ public class AudioCaptureManager {
         }
     }
 
-    /**
-     * Write PCM audio data to a WAV file.
-     */
-    private void writeWavFile(File file, byte[] pcmData, int sampleRate, int channels)
-            throws IOException {
-        int byteRate = sampleRate * channels * 2;
-        int blockAlign = channels * 2;
-
-        try (DataOutputStream out = new DataOutputStream(
-                new BufferedOutputStream(new FileOutputStream(file)))) {
-            // RIFF header
-            out.writeBytes("RIFF");
-            out.writeInt(Integer.reverseBytes(36 + pcmData.length));
-            out.writeBytes("WAVE");
-
-            // fmt chunk
-            out.writeBytes("fmt ");
-            out.writeInt(Integer.reverseBytes(16)); // chunk size
-            out.writeShort(Short.reverseBytes((short) 1)); // PCM
-            out.writeShort(Short.reverseBytes((short) channels));
-            out.writeInt(Integer.reverseBytes(sampleRate));
-            out.writeInt(Integer.reverseBytes(byteRate));
-            out.writeShort(Short.reverseBytes((short) blockAlign));
-            out.writeShort(Short.reverseBytes((short) 16)); // bits per sample
-
-            // data chunk
-            out.writeBytes("data");
-            out.writeInt(Integer.reverseBytes(pcmData.length));
-            out.write(pcmData);
-        }
-    }
 }

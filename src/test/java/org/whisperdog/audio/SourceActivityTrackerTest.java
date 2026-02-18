@@ -102,7 +102,15 @@ public class SourceActivityTrackerTest {
         micLine.close();
         micThread.join();
 
-        byte[] systemData = systemCapture.stop();
+        File systemFile = systemCapture.stop();
+        byte[] systemData = (systemFile != null && systemFile.exists())
+            ? Files.readAllBytes(systemFile.toPath())
+            : new byte[0];
+        if (systemData.length >= 44) {
+            systemData = java.util.Arrays.copyOfRange(systemData, 44, systemData.length);
+        } else {
+            systemData = new byte[0];
+        }
         byte[] micData;
         synchronized (micAudio) {
             micData = micAudio.toByteArray();

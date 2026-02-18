@@ -434,3 +434,96 @@ PASS (conditional) - Checklist is executable with plan context. Missing recovery
 **Verdict**: FIT
 **Summary**: Task premises still hold, references are current, and planned integration points are explicit. No supersession or duplicate-implementation risk is currently visible.
 
+
+---
+
+## Run: 2026-02-18T12:15:00Z
+
+## Scrutinizer Verification Report: Task 0018
+
+**Mode**: Verify Implementation
+**Personas**: Marcus Webb (Cold Reader) + Alex Chen (Pragmatic Shipper)
+**Task**: Incremental audio writes for crash resilience
+**Status**: active (checklist 0% marked done)
+
+### File Coverage
+
+| Planned File | Action | Status | Evidence |
+|-------------|--------|--------|----------|
+| `src/.../recording/IncrementalWavWriter.java` | Create | FOUND | New file, 165 lines, untracked. Implements AutoCloseable, RandomAccessFile-based writer. |
+| `src/.../audio/SystemAudioCapture.java` | Modify | FOUND | Uncommitted diff: +180/-100 lines. ByteArrayOutputStream replaced, stop() returns File. |
+| `src/.../audio/AudioCaptureManager.java` | Modify | FOUND | Uncommitted diff: +60/-70 lines. writeWavFile() removed, consumes File from stop(). |
+| `src/.../recording/AudioRecorder.java` | Modify (optional) | UNCHANGED | Still uses `AudioSystem.write()` at line 44. Decision on Part 2 not documented. |
+
+**File Coverage**: 3/3 required planned files delivered (100%). Optional file deferred.
+
+### Unplanned Changes
+
+| File | Change Type | Classification |
+|------|-------------|---------------|
+| `src/test/.../recording/IncrementalWavWriterTest.java` | Created | Test (quality improvement) - justified |
+| `src/main/.../audio/DualCaptureTest.java` | Modified | Adapting test utility to new File-based API - justified |
+| `src/test/.../audio/SourceActivityTrackerTest.java` | Modified | Adapting test to new stop() contract - justified |
+
+**Plan Adherence**: 50% of changes were on-plan (3/6 files). All 3 unplanned files are test/test-utility adaptations to the API change.
+
+### Checklist Verification
+
+| # | Item | Marked | Verified | Evidence |
+|---|------|--------|----------|----------|
+| 1 | Create IncrementalWavWriter.java | [ ] | IMPLEMENTED | File exists at correct package, 165 lines |
+| 2 | Constructor: open RAF, write 44-byte header | [ ] | IMPLEMENTED | Lines 27-58: validates args, creates RAF, writeHeader() writes 44 bytes |
+| 3 | write(): append, seek, update sizes, synchronized | [ ] | IMPLEMENTED | Lines 61-85: synchronized, appends, updateHeaderSizes(), seeks to end |
+| 4 | close(): final header update, close RAF | [ ] | IMPLEMENTED | Lines 87-109: updates header, closes, idempotent |
+| 5 | getFile() and getBytesWritten() accessors | [ ] | IMPLEMENTED | Lines 111-117 |
+| 6 | Verify: synthetic PCM + partial file test | [ ] | PARTIAL | IncrementalWavWriterTest verifies header updates but no force-kill test |
+| 7 | Replace BAOS field with writer field | [ ] | IMPLEMENTED | Line 47: IncrementalWavWriter writer. Zero BAOS references remain. |
+| 8 | Initialize writer after format negotiation | [ ] | IMPLEMENTED (DEVIATED) | Lines 325-341: init in start() not callback. Positive deviation (fail-fast). |
+| 9 | Replace capturedAudio.write() with writer.write() | [ ] | IMPLEMENTED | Line 446: activeWriter.write(converted, 0, converted.length) |
+| 10 | IOException handling in callback | [ ] | IMPLEMENTED | Lines 447-451: catches, sets flags, logs, does not throw |
+| 11 | Change stop() return type to File | [ ] | IMPLEMENTED | Line 596: public File stop() |
+| 12 | Verify: 30s dual-source recording test | [ ] | NOT DONE | Manual |
+| 13 | Consume File from systemCapture.stop() | [ ] | IMPLEMENTED | Line 155 |
+| 14 | Remove writeWavFile() | [ ] | IMPLEMENTED | Zero writeWavFile references in AudioCaptureManager |
+| 15 | Confirm stopCapture() returns correct refs | [ ] | IMPLEMENTED | Lines 135-179 |
+| 16 | Verify: full dual-source flow test | [ ] | NOT DONE | Manual |
+| 17-21 | Phase 4: Crash resilience (5 items) | [ ] | NOT DONE | Manual |
+| 22-27 | Phase 5: Regression (6 items) | [ ] | NOT DONE | Manual |
+| 28-31 | Phase 6: Mic header resilience (4 items) | [ ] | NOT DONE | Decision pending |
+
+**Checklist Verification**: 0/31 items marked done. 13/15 code-level items (Phases 1-3) are IMPLEMENTED, 1 PARTIAL, 1 DEVIATED (positive). 16 manual items not done.
+
+### Danger Signals
+
+- HIGH: Checklist 0% marked but Phases 1-3 substantially implemented. AI-GOV-012 violated.
+- MEDIUM: No implementation commits. All work in uncommitted working tree.
+- LOW: Plan deviation in writer init location (start() vs callback). Positive deviation.
+
+### Persona Analysis
+
+**Marcus Webb (Cold Reader)**:
+The code implementation for Phases 1-3 is technically faithful to the plan. IncrementalWavWriter matches the plan's API signature exactly. The WAV header layout follows the 44-byte spec. SystemAudioCapture correctly replaces ByteArrayOutputStream with IncrementalWavWriter. AudioCaptureManager properly consumes File instead of byte[] and writeWavFile() is removed. One deviation: plan specified lazy writer init in first callback, implementation initializes in start() after format negotiation. Superior approach - surfaces file-creation failures immediately. Error handling in callback correctly swallows IOExceptions, sets flags, continues. Thread safety handled via synchronized on IncrementalWavWriter and AtomicBoolean writerFailed. Complete absence of checklist updates means any session pickup would miss existing work.
+
+**Alex Chen (Pragmatic Shipper)**:
+Core technical delivery is solid. Three must-have files implemented, diff is clean. Unplanned test files are justified - IncrementalWavWriterTest for new class coverage, DualCaptureTest/SourceActivityTrackerTest adapting to API change. Real gap: Phases 4-5 (crash resilience validation and regression). These prove the approach works. Code looks correct but "looks correct" != "proven correct" for crash resilience. Build passes (mvn package), unit test passes (IncrementalWavWriterTest). Solid partial delivery - engineering work done, validation work remains.
+
+### Verdict
+
+| Metric | Score | Weight | Weighted |
+|--------|-------|--------|----------|
+| File Coverage | 100% | 35% | 35.0% |
+| Checklist Verification | 0% (0 marked done) | 30% | 0.0% |
+| Plan Adherence | 50% | 20% | 10.0% |
+| Completion Status | 0% (0/31 checked) | 15% | 0.0% |
+
+**Weighted Score**: 45%
+**Verdict**: FAIL
+**Summary**: Technical implementation of Phases 1-3 is solid and plan-faithful. FAIL driven by process gaps: zero checklist items marked, zero commits, zero manual validation. Code exists but is undocumented, uncommitted, and unverified. Build/unit tests pass (mvn package, IncrementalWavWriterTest).
+
+### Recommended Actions
+- [ ] Mark Phase 1-3 code items [x] in checklist
+- [ ] Commit working tree changes with task 0018 reference
+- [ ] Execute Phase 4 crash resilience tests (force-kill JVM during recording)
+- [ ] Execute Phase 5 regression tests (mic-only, dual-source, silence remover)
+- [ ] Document Phase 6 decision (replace AudioRecorder or defer to task 0017)
+

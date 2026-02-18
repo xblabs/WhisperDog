@@ -1,13 +1,24 @@
 ---
-id: "0018"
-name: Incremental audio writes for crash resilience
-status: todo
-priority: medium
-tags: [recording, crash-resilience, system-audio, data-loss]
-created: 2026-02-18
-related_issues: [ISS_00012]
-related_tasks: ["0017"]
+task:
+  id: '0018'
+  status: active
+  priority: medium
+  progress: 45
+  title: Incremental audio writes for crash resilience
+  last_updated: '2026-02-18 12:17:39'
+  description: >-
+    Replace in-memory ByteArrayOutputStream buffering in SystemAudioCapture.java
+    with incremental disk writes so system audio survives JVM crashes. Add WAV
+    header resilience for mic path. Split from task 0017.
+  checklist:
+    total_items: 31
+    completed_items: 14
+    completion_percentage: 45
+  latest_work: 'Updated via x-task-update: progress: 45%'
+
 ---
+
+
 
 # Task 0018: Incremental audio writes for crash resilience
 

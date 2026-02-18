@@ -3,14 +3,16 @@ package org.whisperdog.audio;
 import com.sun.jna.Pointer;
 import xt.audio.*;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.EnumSet;
 
 import org.whisperdog.ConfigManager;
+import org.whisperdog.recording.IncrementalWavWriter;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -42,7 +44,10 @@ public class SystemAudioCapture {
     private XtSafeBuffer safeBuffer;
     private String loopbackDeviceId;
     private String loopbackDeviceName;
-    private ByteArrayOutputStream capturedAudio;
+    private IncrementalWavWriter writer;
+    private volatile File outputFile;
+    private volatile IOException writerError;
+    private final AtomicBoolean writerFailed = new AtomicBoolean(false);
     private final AtomicBoolean capturing = new AtomicBoolean(false);
 
     // Format info for conversion
@@ -317,7 +322,24 @@ public class SystemAudioCapture {
         logger.info("Using format: {}Hz, {} channels, {}",
             deviceSampleRate, deviceChannels, mix.sample);
 
-        capturedAudio = new ByteArrayOutputStream();
+        writerError = null;
+        writerFailed.set(false);
+        outputFile = createOutputFile();
+        try {
+            writer = new IncrementalWavWriter(outputFile, TARGET_SAMPLE_RATE, 16, TARGET_CHANNELS);
+        } catch (IOException e) {
+            writerError = e;
+            if (device != null) {
+                try {
+                    device.close();
+                } catch (Exception closeError) {
+                    logger.debug("Error closing device after writer init failure: {}", closeError.getMessage());
+                }
+                device = null;
+            }
+            throw new IOException("Failed to initialize incremental system audio writer", e);
+        }
+
         capturing.set(true);
 
         Structs.XtBufferSize bufferSize = device.getBufferSize(format);
@@ -328,11 +350,41 @@ public class SystemAudioCapture {
         Structs.XtDeviceStreamParams deviceParams = new Structs.XtDeviceStreamParams(
             streamParams, format, latency);
 
-        stream = device.openStream(deviceParams, null);
-        safeBuffer = XtSafeBuffer.register(stream);
-        stream.start();
+        try {
+            stream = device.openStream(deviceParams, null);
+            safeBuffer = XtSafeBuffer.register(stream);
+            stream.start();
+        } catch (Exception e) {
+            capturing.set(false);
+            if (safeBuffer != null) {
+                try {
+                    safeBuffer.close();
+                } catch (Exception closeError) {
+                    logger.debug("Error closing safe buffer after stream start failure: {}", closeError.getMessage());
+                }
+                safeBuffer = null;
+            }
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (Exception closeError) {
+                    logger.debug("Error closing stream after stream start failure: {}", closeError.getMessage());
+                }
+                stream = null;
+            }
+            if (device != null) {
+                try {
+                    device.close();
+                } catch (Exception closeError) {
+                    logger.debug("Error closing device after stream start failure: {}", closeError.getMessage());
+                }
+                device = null;
+            }
+            closeWriterQuietly();
+            throw e;
+        }
 
-        logger.info("Started system audio capture");
+        logger.info("Started system audio capture: {}", outputFile.getAbsolutePath());
     }
 
     // Diagnostic counters (thread-safe: written from callback, read from main thread)
@@ -344,7 +396,7 @@ public class SystemAudioCapture {
      * Callback for audio buffer processing.
      */
     private int onBuffer(XtStream stream, Structs.XtBuffer buffer, Object user) {
-        if (!capturing.get() || buffer.frames == 0) {
+        if (!capturing.get() || buffer.frames == 0 || writerFailed.get()) {
             return 0;
         }
 
@@ -352,41 +404,50 @@ public class SystemAudioCapture {
             XtSafeBuffer safe = XtSafeBuffer.get(stream);
             safe.lock(buffer);
 
-            Object input = safe.getInput();
             byte[] converted;
+            try {
+                Object input = safe.getInput();
+                if (input instanceof float[]) {
+                    float[] samples = (float[]) input;
 
-            if (input instanceof float[]) {
-                float[] samples = (float[]) input;
+                    // Bounds check: limit frames to available samples
+                    int availableFrames = Math.min(buffer.frames, samples.length / deviceChannels);
 
-                // Bounds check: limit frames to available samples
-                int availableFrames = Math.min(buffer.frames, samples.length / deviceChannels);
+                    // Diagnostic: check for non-zero samples
+                    totalBufferCalls.incrementAndGet();
+                    float bufferPeak = 0;
+                    for (int i = 0; i < availableFrames * deviceChannels; i++) {
+                        float abs = Math.abs(samples[i]);
+                        if (abs > bufferPeak) bufferPeak = abs;
+                    }
+                    if (bufferPeak > 0.0001f) nonSilentBuffers.incrementAndGet();
+                    if (bufferPeak > peakSample) peakSample = bufferPeak;
 
-                // Diagnostic: check for non-zero samples
-                totalBufferCalls.incrementAndGet();
-                float bufferPeak = 0;
-                for (int i = 0; i < availableFrames * deviceChannels; i++) {
-                    float abs = Math.abs(samples[i]);
-                    if (abs > bufferPeak) bufferPeak = abs;
+                    converted = convertFloatToInt16(samples, availableFrames, deviceChannels);
+                } else if (input instanceof short[]) {
+                    short[] samples = (short[]) input;
+                    // Bounds check: limit frames to available samples
+                    int availableFrames = Math.min(buffer.frames, samples.length / deviceChannels);
+                    totalBufferCalls.incrementAndGet();
+                    converted = convertInt16(samples, availableFrames, deviceChannels);
+                } else {
+                    return 0;
                 }
-                if (bufferPeak > 0.0001f) nonSilentBuffers.incrementAndGet();
-                if (bufferPeak > peakSample) peakSample = bufferPeak;
-
-                converted = convertFloatToInt16(samples, availableFrames, deviceChannels);
-            } else if (input instanceof short[]) {
-                short[] samples = (short[]) input;
-                // Bounds check: limit frames to available samples
-                int availableFrames = Math.min(buffer.frames, samples.length / deviceChannels);
-                totalBufferCalls.incrementAndGet();
-                converted = convertInt16(samples, availableFrames, deviceChannels);
-            } else {
+            } finally {
                 safe.unlock(buffer);
+            }
+
+            IncrementalWavWriter activeWriter = writer;
+            if (activeWriter == null) {
                 return 0;
             }
 
-            safe.unlock(buffer);
-
-            synchronized (capturedAudio) {
-                capturedAudio.write(converted);
+            try {
+                activeWriter.write(converted, 0, converted.length);
+            } catch (IOException e) {
+                writerError = e;
+                writerFailed.set(true);
+                logger.error("System audio disk write failed. Recording will continue without system track updates: {}", e.getMessage(), e);
             }
         } catch (Exception e) {
             logger.error("Error processing audio buffer: {}", e.getMessage());
@@ -406,6 +467,41 @@ public class SystemAudioCapture {
             total, nonSilent,
             total > 0 ? (nonSilent * 100.0 / total) : 0,
             peakSample);
+    }
+
+    public boolean hasWriteError() {
+        return writerError != null;
+    }
+
+    public String getWriteErrorMessage() {
+        return writerError != null ? writerError.getMessage() : null;
+    }
+
+    private File createOutputFile() {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        File tempDir = ConfigManager.getTempDirectory();
+        File candidate = new File(tempDir, "whisperdog_system_" + timestamp + ".wav");
+        int suffix = 1;
+        while (candidate.exists()) {
+            candidate = new File(tempDir, "whisperdog_system_" + timestamp + "_" + suffix + ".wav");
+            suffix++;
+        }
+        return candidate;
+    }
+
+    private void closeWriterQuietly() {
+        IncrementalWavWriter activeWriter = writer;
+        writer = null;
+        if (activeWriter != null) {
+            try {
+                activeWriter.close();
+            } catch (IOException e) {
+                if (writerError == null) {
+                    writerError = e;
+                }
+                logger.warn("Failed to finalize system audio WAV header: {}", e.getMessage(), e);
+            }
+        }
     }
 
     /**
@@ -495,16 +591,19 @@ public class SystemAudioCapture {
 
     /**
      * Stop capturing and return the captured audio.
-     * @return Captured audio as 16-bit PCM, 16kHz, mono
+     * @return Captured WAV file, or null if no file is available
      */
-    public byte[] stop() {
+    public File stop() {
         if (!capturing.get()) {
-            return new byte[0];
+            if (writer != null) {
+                closeWriterQuietly();
+            }
+            return outputFile;
         }
 
         capturing.set(false);
 
-        // Brief delay to allow any in-flight callbacks to complete writing to capturedAudio.
+        // Brief delay to allow any in-flight callbacks to complete writing to writer.
         // The callback checks capturing.get() first, so after this delay no new writes will occur.
         try {
             Thread.sleep(50);
@@ -552,9 +651,17 @@ public class SystemAudioCapture {
             logger.error("Unexpected error during stop(): {}", t.getMessage(), t);
         }
 
-        synchronized (capturedAudio) {
-            return capturedAudio.toByteArray();
+        closeWriterQuietly();
+
+        if (writerError != null) {
+            logger.warn("System audio capture completed with write error: {}", writerError.getMessage());
         }
+
+        if (outputFile != null && outputFile.exists()) {
+            return outputFile;
+        }
+
+        return null;
     }
 
     /**
@@ -626,50 +733,22 @@ public class SystemAudioCapture {
             Thread.sleep(1000);
         }
 
-        byte[] audioData = capture.stop();
+        File capturedFile = capture.stop();
+        long pcmBytes = (capturedFile != null && capturedFile.exists())
+            ? Math.max(0, capturedFile.length() - 44)
+            : 0;
 
         System.out.println("\nCapture complete!");
-        System.out.println("  Captured: " + audioData.length + " bytes");
-        System.out.println("  Duration: " + String.format("%.2f", audioData.length / 2.0 / TARGET_SAMPLE_RATE) + " seconds");
+        System.out.println("  Captured: " + pcmBytes + " bytes");
+        System.out.println("  Duration: " + String.format("%.2f", pcmBytes / 2.0 / TARGET_SAMPLE_RATE) + " seconds");
         System.out.println("  Diagnostics: " + capture.getDiagnostics());
+        if (capture.hasWriteError()) {
+            System.out.println("  Warning: " + capture.getWriteErrorMessage());
+        }
+        if (capturedFile != null) {
+            System.out.println("  Saved to: " + capturedFile.getAbsolutePath());
+        }
 
         capture.dispose();
-
-        // Save to WAV file
-        File tempFile = ConfigManager.createTempFile("whisperdog_poc_", ".wav");
-        writeWav(tempFile, audioData, TARGET_SAMPLE_RATE, TARGET_CHANNELS);
-        System.out.println("  Saved to: " + tempFile.getAbsolutePath());
-    }
-
-    /**
-     * Write PCM data to WAV file.
-     */
-    private static void writeWav(File file, byte[] pcmData, int sampleRate, int channels)
-            throws IOException {
-        int byteRate = sampleRate * channels * 2;
-        int blockAlign = channels * 2;
-
-        try (DataOutputStream out = new DataOutputStream(
-                new BufferedOutputStream(new FileOutputStream(file)))) {
-            // RIFF header
-            out.writeBytes("RIFF");
-            out.writeInt(Integer.reverseBytes(36 + pcmData.length));
-            out.writeBytes("WAVE");
-
-            // fmt chunk
-            out.writeBytes("fmt ");
-            out.writeInt(Integer.reverseBytes(16)); // chunk size
-            out.writeShort(Short.reverseBytes((short) 1)); // PCM
-            out.writeShort(Short.reverseBytes((short) channels));
-            out.writeInt(Integer.reverseBytes(sampleRate));
-            out.writeInt(Integer.reverseBytes(byteRate));
-            out.writeShort(Short.reverseBytes((short) blockAlign));
-            out.writeShort(Short.reverseBytes((short) 16)); // bits per sample
-
-            // data chunk
-            out.writeBytes("data");
-            out.writeInt(Integer.reverseBytes(pcmData.length));
-            out.write(pcmData);
-        }
     }
 }

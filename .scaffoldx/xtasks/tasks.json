@@ -326,7 +326,7 @@
       "id": "0018",
       "path": ".scaffoldx/xtasks/0018_incremental_audio_writes_for_crash_resilience",
       "created": "2026-02-18",
-      "last_updated": "2026-02-18",
+      "last_updated": "2026-02-18T12:17:38.989Z",
       "name": "Incremental audio writes for crash resilience",
       "description": "Replace in-memory ByteArrayOutputStream buffering in SystemAudioCapture.java with incremental disk writes so system audio survives JVM crashes. Add WAV header resilience for mic path. Split from task 0017.",
       "priority": "medium",
@@ -338,8 +338,8 @@
         "system-audio",
         "data-loss"
       ],
-      "status": "todo",
-      "progress": 0,
+      "status": "active",
+      "progress": 45,
       "actual_hours": "0",
       "parent_task_id": null,
       "child_task_ids": [],
@@ -347,7 +347,20 @@
       "task_type": "executable",
       "test_task": false,
       "deletable": true,
-      "environment_created": "claude-desktop"
+      "environment_created": "claude-desktop",
+      "status_changed_at": "2026-02-18T11:49:59.937Z",
+      "stateTransitions": [
+        {
+          "from": null,
+          "to": "0018",
+          "timestamp": "2026-02-18T11:49:59.937Z",
+          "reason": "Switching to 0018",
+          "actor": "user",
+          "trigger": "x-task-switch",
+          "environment": "claude-code"
+        }
+      ],
+      "last_updated_environment": "claude-code"
     }
   ],
   "lastTaskId": 18

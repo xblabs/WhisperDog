@@ -2,7 +2,7 @@
   "meta": {
     "command": "x-context-reindex",
     "version": "1.0.0",
-    "timestamp": "2025-12-26T02:16:34.354Z",
+    "timestamp": "2026-02-18T11:50:00.048Z",
     "philosophy": "LLM-driven natural writing, not algorithmic generation"
   },
   "instructions": {
@@ -19,29 +19,135 @@
   "collectedData": {
     "metadata": {
       "repoRoot": "C:\\__dev\\_projects\\whisperdog",
-      "timestamp": "2025-12-26T02:16:34.288Z",
+      "timestamp": "2026-02-18T11:50:00.030Z",
       "collectorVersion": "1.0.0"
     },
-    "currentTask": null,
+    "currentTask": {
+      "id": "0016",
+      "name": "Icon Theming System",
+      "status": "in_progress",
+      "progress": 0,
+      "priority": "medium",
+      "created": "2026-02-01",
+      "updated": "2026-02-01",
+      "task_type": "executable",
+      "tags": [
+        "ui",
+        "icons",
+        "theming",
+        "architecture"
+      ],
+      "dependencies": [],
+      "directory": ".scaffoldx/xtasks/0016_icon_theming_system",
+      "description": "Runtime icon theming with pure black source SVGs and context-aware ColorFilter application. Replaces index-based icon naming with semantic names and hierarchical color contexts."
+    },
     "allTasks": {
-      "activeTasks": [],
-      "recentTasks": [],
-      "summary": {}
+      "activeTasks": [
+        {
+          "id": "0016",
+          "name": "Icon Theming System",
+          "status": "in_progress",
+          "priority": "medium",
+          "path": ".scaffoldx/xtasks/0016_icon_theming_system"
+        },
+        {
+          "id": "0018",
+          "name": "Incremental audio writes for crash resilience",
+          "status": "active",
+          "priority": "medium",
+          "path": ".scaffoldx/xtasks/0018_incremental_audio_writes_for_crash_resilience"
+        }
+      ],
+      "recentTasks": [
+        "0017: Retry failed transcriptions [todo]",
+        "0014: Recipe System Audit and UX Improvements [todo]",
+        "0015: Recordings Panel UX Improvements [todo]",
+        "0013: Attribution Tuning with Diverse Test Corpus [todo]",
+        "0012: Audio Level Normalization [todo]",
+        "0011: Synchronized Dual-Source Silence Removal [todo]",
+        "0007: Whisper Vocabulary Hints [todo]",
+        "0005: MP4 Drag-Drop Support [todo]"
+      ],
+      "summary": {
+        "review": 5,
+        "todo": 8,
+        "awaiting_verification": 1,
+        "in_progress": 1,
+        "active": 1
+      },
+      "totalCount": 16
     },
     "xcontextFiles": {
       "recentFiles": [
         {
+          "path": ".scaffoldx\\xcontext\\development\\adr\\002_dual_source_attribution.md",
+          "tokens": 1468
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\development\\adr\\003_llm_changelog_sync.md",
+          "tokens": 835
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\_core_agent_instructions_layer_source.md",
+          "tokens": 571
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\index.md",
+          "tokens": 1401
+        },
+        {
           "path": ".scaffoldx\\xcontext\\current_project_context.md",
-          "tokens": 285
+          "tokens": 296
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\development\\index.md",
+          "tokens": 2143
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\development\\adr\\001_pipeline_chaining.md",
+          "tokens": 837
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\core\\index.md",
+          "tokens": 1230
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\project\\index.md",
+          "tokens": 2454
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\ui\\light_dark_toggle_notes.md",
+          "tokens": 396
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\data\\index.md",
+          "tokens": 2306
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\ui\\index.md",
+          "tokens": 2060
+        },
+        {
+          "path": ".scaffoldx\\xcontext\\api\\index.md",
+          "tokens": 1559
         },
         {
           "path": ".scaffoldx\\xcontext\\Overview.md",
           "tokens": 1098
         }
       ],
-      "totalCount": 2
+      "totalCount": 14
     },
-    "recentSessions": [],
-    "domainStructure": {}
+    "recentSessions": [
+      ".scaffoldx\\xmemory\\session_summaries\\2026-01.md"
+    ],
+    "domainStructure": {
+      "api": 1,
+      "core": 1,
+      "data": 1,
+      "development": 4,
+      "project": 1,
+      "ui": 2
+    }
   }
 }
